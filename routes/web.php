@@ -1,21 +1,10 @@
 <?php
-
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\CatalogItemController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\InventoryController;
 use Illuminate\Support\Facades\Route;
-
 Route::get('/', fn () => redirect()->route('dashboard'));
-Route::middleware('guest')->group(function () {
-    Route::get('/iniciar-sesion', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/iniciar-sesion', [AuthenticatedSessionController::class, 'store'])->name('login.store');
-});
-Route::middleware('auth')->group(function () {
-    Route::get('/panel', fn () => view('dashboard'))->name('dashboard');
-    Route::post('/cerrar-sesion', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/administracion/usuarios', [UserController::class, 'index'])->name('admin.users.index');
-        Route::post('/administracion/usuarios', [UserController::class, 'store'])->name('admin.users.store');
-        Route::put('/administracion/usuarios/{user}', [UserController::class, 'update'])->name('admin.users.update');
-        Route::patch('/administracion/usuarios/{user}/estado', [UserController::class, 'updateStatus'])->name('admin.users.status');
-    });
-});
+Route::middleware('guest')->group(function(){ Route::get('/iniciar-sesion',[AuthenticatedSessionController::class,'create'])->name('login'); Route::post('/iniciar-sesion',[AuthenticatedSessionController::class,'store'])->name('login.store'); });
+Route::middleware('auth')->group(function(){ Route::get('/panel',function(){ $lowStock=\App\Models\CatalogItem::where('type','product')->withCount(['inventoryUnits as available_units_count'=>fn($q)=>$q->where('status','available')])->get()->filter(fn($item)=>$item->available_units_count<=5)->sortBy('available_units_count'); return view('dashboard',compact('lowStock'));})->name('dashboard'); Route::post('/cerrar-sesion',[AuthenticatedSessionController::class,'destroy'])->name('logout'); Route::middleware('role:admin,comercial')->group(function(){Route::get('/clientes',[CustomerController::class,'index'])->name('customers.index');Route::post('/clientes',[CustomerController::class,'store'])->name('customers.store');Route::put('/clientes/{customer}',[CustomerController::class,'update'])->name('customers.update');Route::get('/catalogo',[CatalogItemController::class,'index'])->name('catalog.index');Route::post('/catalogo',[CatalogItemController::class,'store'])->name('catalog.store');Route::get('/inventario',[InventoryController::class,'index'])->name('inventory.index');Route::post('/inventario/categorias',[InventoryController::class,'category'])->name('inventory.categories');Route::post('/inventario/series',[InventoryController::class,'unit'])->name('inventory.units');});Route::middleware('role:admin')->group(function(){Route::get('/administracion/usuarios',[UserController::class,'index'])->name('admin.users.index');Route::post('/administracion/usuarios',[UserController::class,'store'])->name('admin.users.store');Route::put('/administracion/usuarios/{user}',[UserController::class,'update'])->name('admin.users.update');Route::patch('/administracion/usuarios/{user}/estado',[UserController::class,'updateStatus'])->name('admin.users.status');});});
