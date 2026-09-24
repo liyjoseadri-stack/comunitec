@@ -1,1 +1,0 @@
-<?php namespace App\Models; use Illuminate\Database\Eloquent\Model; class InventoryUnit extends Model { protected $fillable=['catalog_item_id','serial_number','status','quote_id']; public function item(){return $this->belongsTo(CatalogItem::class,'catalog_item_id');} }
