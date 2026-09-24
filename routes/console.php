@@ -8,4 +8,4 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('quotes:expire')->daily();
+Schedule::command('cotizaciones:vencer')->daily();

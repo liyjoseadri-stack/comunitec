@@ -26,7 +26,7 @@ No guardar contraseñas en Git. Los usuarios se administran desde el módulo pro
 
 Las ventas se originan en una cotización aceptada y su conversión es manual. No hay pasarela de pago. Los precios incluyen IVA. Una cotización pendiente vence a los 15 días y una aceptada reserva piezas por 5 días.
 
-Modificar partidas de una aceptada libera sus reservas y la devuelve a Pendiente; debe aceptarse nuevamente. Los cambios inválidos conservan las reservas. Cancelar libera piezas. El comando `quotes:expire` procesa los vencimientos; requiere ejecutar el programador de Laravel para funcionar automáticamente.
+Modificar partidas de una aceptada libera sus reservas y la devuelve a Pendiente; debe aceptarse nuevamente. Los cambios inválidos conservan las reservas. Cancelar libera piezas. El comando `cotizaciones:vencer` procesa los vencimientos; requiere ejecutar el programador de Laravel para funcionar automáticamente.
 
 ## Idioma y compatibilidad
 
@@ -36,4 +36,4 @@ Se conservan nombres técnicos de Laravel, Composer y PHPUnit (`app`, `config`, 
 
 ## Estado y pendientes
 
-El plan está en `tasks/plan.md` y el seguimiento en `tasks/todo.md`. La Entrega 3 de creación y cálculo de cotizaciones está terminada. El SMTP real ya fue configurado y comprobado con una cuenta autorizada; sus credenciales permanecen únicamente en `.env`. Los estados y reservas tienen avances de entregas posteriores. La conversión a venta y la selección de series entregadas corresponden a la Entrega 5.
+El plan está en `tasks/plan.md` y el seguimiento en `tasks/todo.md`. Las Entregas 3 y 4 están terminadas: creación y cálculo de cotizaciones, ciclo de estados, PDF, correo manual e historial de sus resultados. El SMTP real ya fue configurado y comprobado con una cuenta autorizada; sus credenciales permanecen únicamente en `.env`. La conversión a venta y la selección de series entregadas corresponden a la Entrega 5.

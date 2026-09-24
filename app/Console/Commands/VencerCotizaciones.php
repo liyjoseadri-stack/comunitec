@@ -8,7 +8,11 @@ use Illuminate\Console\Command;
 
 class VencerCotizaciones extends Command
 {
-    protected $signature = 'quotes:expire';
+    protected $signature = 'cotizaciones:vencer';
+
+    protected $aliases = [
+        'quotes:expire',
+    ];
 
     protected $description = 'Vence cotizaciones pendientes y libera reservas aceptadas que vencieron';
 

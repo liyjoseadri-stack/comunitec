@@ -27,6 +27,16 @@ class EnvioCotizacionesTest extends TestCase
         $this->assertSame('pending', $cotizacion->fresh()->status);
         $this->assertTrue($cotizacion->fresh()->sent_at->equalTo(now()));
         $this->assertTrue($cotizacion->fresh()->expires_at->equalTo(now()->addDays(15)));
+        $this->assertDatabaseHas('quote_email_deliveries', [
+            'quote_id' => $cotizacion->id,
+            'recipient' => 'cliente@example.test',
+            'result' => 'accepted',
+        ]);
+        $this->get("/cotizaciones/{$cotizacion->id}")
+            ->assertOk()
+            ->assertSee('Historial de correo')
+            ->assertSee('Aceptado por el servicio de correo')
+            ->assertSee('cliente@example.test');
     }
 
     public function test_fallo_del_correo_conserva_borrador_y_fechas(): void
@@ -38,6 +48,11 @@ class EnvioCotizacionesTest extends TestCase
         $this->assertSame('draft', $cotizacion->fresh()->status);
         $this->assertNull($cotizacion->fresh()->sent_at);
         $this->assertNull($cotizacion->fresh()->expires_at);
+        $this->assertDatabaseHas('quote_email_deliveries', [
+            'quote_id' => $cotizacion->id,
+            'recipient' => 'cliente@example.test',
+            'result' => 'failed',
+        ]);
     }
 
     public function test_reenviar_no_reinicia_la_vigencia(): void

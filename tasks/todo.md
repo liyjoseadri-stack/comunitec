@@ -70,6 +70,18 @@ Este archivo refleja el plan aprobado en `tasks/plan.md`. Una tarea se marca al 
 - [ ] Entrega 5: convertir una cotización aceptada en venta y registrar método de pago y series entregadas.
 - [x] Configurar SMTP autorizado para entregas reales de correo.
 
+## Entrega 4: ciclo de estados, PDF y correo
+
+- [x] Aplicar las transiciones de Borrador, Pendiente, Aceptada, Rechazada, Cancelada y Vencida con permisos del servidor.
+- [x] Vencer cotizaciones pendientes a los 15 días mediante el comando programado `cotizaciones:vencer`.
+- [x] Permitir modificar cotizaciones aceptadas, liberar sus reservas y exigir una nueva aceptación.
+- [x] Generar un PDF con cliente, responsable, vigencia, partidas, descuento, total e indicación de IVA incluido.
+- [x] Enviar manualmente la cotización con el PDF adjunto y conservar estado y fechas cuando falla el transporte.
+- [x] Registrar destinatario, usuario, fecha y resultado de cada intento de correo aceptado o fallido.
+- [x] Mostrar el historial de correo aclarando que la aceptación del servicio no confirma recepción ni lectura.
+- Verificación de cierre: 59 pruebas y 287 aserciones; Pint, compilación de Blade y programación diaria aprobados. La migración del historial se aplicó a MySQL local. El PDF se renderizó en A4 y se inspeccionó visualmente sin cortes ni desbordamientos.
+- Siguiente entrega: completar la conversión única de una cotización aceptada en venta, solicitar método de pago y asignar las series entregadas.
+
 ## Próximo punto activo
 
 - Navegación común incorporada en Panel, Clientes, Catálogo, Inventario, listado/detalle de Cotizaciones y Usuarios. Se muestran enlaces por rol y se indica la sección actual con `aria-current`. Estilos en `public/css/navegacion.css`, sin recompilación de Vite.

@@ -42,6 +42,16 @@ class Cotizacion extends Model
         return $this->belongsTo(Cliente::class);
     }
 
+    public function responsable()
+    {
+        return $this->belongsTo(Usuario::class, 'user_id');
+    }
+
+    public function enviosCorreo()
+    {
+        return $this->hasMany(EnvioCotizacion::class, 'quote_id')->latest('attempted_at');
+    }
+
     public function etiquetaEstado(): string
     {
         return match ($this->status) {

@@ -6,6 +6,7 @@ use App\Mail\CorreoCotizacion;
 use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
+use App\Models\EnvioCotizacion;
 use App\Models\PiezaInventario;
 use App\Services\ServicioInventarioCotizacion;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -31,7 +32,7 @@ class ControladorCotizaciones extends Controller
 
     public function mostrar(Cotizacion $quote): View
     {
-        $quote->load('customer', 'lines');
+        $quote->load('customer', 'lines', 'enviosCorreo.usuario');
         $productos = $quote->lines->where('type', 'product')->groupBy('catalog_item_id');
         $disponibles = PiezaInventario::whereIn('catalog_item_id', $productos->keys())
             ->where('status', 'available')->selectRaw('catalog_item_id, COUNT(*) AS cantidad')
@@ -62,8 +63,11 @@ class ControladorCotizaciones extends Controller
     public function pdf(Cotizacion $quote)
     {
         return Pdf::loadView('cotizaciones.pdf', [
-            'quote' => $quote->load('customer',
-                'lines'),
+            'quote' => $quote->load(
+                'customer',
+                'lines',
+                'responsable'
+            ),
         ])->download("{$quote->folio}.pdf");
     }
 
@@ -83,11 +87,15 @@ class ControladorCotizaciones extends Controller
         if ($transporte === 'log' || ($transporte === 'array' && ! app()->runningUnitTests())) {
             return back()->with('error', 'Configura un servicio de correo real antes de enviar. La cotización conserva su estado.');
         }
+
+        $destinatario = $cotizacion->customer()->value('email');
+        $usuarioId = (int) auth()->id();
+
         try {
-            DB::transaction(function () use ($cotizacion, $estadoEsperado) {
+            DB::transaction(function () use ($cotizacion, $destinatario, $estadoEsperado, $usuarioId) {
                 $actual = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
                 abort_unless($actual->status === $estadoEsperado, 422, 'El estado de la cotización no permite este envío.');
-                $actual->load('customer', 'lines');
+                $actual->load('customer', 'lines', 'responsable');
                 if ($estadoEsperado === 'draft') {
                     $actual->fill([
                         'status' => 'pending',
@@ -95,11 +103,25 @@ class ControladorCotizaciones extends Controller
                         'expires_at' => now()->addDays(15),
                     ]);
                 }
-                Mail::to($actual->customer->email)->send(new CorreoCotizacion($actual));
+                Mail::to($destinatario)->send(new CorreoCotizacion($actual));
                 $actual->save();
+                $actual->enviosCorreo()->create([
+                    'user_id' => $usuarioId,
+                    'recipient' => $destinatario,
+                    'result' => EnvioCotizacion::RESULTADO_ACEPTADO,
+                    'message' => 'El servicio de correo aceptó el mensaje para su envío.',
+                    'attempted_at' => now(),
+                ]);
             });
         } catch (TransportExceptionInterface $excepcion) {
             report($excepcion);
+            $cotizacion->enviosCorreo()->create([
+                'user_id' => $usuarioId,
+                'recipient' => $destinatario,
+                'result' => EnvioCotizacion::RESULTADO_FALLIDO,
+                'message' => 'El servicio de correo no aceptó el mensaje.',
+                'attempted_at' => now(),
+            ]);
 
             return back()->with('error', 'No se pudo enviar el correo. La cotización conserva su estado y fechas; puedes volver a intentarlo.');
         }

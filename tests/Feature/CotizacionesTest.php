@@ -156,7 +156,7 @@ class CotizacionesTest extends TestCase
             'total' => 0,
         ]);
 
-        $this->artisan('quotes:expire')->assertExitCode(0);
+        $this->artisan('cotizaciones:vencer')->assertExitCode(0);
 
         $this->assertSame('expired', $overdue->fresh()->status);
         $this->assertSame('pending', $current->fresh()->status);
@@ -183,10 +183,31 @@ class CotizacionesTest extends TestCase
             'status' => 'draft',
             'total' => 0,
         ]);
+        $quote->lines()->create([
+            'type' => 'other',
+            'description' => 'Configuración especializada',
+            'quantity' => 2,
+            'unit_price' => 750,
+            'subtotal' => 1500,
+        ]);
+        $quote->update([
+            'discount_percent' => 5,
+            'total' => 1425,
+        ]);
 
         $this->actingAs($user)->get("/cotizaciones/{$quote->id}/pdf")
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+
+        $contenido = view('cotizaciones.pdf', [
+            'quote' => $quote->load('customer', 'lines'),
+        ])->render();
+
+        $this->assertStringContainsString('COT-PDF-1', $contenido);
+        $this->assertStringContainsString('Marta', $contenido);
+        $this->assertStringContainsString('Configuración especializada', $contenido);
+        $this->assertStringContainsString('5.00%', $contenido);
+        $this->assertStringContainsString('$1,425.00', $contenido);
     }
 
     public function test_los_estados_se_muestran_en_espanol(): void
@@ -408,7 +429,7 @@ class CotizacionesTest extends TestCase
             'quote_id' => $quote->id,
         ]);
 
-        $this->artisan('quotes:expire')->assertExitCode(0);
+        $this->artisan('cotizaciones:vencer')->assertExitCode(0);
 
         $this->assertSame('cancelled', $quote->fresh()->status);
         $this->assertDatabaseHas('inventory_units', [
