@@ -13,6 +13,42 @@ body {
     overflow-wrap: anywhere;
 }
 
+.encabezado-pagina,
+.encabezado-seccion {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.encabezado-pagina {
+    margin-bottom: 1.5rem;
+}
+
+.encabezado-pagina h1,
+.encabezado-seccion h2 {
+    margin-bottom: 0.25rem;
+}
+
+.encabezado-pagina p,
+.encabezado-seccion p {
+    margin: 0;
+    color: #475569;
+}
+
+.contador-registros,
+.insignia-tipo {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    color: #1e3a8a;
+    background: #dbeafe;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .bloque-administrativo {
     margin-bottom: 1.5rem;
     padding: 1.25rem;
@@ -30,6 +66,35 @@ body {
     display: grid;
     gap: 0.5rem;
     max-width: 38rem;
+}
+
+.formulario-catalogo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    max-width: none;
+    margin-top: 1.25rem;
+}
+
+.campo-formulario {
+    display: grid;
+    align-content: start;
+    gap: 0.375rem;
+}
+
+.campo-formulario--ancho {
+    grid-column: 1 / -1;
+}
+
+.formulario-administrativo .campo-formulario label {
+    margin-top: 0;
+}
+
+.texto-opcional,
+.campo-formulario small,
+.detalle-tabla {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 400;
 }
 
 .formulario-administrativo label {
@@ -69,6 +134,38 @@ body {
     cursor: not-allowed;
 }
 
+.entrada-con-prefijo {
+    display: flex;
+    align-items: center;
+    border: 1px solid #64748b;
+    border-radius: 0.375rem;
+    background: #ffffff;
+}
+
+.entrada-con-prefijo > span {
+    padding-left: 0.75rem;
+    color: #475569;
+}
+
+.formulario-administrativo .entrada-con-prefijo input {
+    border: 0;
+}
+
+.entrada-con-prefijo:focus-within {
+    outline: 3px solid #2563eb;
+    outline-offset: 3px;
+}
+
+.formulario-administrativo .entrada-con-prefijo input:focus-visible {
+    outline: 0;
+}
+
+.acciones-formulario {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.25rem;
+}
+
 .pagina-administrativa a {
     color: #1d4ed8;
     text-underline-offset: 0.2em;
@@ -98,6 +195,42 @@ body {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
+}
+
+.contenedor-tabla {
+    max-width: 100%;
+    margin-top: 1rem;
+    overflow-x: auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+}
+
+.tabla-catalogo {
+    min-width: 52rem;
+}
+
+.tabla-registros thead {
+    background: #f1f5f9;
+}
+
+.tabla-registros tbody tr:hover {
+    background: #f8fafc;
+}
+
+.tabla-registros th:first-child,
+.tabla-registros td:first-child {
+    padding-left: 0.875rem;
+}
+
+.detalle-tabla {
+    display: block;
+    margin-top: 0.25rem;
+}
+
+.estado-vacio {
+    padding: 2rem !important;
+    color: #64748b;
+    text-align: center !important;
 }
 
 .tabla-registros th,
@@ -148,4 +281,35 @@ body {
 .tabla-partidas details {
     max-width: min(38rem, calc(100vw - 8rem));
     margin-bottom: 0;
+}
+
+@media (max-width: 40rem) {
+    .pagina-administrativa {
+        padding-right: 1rem;
+        padding-left: 1rem;
+    }
+
+    .encabezado-pagina {
+        display: grid;
+    }
+
+    .formulario-catalogo {
+        grid-template-columns: 1fr;
+    }
+
+    .campo-formulario--ancho {
+        grid-column: auto;
+    }
+
+    .acciones-formulario {
+        justify-content: stretch;
+    }
+
+    .acciones-formulario button {
+        width: 100%;
+    }
+
+    .bloque-administrativo {
+        padding: 1rem;
+    }
 }
