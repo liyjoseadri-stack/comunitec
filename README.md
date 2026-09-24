@@ -1,6 +1,6 @@
 # Comunitec
 
-Sistema administrativo de clientes, catálogo, inventario y cotizaciones para COMUN&TEC, desarrollado con Laravel 12, PHP 8.2 o superior y MySQL.
+Sistema administrativo de clientes, catálogo, inventario, cotizaciones y ventas para COMUN&TEC, desarrollado con Laravel 12, PHP 8.2 o superior y MySQL.
 
 ## Instalación local
 
@@ -26,6 +26,8 @@ No guardar contraseñas en Git. Los usuarios se administran desde el módulo pro
 
 Las ventas se originan en una cotización aceptada y su conversión es manual. No hay pasarela de pago. Los precios incluyen IVA. Una cotización pendiente vence a los 15 días y una aceptada reserva piezas por 5 días.
 
+Al registrar la venta se elige efectivo, transferencia, tarjeta u otro y se asignan las series entregadas. La conversión no descuenta inventario de nuevo. La venta conserva copias históricas del cliente, responsable, partidas e importes aunque después cambien sus registros de origen.
+
 Modificar partidas de una aceptada libera sus reservas y la devuelve a Pendiente; debe aceptarse nuevamente. Los cambios inválidos conservan las reservas. Cancelar libera piezas. El comando `cotizaciones:vencer` procesa los vencimientos; requiere ejecutar el programador de Laravel para funcionar automáticamente.
 
 ## Idioma y compatibilidad
@@ -36,4 +38,4 @@ Se conservan nombres técnicos de Laravel, Composer y PHPUnit (`app`, `config`, 
 
 ## Estado y pendientes
 
-El plan está en `tasks/plan.md` y el seguimiento en `tasks/todo.md`. Las Entregas 3 y 4 están terminadas: creación y cálculo de cotizaciones, ciclo de estados, PDF, correo manual e historial de sus resultados. El SMTP real ya fue configurado y comprobado con una cuenta autorizada; sus credenciales permanecen únicamente en `.env`. La conversión a venta y la selección de series entregadas corresponden a la Entrega 5.
+El plan está en `tasks/plan.md` y el seguimiento en `tasks/todo.md`. Las Entregas 3, 4 y 5 están terminadas: creación y cálculo de cotizaciones, ciclo de estados, PDF, correo manual, historial de envíos, conversión a venta y trazabilidad de series. El SMTP real ya fue configurado y comprobado con una cuenta autorizada; sus credenciales permanecen únicamente en `.env`. La siguiente etapa es la Entrega 6: panel, filtros, reportes y revisión integral de experiencia de uso.

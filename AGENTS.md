@@ -2,12 +2,13 @@
 
 ## Avance vigente: 24 de septiembre de 2026
 
+- Entrega 5 completada: una cotización aceptada se convierte manualmente y una sola vez en venta. La operación copia cliente, responsable, importes y partidas como datos históricos; solicita efectivo, transferencia, tarjeta u otro; asigna las series reservadas y las marca como entregadas sin volver a descontar inventario. Las ventas y su trazabilidad desde Inventario son consultables por los tres roles; solo Administrador y Comercial pueden convertir. La migración de ventas y sus copias históricas se aplicó a MySQL local. Verificación de cierre: 74 pruebas y 419 aserciones, Pint, Blade, rutas y revisión visual adaptable aprobados.
 - Entrega 4 completada: ciclo de estados, vencimiento diario, edición de cotizaciones aceptadas, PDF y correo manual. Cada intento real de correo guarda destinatario, usuario, fecha y resultado técnico; los fallos de transporte conservan el estado y las fechas de la cotización. El detalle muestra el historial y aclara que la aceptación del servicio no confirma lectura. El PDF incluye datos del cliente y responsable, vigencia, partidas, descuento, total e indicación de IVA incluido. El comando principal es `cotizaciones:vencer`, con `quotes:expire` como alias de compatibilidad. La migración del historial se aplicó a MySQL local. Verificación: 59 pruebas y 287 aserciones, Pint, Blade y programación diaria aprobados; PDF A4 renderizado e inspeccionado sin cortes ni desbordamientos.
 - Entrega 3 cerrada funcionalmente: creación de borradores con folio único, partidas de catálogo y libres, subtotales/descuento/total calculados en servidor, advertencias de inventario y conservación de descripciones y precios históricos. Productos y servicios toman el precio del catálogo al agregarse; editar una partida existente conserva el precio cotizado aunque cambie o se desactive el artículo. Un artículo desactivado no puede agregarse a una cotización nueva. Suite de cierre: 58 pruebas y 267 aserciones; Pint, Blade y auditorías de Composer/NPM aprobados. `npm run build` continúa bloqueado dentro del sandbox de Codex al resolver `vite.config.js`; el usuario había ejecutado Vite correctamente y este cierre no modifica recursos procesados por Vite.
 - Revisión de seguridad del cierre: entradas validadas en servidor, rutas de escritura protegidas por rol, consultas mediante Eloquent/Query Builder, salida Blade escapada y `.env` ignorado por Git. No copiar credenciales SMTP a archivos rastreados.
 - El usuario confirmó recepción de los dos correos de prueba enviados por Gmail. La recepción SMTP real queda comprobada; no confirmó explícitamente la apertura del PDF.
 - Cancelar y rechazar ahora releen y bloquean la cotización dentro de una transacción. Cancelar una copia pendiente cuya versión actual ya fue aceptada libera las reservas; rechazar esa copia no sobrescribe la aceptación. Dos pruebas reprodujeron los defectos antes de corregirlos. Suite completa: 54 pruebas, 255 aserciones aprobadas; formato verificado después de ordenar imports de la prueba. Estas pruebas simulan lecturas desactualizadas en SQLite; no equivalen a concurrencia real de MySQL.
-- Las transiciones, PDF/correo y reservas ya tienen avances de las Entregas 4 y 5. La conversión a venta continúa pendiente en la Entrega 5.
+- Las transiciones, PDF/correo, reservas y conversión a venta de las Entregas 4 y 5 están terminadas.
 
 ## Estado vigente: 23 de septiembre de 2026
 
@@ -33,7 +34,7 @@
 - Se implementó la edición de partidas: modificar una aceptada libera reservas y la devuelve a Pendiente; entradas inválidas mantienen la aceptación. Se bloquean cambios en cotizaciones canceladas.
 - Última suite: 40 pruebas, 133 aserciones aprobadas. Se verificaron advertencias acumuladas por producto, reversión de reservas parciales y bloqueo de aceptación vencida o duplicada. Las pruebas usan SQLite; falta validación de concurrencia en MySQL. El usuario confirmó compilación local de Vite exitosa (58 módulos, 1.84 s) para el avance de traducción; los cambios posteriores se verificaron con pruebas y compilación de Blade.
 - Cliente, área y descuento ya son editables. Cambiar una aceptada libera reservas y exige nueva aceptación; guardar sin cambios la conserva. Creación y edición aceptan 0 sin descuento o 5–10%. Los folios ahora incluyen ULID para evitar colisiones; queda pendiente definir su presentación comercial definitiva.
-- La entrega sigue abierta: revisar encabezados, folios, descuentos, correo y transiciones; después implementar la conversión a venta. No afirmar cierre por el número de pruebas.
+- La siguiente etapa es la Entrega 6: panel, filtros, reportes y revisión integral de experiencia de uso.
 
 ## Uso de este archivo
 

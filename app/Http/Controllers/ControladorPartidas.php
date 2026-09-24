@@ -106,6 +106,7 @@ class ControladorPartidas extends Controller
     {
         DB::transaction(function () use ($cotizacion, $operacion) {
             $actual = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
+            abort_if($actual->venta()->exists(), 422, 'Una cotización convertida en venta ya no admite cambios.');
             abort_unless(in_array($actual->status, [
                 'draft',
                 'pending',

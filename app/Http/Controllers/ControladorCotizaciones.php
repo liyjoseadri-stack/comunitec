@@ -25,14 +25,14 @@ class ControladorCotizaciones extends Controller
     {
         return view('cotizaciones.listado', [
             'customers' => Cliente::orderBy('name')->get(),
-            'quotes' => Cotizacion::latest()->get(),
+            'quotes' => Cotizacion::with('venta')->latest()->get(),
             'puedeEditar' => auth()->user()->esAdministrador() || auth()->user()->esComercial(),
         ]);
     }
 
     public function mostrar(Cotizacion $quote): View
     {
-        $quote->load('customer', 'lines', 'enviosCorreo.usuario');
+        $quote->load('customer', 'lines', 'enviosCorreo.usuario', 'venta');
         $productos = $quote->lines->where('type', 'product')->groupBy('catalog_item_id');
         $disponibles = PiezaInventario::whereIn('catalog_item_id', $productos->keys())
             ->where('status', 'available')->selectRaw('catalog_item_id, COUNT(*) AS cantidad')
@@ -49,14 +49,20 @@ class ControladorCotizaciones extends Controller
 
                 ];
             })->filter(fn ($faltante) => $faltante['requested'] > $faltante['available']);
+        $piezasReservadas = PiezaInventario::where('quote_id', $quote->id)
+            ->where('status', 'reserved')
+            ->orderBy('serial_number')
+            ->get();
 
         return view('cotizaciones.detalle', [
             'quote' => $quote,
-            'puedeEditar' => auth()->user()->esAdministrador() || auth()->user()->esComercial(),
+            'puedeEditar' => $quote->venta === null
+                && (auth()->user()->esAdministrador() || auth()->user()->esComercial()),
             'clientes' => Cliente::orderBy('name')->get(),
             'items' => ArticuloCatalogo::where('active',
                 true)->get(),
             'shortages' => $shortages,
+            'piezasReservadas' => $piezasReservadas,
         ]);
     }
 
@@ -146,6 +152,7 @@ class ControladorCotizaciones extends Controller
     {
         $liberoPiezas = DB::transaction(function () use ($quote): bool {
             $actual = Cotizacion::whereKey($quote->id)->lockForUpdate()->firstOrFail();
+            abort_if($actual->venta()->exists(), 422, 'Una cotización convertida en venta ya no puede cancelarse.');
             abort_unless(in_array($actual->status, [
                 'draft',
                 'pending',
@@ -235,6 +242,7 @@ class ControladorCotizaciones extends Controller
 
         DB::transaction(function () use ($quote, $datos) {
             $cotizacion = Cotizacion::whereKey($quote->id)->lockForUpdate()->firstOrFail();
+            abort_if($cotizacion->venta()->exists(), 422, 'Una cotización convertida en venta ya no admite cambios.');
             abort_unless(in_array($cotizacion->status, [
                 'draft',
                 'pending',

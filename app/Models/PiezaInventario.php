@@ -13,10 +13,16 @@ class PiezaInventario extends Model
         'serial_number',
         'status',
         'quote_id',
+        'sale_line_id',
     ];
 
     public function item()
     {
         return $this->belongsTo(ArticuloCatalogo::class, 'catalog_item_id');
+    }
+
+    public function partidaVenta()
+    {
+        return $this->belongsTo(PartidaVenta::class, 'sale_line_id');
     }
 }

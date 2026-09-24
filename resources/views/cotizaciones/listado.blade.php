@@ -71,7 +71,8 @@
                             <a href="{{route('cotizaciones.detalle',$q)}}">
                                 {{$q->folio}}
                             </a>
-                            — {{$q->etiquetaEstado()}} — ${{$q->total}}
+                            — {{ $q->etiquetaEstado() }}{{ $q->venta ? ' · Convertida en venta' : '' }}
+                            — ${{ number_format((float) $q->total, 2) }}
                         </li>
                     @empty
                         <li>Aún no hay cotizaciones registradas.</li>

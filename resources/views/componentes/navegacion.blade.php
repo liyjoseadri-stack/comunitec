@@ -2,6 +2,7 @@
     $enlaces = [
         ['ruta' => 'panel', 'patron' => 'panel', 'texto' => 'Panel'],
         ['ruta' => 'cotizaciones.listado', 'patron' => 'cotizaciones.*', 'texto' => 'Cotizaciones'],
+        ['ruta' => 'ventas.listado', 'patron' => 'ventas.*', 'texto' => 'Ventas'],
     ];
 
     if (auth()->user()->esAdministrador() || auth()->user()->esComercial()) {

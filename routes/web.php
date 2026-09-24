@@ -7,6 +7,7 @@ use App\Http\Controllers\ControladorClientes;
 use App\Http\Controllers\ControladorCotizaciones;
 use App\Http\Controllers\ControladorInventario;
 use App\Http\Controllers\ControladorPartidas;
+use App\Http\Controllers\ControladorVentas;
 use App\Models\ArticuloCatalogo;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +52,14 @@ Route::middleware('auth')->group(function () {
             ControladorCotizaciones::class,
             'pdf',
         ])->name('cotizaciones.pdf');
+        Route::get('/ventas', [
+            ControladorVentas::class,
+            'listar',
+        ])->name('ventas.listado');
+        Route::get('/ventas/{venta}', [
+            ControladorVentas::class,
+            'mostrar',
+        ])->name('ventas.detalle');
     });
 
     Route::middleware('role:admin,comercial')->group(function () {
@@ -78,6 +87,10 @@ Route::middleware('auth')->group(function () {
             ControladorCotizaciones::class,
             'aceptar',
         ])->name('cotizaciones.aceptar');
+        Route::post('/cotizaciones/{quote}/venta', [
+            ControladorVentas::class,
+            'guardar',
+        ])->name('ventas.guardar');
         Route::post('/cotizaciones', [
             ControladorCotizaciones::class,
             'guardar',

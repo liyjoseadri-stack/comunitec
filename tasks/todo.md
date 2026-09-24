@@ -67,7 +67,7 @@ Este archivo refleja el plan aprobado en `tasks/plan.md`. Una tarea se marca al 
 - [x] Evitar colisiones de folios al crear varias cotizaciones en el mismo instante mediante un identificador ULID. El formato comercial definitivo sigue pendiente.
 - [x] Sumar las partidas repetidas de un producto para advertir faltantes y verificar que una aceptación fallida no deja reservas parciales.
 - [x] Comprobar estado y vigencia dentro de la transacción de reserva; impedir aceptación fuera de plazo y reservas duplicadas.
-- [ ] Entrega 5: convertir una cotización aceptada en venta y registrar método de pago y series entregadas.
+- [x] Entrega 5: convertir una cotización aceptada una sola vez en venta, registrar método de pago, copiar datos históricos y asignar las series entregadas sin descontar inventario nuevamente.
 - [x] Configurar SMTP autorizado para entregas reales de correo.
 
 ## Entrega 4: ciclo de estados, PDF y correo
@@ -80,7 +80,18 @@ Este archivo refleja el plan aprobado en `tasks/plan.md`. Una tarea se marca al 
 - [x] Registrar destinatario, usuario, fecha y resultado de cada intento de correo aceptado o fallido.
 - [x] Mostrar el historial de correo aclarando que la aceptación del servicio no confirma recepción ni lectura.
 - Verificación de cierre: 59 pruebas y 287 aserciones; Pint, compilación de Blade y programación diaria aprobados. La migración del historial se aplicó a MySQL local. El PDF se renderizó en A4 y se inspeccionó visualmente sin cortes ni desbordamientos.
-- Siguiente entrega: completar la conversión única de una cotización aceptada en venta, solicitar método de pago y asignar las series entregadas.
+## Entrega 5: ventas e inventario
+
+- [x] Crear venta y partidas históricas vinculadas a la cotización aceptada.
+- [x] Copiar cliente, responsable, importes y conceptos para que cambios posteriores no alteren la venta.
+- [x] Registrar efectivo, transferencia, tarjeta u otro con descripción obligatoria.
+- [x] Asignar exactamente una serie reservada por pieza y marcarla como entregada sin un segundo descuento.
+- [x] Impedir ventas duplicadas, series ajenas o incompletas y registros parciales ante fallos.
+- [x] Bloquear edición y cancelación de cotizaciones ya convertidas.
+- [x] Permitir a Consulta listar y ver ventas sin acciones de escritura.
+- [x] Mostrar en Inventario la venta y el cliente de cada serie entregada.
+- Verificación de cierre: 74 pruebas y 419 aserciones; Pint, Blade, rutas, migraciones MySQL y revisión visual en escritorio y móvil aprobados.
+- Siguiente entrega: panel, filtros, reportes y revisión integral de experiencia de uso.
 
 ## Próximo punto activo
 

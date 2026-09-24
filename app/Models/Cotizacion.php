@@ -52,6 +52,11 @@ class Cotizacion extends Model
         return $this->hasMany(EnvioCotizacion::class, 'quote_id')->latest('attempted_at');
     }
 
+    public function venta()
+    {
+        return $this->hasOne(Venta::class, 'quote_id');
+    }
+
     public function etiquetaEstado(): string
     {
         return match ($this->status) {

@@ -15,7 +15,10 @@ class ControladorInventario extends Controller
             'categories' => Categoria::all(),
             'products' => ArticuloCatalogo::where('type',
                 'product')->get(),
-            'units' => PiezaInventario::with('item')->latest()->get(),
+            'units' => PiezaInventario::with(
+                'item',
+                'partidaVenta.venta'
+            )->latest()->get(),
         ]);
     }
 

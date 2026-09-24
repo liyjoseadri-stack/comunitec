@@ -43,9 +43,17 @@
             <p>
                 Estado:
                 <strong>
-                    {{ $quote->etiquetaEstado() }}
+                    {{ $quote->etiquetaEstado() }}{{ $quote->venta ? ' · Convertida en venta' : '' }}
                 </strong>
             </p>
+            @if ($quote->venta)
+                <p>
+                    Venta relacionada:
+                    <a href="{{ route('ventas.detalle', $quote->venta) }}">
+                        {{ $quote->venta->folio }}
+                    </a>
+                </p>
+            @endif
             @if ($quote->area_requesting)
                 <p>
                     Área solicitante: {{ $quote->area_requesting }}
@@ -208,6 +216,83 @@
                 <p>
                     Guardar un cambio libera las piezas reservadas y devuelve la cotización a Pendiente para una nueva aceptación.
                 </p>
+                <section class="bloque-administrativo" aria-labelledby="titulo-convertir-venta">
+                    <h2 id="titulo-convertir-venta">
+                        Convertir en venta
+                    </h2>
+                    <p>
+                        Confirma el método de pago y asigna una serie reservada a cada pieza entregada. Esta acción cierra la operación y no vuelve a descontar inventario.
+                    </p>
+                    <form class="formulario-administrativo formulario-venta" method="post" action="{{ route('ventas.guardar', $quote) }}">
+                        @csrf
+                        <label for="metodo-pago">Método de pago</label>
+                        <select id="metodo-pago" name="payment_method" required>
+                            <option value="">Selecciona un método</option>
+                            <option value="cash" @selected(old('payment_method') === 'cash')>
+                                Efectivo
+                            </option>
+                            <option value="transfer" @selected(old('payment_method') === 'transfer')>
+                                Transferencia
+                            </option>
+                            <option value="card" @selected(old('payment_method') === 'card')>
+                                Tarjeta
+                            </option>
+                            <option value="other" @selected(old('payment_method') === 'other')>
+                                Otro
+                            </option>
+                        </select>
+                        <label for="detalle-metodo-pago">
+                            Especifica el método si elegiste Otro
+                        </label>
+                        <input
+                            id="detalle-metodo-pago"
+                            name="payment_method_detail"
+                            value="{{ old('payment_method_detail') }}"
+                            maxlength="255"
+                        >
+
+                        @foreach ($quote->lines->where('type', 'product') as $partida)
+                            @php
+                                $seriesDisponibles = $piezasReservadas->where(
+                                    'catalog_item_id',
+                                    $partida->catalog_item_id
+                                );
+                            @endphp
+                            <fieldset>
+                                <legend>
+                                    {{ $partida->description }} — {{ (int) $partida->quantity }} piezas
+                                </legend>
+                                @for ($indice = 0; $indice < (int) $partida->quantity; $indice++)
+                                    <label for="serie-{{ $partida->id }}-{{ $indice }}">
+                                        Serie {{ $indice + 1 }}
+                                    </label>
+                                    <select
+                                        id="serie-{{ $partida->id }}-{{ $indice }}"
+                                        name="series[{{ $partida->id }}][]"
+                                        required
+                                    >
+                                        <option value="">Selecciona una serie</option>
+                                        @foreach ($seriesDisponibles as $pieza)
+                                            <option
+                                                value="{{ $pieza->id }}"
+                                                @selected(old("series.{$partida->id}.{$indice}") == $pieza->id)
+                                            >
+                                                {{ $pieza->serial_number }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @endfor
+                            </fieldset>
+                        @endforeach
+
+                        <p>
+                            Cada serie debe seleccionarse una sola vez. Los servicios y conceptos libres no requieren serie.
+                        </p>
+                        <button type="submit">
+                            Registrar venta
+                        </button>
+                    </form>
+                </section>
                 <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.cancelar', $quote) }}">
                     @csrf
                     <button type="submit">
