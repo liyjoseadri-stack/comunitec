@@ -15,7 +15,7 @@ class ControladorVentas extends Controller
     public function listar(): View
     {
         return view('ventas.listado', [
-            'ventas' => Venta::with('cotizacion')
+            'ventas' => Venta::with('cotizacion', 'cliente')
                 ->latest('sold_at')
                 ->get(),
         ]);
@@ -26,6 +26,8 @@ class ControladorVentas extends Controller
         return view('ventas.detalle', [
             'venta' => $venta->load(
                 'cotizacion',
+                'cliente',
+                'responsable',
                 'partidas.piezas'
             ),
         ]);

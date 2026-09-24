@@ -28,7 +28,7 @@
                 <dl class="datos-operacion">
                     <div>
                         <dt>Cliente</dt>
-                        <dd>{{ $venta->customer_name }}</dd>
+                        <dd>{{ $venta->nombreClienteMostrado() }}</dd>
                     </div>
                     <div>
                         <dt>RFC</dt>
@@ -58,7 +58,7 @@
                     </div>
                     <div>
                         <dt>Responsable</dt>
-                        <dd>{{ $venta->responsible_name }}</dd>
+                        <dd>{{ $venta->nombreResponsableMostrado() }}</dd>
                     </div>
                     <div>
                         <dt>Correo del responsable</dt>

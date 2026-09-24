@@ -38,4 +38,4 @@ Se conservan nombres técnicos de Laravel, Composer y PHPUnit (`app`, `config`, 
 
 ## Estado y pendientes
 
-El plan está en `tasks/plan.md` y el seguimiento en `tasks/todo.md`. Las Entregas 3, 4 y 5 están terminadas: creación y cálculo de cotizaciones, ciclo de estados, PDF, correo manual, historial de envíos, conversión a venta y trazabilidad de series. El SMTP real ya fue configurado y comprobado con una cuenta autorizada; sus credenciales permanecen únicamente en `.env`. La siguiente etapa es la Entrega 6: panel, filtros, reportes y revisión integral de experiencia de uso.
+El plan está en `tasks/plan.md` y el seguimiento en `tasks/todo.md`. Las Entregas 3, 4, 5 y 6 están terminadas: creación y cálculo de cotizaciones, ciclo de estados, PDF, correo manual, historial de envíos, conversión a venta, trazabilidad de series, panel mensual y reportes filtrables. El SMTP real ya fue configurado y comprobado con una cuenta autorizada; sus credenciales permanecen únicamente en `.env`. La siguiente etapa es la Entrega 7: cierre integral, documentación de operación y preparación de la entrega académica.

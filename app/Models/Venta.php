@@ -90,4 +90,18 @@ class Venta extends Model
             self::METODO_OTRO,
         ];
     }
+
+    public function nombreClienteMostrado(): string
+    {
+        return trim((string) $this->customer_name) !== ''
+            ? $this->customer_name
+            : ($this->cliente?->name ?? 'Cliente no disponible');
+    }
+
+    public function nombreResponsableMostrado(): string
+    {
+        return trim((string) $this->responsible_name) !== ''
+            ? $this->responsible_name
+            : ($this->responsable?->name ?? 'Responsable no disponible');
+    }
 }

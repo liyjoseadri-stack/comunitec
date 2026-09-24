@@ -92,7 +92,7 @@
                                                 {{ $u->partidaVenta->venta->folio }}
                                             </a>
                                             <br>
-                                            {{ $u->partidaVenta->venta->customer_name }}
+                                            {{ $u->partidaVenta->venta->nombreClienteMostrado() }}
                                         @else
                                             No aplica
                                         @endif

@@ -17,7 +17,7 @@ class ControladorInventario extends Controller
                 'product')->get(),
             'units' => PiezaInventario::with(
                 'item',
-                'partidaVenta.venta'
+                'partidaVenta.venta.cliente'
             )->latest()->get(),
         ]);
     }

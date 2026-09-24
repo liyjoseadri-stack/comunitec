@@ -69,4 +69,16 @@ class Cotizacion extends Model
             default => 'Sin definir',
         };
     }
+
+    public static function estados(): array
+    {
+        return [
+            'draft',
+            'pending',
+            'accepted',
+            'rejected',
+            'cancelled',
+            'expired',
+        ];
+    }
 }

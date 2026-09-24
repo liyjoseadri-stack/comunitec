@@ -6,9 +6,10 @@ use App\Http\Controllers\ControladorCatalogo;
 use App\Http\Controllers\ControladorClientes;
 use App\Http\Controllers\ControladorCotizaciones;
 use App\Http\Controllers\ControladorInventario;
+use App\Http\Controllers\ControladorPanel;
 use App\Http\Controllers\ControladorPartidas;
+use App\Http\Controllers\ControladorReportes;
 use App\Http\Controllers\ControladorVentas;
-use App\Models\ArticuloCatalogo;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -27,14 +28,10 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/panel', function () {
-        $lowStock = ArticuloCatalogo::where('type', 'product')->withCount([
-            'inventoryUnits as available_units_count' => fn ($query) => $query->where('status',
-                'available'),
-        ])->get()->filter(fn ($item) => $item->available_units_count <= 5)->sortBy('available_units_count');
-
-        return view('panel', compact('lowStock'));
-    })->name('panel');
+    Route::get('/panel', [
+        ControladorPanel::class,
+        'mostrar',
+    ])->name('panel');
     Route::post('/cerrar-sesion', [
         ControladorSesion::class,
         'eliminar',
@@ -60,6 +57,14 @@ Route::middleware('auth')->group(function () {
             ControladorVentas::class,
             'mostrar',
         ])->name('ventas.detalle');
+        Route::get('/reportes/cotizaciones', [
+            ControladorReportes::class,
+            'cotizaciones',
+        ])->name('reportes.cotizaciones');
+        Route::get('/reportes/ventas', [
+            ControladorReportes::class,
+            'ventas',
+        ])->name('reportes.ventas');
     });
 
     Route::middleware('role:admin,comercial')->group(function () {

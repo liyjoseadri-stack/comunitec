@@ -93,6 +93,21 @@ Este archivo refleja el plan aprobado en `tasks/plan.md`. Una tarea se marca al 
 - Verificación de cierre: 74 pruebas y 419 aserciones; Pint, Blade, rutas, migraciones MySQL y revisión visual en escritorio y móvil aprobados.
 - Siguiente entrega: panel, filtros, reportes y revisión integral de experiencia de uso.
 
+## Entrega 6: panel y reportes
+
+- [x] Mostrar el mes actual en el Panel y permitir recorrer o seleccionar otros meses.
+- [x] Contar cotizaciones por Borrador, Pendiente, Aceptada, Rechazada, Cancelada y Vencida.
+- [x] Calcular porcentaje de aceptación, cantidad de ventas e importe vendido del periodo.
+- [x] Mostrar actividad reciente y alertas de inventario bajo.
+- [x] Filtrar el reporte de cotizaciones por periodo, cliente, responsable y estado.
+- [x] Filtrar el reporte de ventas por periodo, cliente, responsable y método de pago.
+- [x] Conservar filtros al paginar y calcular totales sobre todos los resultados filtrados.
+- [x] Permitir lectura de Panel y reportes a Administrador, Comercial y Consulta.
+- [x] Recuperar nombres históricos faltantes de ventas antiguas sin sobrescribir copias existentes.
+- [x] Revisar Panel y reportes en escritorio y móvil, incluidos foco, desplazamiento y consola.
+- Verificación de cierre: 83 pruebas y 506 aserciones; Pint, Blade y revisión del diff aprobados. Revisión visual a 1280 × 800 y 390 × 844 sin desbordamiento del documento ni errores de consola. Vite quedó bloqueado dentro del sandbox por acceso denegado de `esbuild` a un directorio superior; las vistas nuevas usan CSS público directo.
+- Siguiente entrega: cierre integral, documentación de operación y preparación de la entrega académica.
+
 ## Próximo punto activo
 
 - Navegación común incorporada en Panel, Clientes, Catálogo, Inventario, listado/detalle de Cotizaciones y Usuarios. Se muestran enlaces por rol y se indica la sección actual con `aria-current`. Estilos en `public/css/navegacion.css`, sin recompilación de Vite.

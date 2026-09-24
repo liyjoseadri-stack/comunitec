@@ -3,6 +3,7 @@
         ['ruta' => 'panel', 'patron' => 'panel', 'texto' => 'Panel'],
         ['ruta' => 'cotizaciones.listado', 'patron' => 'cotizaciones.*', 'texto' => 'Cotizaciones'],
         ['ruta' => 'ventas.listado', 'patron' => 'ventas.*', 'texto' => 'Ventas'],
+        ['ruta' => 'reportes.cotizaciones', 'patron' => 'reportes.*', 'texto' => 'Reportes'],
     ];
 
     if (auth()->user()->esAdministrador() || auth()->user()->esComercial()) {
