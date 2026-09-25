@@ -3,6 +3,7 @@
 use App\Http\Controllers\Administracion\ControladorUsuarios;
 use App\Http\Controllers\Auth\ControladorSesion;
 use App\Http\Controllers\ControladorCatalogo;
+use App\Http\Controllers\ControladorCategorias;
 use App\Http\Controllers\ControladorClientes;
 use App\Http\Controllers\ControladorCotizaciones;
 use App\Http\Controllers\ControladorInventario;
@@ -117,9 +118,25 @@ Route::middleware('auth')->group(function () {
             'listar',
         ])->name('inventario.listado');
         Route::post('/inventario/categorias', [
-            ControladorInventario::class,
-            'guardarCategoria',
-        ])->name('inventario.categorias');
+            ControladorCategorias::class,
+            'guardar',
+        ])->name('inventario.categorias.guardar');
+        Route::get('/inventario/categorias', [
+            ControladorCategorias::class,
+            'listar',
+        ])->name('inventario.categorias.listado');
+        Route::get('/inventario/categorias/{categoria}', [
+            ControladorCategorias::class,
+            'mostrar',
+        ])->name('inventario.categorias.detalle');
+        Route::put('/inventario/categorias/{categoria}', [
+            ControladorCategorias::class,
+            'actualizar',
+        ])->name('inventario.categorias.actualizar');
+        Route::patch('/inventario/categorias/{categoria}/estado', [
+            ControladorCategorias::class,
+            'actualizarEstado',
+        ])->name('inventario.categorias.estado');
         Route::post('/inventario/series', [
             ControladorInventario::class,
             'registrarPieza',

@@ -13,7 +13,7 @@
             @endif
             <section class="bloque-administrativo" aria-labelledby="titulo-categoria">
                 <h2 id="titulo-categoria">Registrar categoría</h2>
-                <form class="formulario-administrativo" method="post" action="{{ route('inventario.categorias') }}">
+                <form class="formulario-administrativo" method="post" action="{{ route('inventario.categorias.guardar') }}">
                     @csrf
                     <label for="categoria">Nombre de la categoría</label>
                     <input id="categoria" name="nombre" value="{{ old('nombre') }}" required>
