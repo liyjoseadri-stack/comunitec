@@ -316,7 +316,7 @@
                         </option>
                         @foreach ($articulos as $articulo)
                             <option value="{{ $articulo->id }}">
-                                {{ $articulo->nombre }} — {{ $articulo->tipo === 'producto' ? 'Producto' : 'Servicio' }} — ${{ $articulo->precio }}
+                                {{ $articulo->codigo }} · {{ $articulo->nombre }} · {{ $articulo->categoria?->nombre ?? 'Sin categoría' }} · {{ $articulo->tipo === 'producto' ? 'Producto' : 'Servicio' }} · ${{ number_format((float) $articulo->precio, 2) }}
                             </option>
                         @endforeach
                     </select>

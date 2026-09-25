@@ -32,7 +32,7 @@ class ControladorCotizaciones extends Controller
 
     public function mostrar(Cotizacion $cotizacion): View
     {
-        $cotizacion->load('cliente', 'partidas', 'enviosCorreo.usuario', 'venta');
+        $cotizacion->load('cliente', 'partidas.articulo', 'enviosCorreo.usuario', 'venta');
         $productos = $cotizacion->partidas->where('tipo', 'producto')->groupBy('articulo_catalogo_id');
         $disponibles = ArticuloCatalogo::whereIn('id', $productos->keys())
             ->pluck('existencias', 'id');
@@ -58,7 +58,10 @@ class ControladorCotizaciones extends Controller
             'puedeEditar' => $cotizacion->venta === null
                 && (auth()->user()->esAdministrador() || auth()->user()->esComercial()),
             'clientes' => Cliente::orderBy('nombre')->get(),
-            'articulos' => ArticuloCatalogo::where('activo', true)->get(),
+            'articulos' => ArticuloCatalogo::with('categoria')
+                ->where('activo', true)
+                ->orderBy('nombre')
+                ->get(),
             'faltantes' => $faltantes,
             'piezasReservadas' => $piezasReservadas,
         ]);
