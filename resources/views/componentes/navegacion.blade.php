@@ -22,7 +22,14 @@
 @endphp
 
 <nav class="navegacion-principal" aria-label="Navegación principal">
-    <span class="navegacion-principal__marca">Comunitec</span>
+    <a class="navegacion-principal__marca" href="{{ route('panel') }}" aria-label="Ir al panel de COMUN&TEC">
+        <img
+            src="{{ asset('images/logo-comunitec-transparente.png') }}"
+            alt="COMUN&TEC, comercialización e instalación de tecnologías"
+            width="1469"
+            height="917"
+        >
+    </a>
     <ul>
         @foreach ($enlaces as $enlace)
             <li>

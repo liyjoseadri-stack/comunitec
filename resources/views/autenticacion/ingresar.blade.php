@@ -11,10 +11,15 @@
     <body class="min-h-screen bg-slate-100 text-slate-900">
         <main class="mx-auto flex min-h-screen max-w-md items-center px-6">
             <section class="w-full rounded-xl bg-white p-8 shadow-sm">
-                <h1 class="text-2xl font-semibold">
-                    Comunitec
-                </h1>
-                <p class="mt-2 text-sm text-slate-600">
+                <img
+                    class="mx-auto h-auto w-full max-w-72"
+                    src="{{ asset('images/logo-comunitec-transparente.png') }}"
+                    alt="COMUN&TEC, comercialización e instalación de tecnologías"
+                    width="1469"
+                    height="917"
+                >
+                <h1 class="sr-only">Iniciar sesión en COMUN&amp;TEC</h1>
+                <p class="mt-4 text-center text-sm text-slate-600">
                     Inicia sesión para administrar cotizaciones y ventas.
                 </p>
                 <form class="mt-6 space-y-4" method="POST" action="{{ route('login.store') }}">
