@@ -46,7 +46,6 @@ class AutorizacionRolesTest extends TestCase
         $rutas = [
             '/panel',
             '/clientes',
-            '/catalogo',
             '/inventario',
             '/cotizaciones',
             '/ventas',

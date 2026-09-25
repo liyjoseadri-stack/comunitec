@@ -9,6 +9,7 @@ use App\Http\Controllers\ControladorCotizaciones;
 use App\Http\Controllers\ControladorInventario;
 use App\Http\Controllers\ControladorPanel;
 use App\Http\Controllers\ControladorPartidas;
+use App\Http\Controllers\ControladorProductos;
 use App\Http\Controllers\ControladorReportes;
 use App\Http\Controllers\ControladorVentas;
 use Illuminate\Support\Facades\Route;
@@ -114,9 +115,14 @@ Route::middleware('auth')->group(function () {
             'actualizar',
         ])->name('cotizaciones.partidas.actualizar');
         Route::get('/inventario', [
-            ControladorInventario::class,
+            ControladorProductos::class,
             'listar',
         ])->name('inventario.listado');
+        Route::get('/inventario/productos', [ControladorProductos::class, 'listar'])->name('inventario.productos.listado');
+        Route::post('/inventario/productos', [ControladorProductos::class, 'guardar'])->name('inventario.productos.guardar');
+        Route::get('/inventario/productos/{articulo}', [ControladorProductos::class, 'mostrar'])->name('inventario.productos.detalle');
+        Route::put('/inventario/productos/{articulo}', [ControladorProductos::class, 'actualizar'])->name('inventario.productos.actualizar');
+        Route::patch('/inventario/productos/{articulo}/estado', [ControladorProductos::class, 'actualizarEstado'])->name('inventario.productos.estado');
         Route::post('/inventario/categorias', [
             ControladorCategorias::class,
             'guardar',
@@ -141,10 +147,7 @@ Route::middleware('auth')->group(function () {
             ControladorInventario::class,
             'registrarPieza',
         ])->name('inventario.piezas');
-        Route::get('/catalogo', [
-            ControladorCatalogo::class,
-            'listar',
-        ])->name('catalogo.listado');
+        Route::redirect('/catalogo', '/inventario')->name('catalogo.listado');
         Route::post('/catalogo', [
             ControladorCatalogo::class,
             'guardar',

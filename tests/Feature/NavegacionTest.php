@@ -14,7 +14,7 @@ class NavegacionTest extends TestCase
     {
         $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_ADMINISTRADOR]);
 
-        foreach (['/panel', '/clientes', '/catalogo', '/inventario', '/cotizaciones', '/ventas'] as $ruta) {
+        foreach (['/panel', '/clientes', '/inventario', '/cotizaciones', '/ventas'] as $ruta) {
             $this->actingAs($usuario)->get($ruta)
                 ->assertOk()
                 ->assertSee('class="aplicacion"', false)
@@ -26,7 +26,7 @@ class NavegacionTest extends TestCase
     {
         $this->actingAs(Usuario::factory()->create(['rol' => Usuario::ROL_ADMINISTRADOR]));
 
-        foreach (['/panel', '/clientes', '/catalogo', '/inventario', '/cotizaciones', '/ventas', '/reportes/cotizaciones', '/reportes/ventas', '/administracion/usuarios'] as $ruta) {
+        foreach (['/panel', '/clientes', '/inventario', '/cotizaciones', '/ventas', '/reportes/cotizaciones', '/reportes/ventas', '/administracion/usuarios'] as $ruta) {
             $this->get($ruta)->assertOk()
                 ->assertSee('aria-label="Navegación principal"', false)
                 ->assertSee('href="'.route('cotizaciones.listado').'"', false)

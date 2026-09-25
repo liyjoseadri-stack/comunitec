@@ -26,13 +26,13 @@ class CatalogoTest extends TestCase
                     'precio' => '1250.00',
                 ],
             ])
-            ->get('/catalogo');
+            ->get('/inventario');
 
         $response->assertOk()
             ->assertSee('css/administracion.css', false)
-            ->assertSee('<label for="tipo">Tipo de concepto</label>', false)
+            ->assertSee('<label for="tipo">Tipo</label>', false)
             ->assertSee('<label for="precio">Precio con IVA</label>', false)
-            ->assertSee('<label for="existencias">Existencias iniciales</label>', false)
+            ->assertSee('<label for="existencias">Existencias</label>', false)
             ->assertSee('value="Instalación de red"', false)
             ->assertSee('value="SER-001"', false)
             ->assertSee('value="1250.00"', false)

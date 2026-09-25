@@ -8,7 +8,6 @@
 
     if (auth()->user()->esAdministrador() || auth()->user()->esComercial()) {
         $enlaces[] = ['ruta' => 'clientes.listado', 'patron' => 'clientes.*', 'texto' => 'Clientes'];
-        $enlaces[] = ['ruta' => 'catalogo.listado', 'patron' => 'catalogo.*', 'texto' => 'Catálogo'];
         $enlaces[] = ['ruta' => 'inventario.listado', 'patron' => 'inventario.*', 'texto' => 'Inventario'];
     }
 
