@@ -12,92 +12,92 @@ use Illuminate\Validation\Rule;
 
 class ControladorPartidas extends Controller
 {
-    public function guardar(Request $solicitud, Cotizacion $quote)
+    public function guardar(Request $solicitud, Cotizacion $cotizacion)
     {
         $datos = $this->validar($solicitud);
-        $this->modificar($quote, fn () => $quote->lines()->create($datos));
+        $this->modificar($cotizacion, fn () => $cotizacion->partidas()->create($datos));
 
         return back()->with('success', 'Partida agregada. Si la cotización estaba aceptada, requiere una nueva aceptación.');
     }
 
-    public function actualizar(Request $solicitud, Cotizacion $quote, PartidaCotizacion $line)
+    public function actualizar(Request $solicitud, Cotizacion $cotizacion, PartidaCotizacion $partida)
     {
-        abort_unless($line->quote_id === $quote->id, 404);
-        $datos = $this->validar($solicitud, $line);
-        $this->modificar($quote, fn () => $line->update($datos));
+        abort_unless($partida->cotizacion_id === $cotizacion->id, 404);
+        $datos = $this->validar($solicitud, $partida);
+        $this->modificar($cotizacion, fn () => $partida->update($datos));
 
         return back()->with('success', 'Partida actualizada. Si la cotización estaba aceptada, requiere una nueva aceptación.');
     }
 
-    public function eliminar(Cotizacion $quote, PartidaCotizacion $line)
+    public function eliminar(Cotizacion $cotizacion, PartidaCotizacion $partida)
     {
-        abort_unless($line->quote_id === $quote->id, 404);
-        $this->modificar($quote, fn () => $line->delete());
+        abort_unless($partida->cotizacion_id === $cotizacion->id, 404);
+        $this->modificar($cotizacion, fn () => $partida->delete());
 
         return back()->with('success', 'Partida eliminada. Si la cotización estaba aceptada, requiere una nueva aceptación.');
     }
 
     private function validar(Request $solicitud, ?PartidaCotizacion $partida = null): array
     {
-        $reglaArticulo = Rule::exists('catalog_items', 'id')
-            ->where('type', $solicitud->input('type'));
+        $reglaArticulo = Rule::exists('articulos_catalogo', 'id')
+            ->where('tipo', $solicitud->input('tipo'));
         $conservaArticuloHistorico = $partida !== null
-            && (int) $partida->catalog_item_id === (int) $solicitud->input('catalog_item_id');
+            && (int) $partida->articulo_catalogo_id === (int) $solicitud->input('articulo_catalogo_id');
         if (! $conservaArticuloHistorico) {
-            $reglaArticulo->where('active', true);
+            $reglaArticulo->where('activo', true);
         }
 
         $datos = $solicitud->validate([
 
-            'type' => [
+            'tipo' => [
                 'required',
                 Rule::in([
-                    'product',
-                    'service',
-                    'other',
+                    'producto',
+                    'servicio',
+                    'otro',
                 ]),
             ],
 
-            'catalog_item_id' => [
-                'required_unless:type,other',
+            'articulo_catalogo_id' => [
+                'required_unless:tipo,otro',
                 'nullable',
                 $reglaArticulo,
             ],
 
-            'description' => [
+            'descripcion' => [
                 'required',
                 'string',
                 'max:1000',
             ],
 
-            'quantity' => [
+            'cantidad' => [
                 'required',
-                $solicitud->input('type') === 'product' ? 'integer' : 'numeric',
+                $solicitud->input('tipo') === 'producto' ? 'integer' : 'numeric',
                 'gt:0',
             ],
 
-            'unit_price' => [
-                'required_if:type,other',
+            'precio_unitario' => [
+                'required_if:tipo,otro',
                 'nullable',
                 'numeric',
                 'min:0',
             ],
 
         ]);
-        if ($datos['type'] === 'other') {
-            $datos['catalog_item_id'] = null;
+        if ($datos['tipo'] === 'otro') {
+            $datos['articulo_catalogo_id'] = null;
         } else {
-            $articulo = ArticuloCatalogo::findOrFail($datos['catalog_item_id']);
+            $articulo = ArticuloCatalogo::findOrFail($datos['articulo_catalogo_id']);
             $mismoArticulo = $partida !== null
-                && (int) $partida->catalog_item_id === (int) $articulo->id;
-            $datos['unit_price'] = $mismoArticulo
-                ? $partida->unit_price
-                : $articulo->price;
+                && (int) $partida->articulo_catalogo_id === (int) $articulo->id;
+            $datos['precio_unitario'] = $mismoArticulo
+                ? $partida->precio_unitario
+                : $articulo->precio;
         }
 
         return [
             ...$datos,
-            'subtotal' => round($datos['quantity'] * $datos['unit_price'],
+            'subtotal' => round($datos['cantidad'] * $datos['precio_unitario'],
                 2),
         ];
     }
@@ -107,24 +107,24 @@ class ControladorPartidas extends Controller
         DB::transaction(function () use ($cotizacion, $operacion) {
             $actual = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
             abort_if($actual->venta()->exists(), 422, 'Una cotización convertida en venta ya no admite cambios.');
-            abort_unless(in_array($actual->status, [
-                'draft',
-                'pending',
-                'accepted',
+            abort_unless(in_array($actual->estado, [
+                'borrador',
+                'pendiente',
+                'aceptada',
             ], true), 422, 'Esta cotización ya no admite cambios.');
             $operacion();
-            if ($actual->status === 'accepted') {
-                PiezaInventario::where('quote_id', $actual->id)->where('status', 'reserved')->update([
-                    'status' => 'available',
-                    'quote_id' => null,
+            if ($actual->estado === 'aceptada') {
+                PiezaInventario::where('cotizacion_id', $actual->id)->where('estado', 'reservada')->update([
+                    'estado' => 'disponible',
+                    'cotizacion_id' => null,
                 ]);
                 $actual->fill([
-                    'status' => 'pending',
-                    'accepted_at' => null,
-                    'expires_at' => now()->addDays(15),
+                    'estado' => 'pendiente',
+                    'aceptada_en' => null,
+                    'vence_en' => now()->addDays(15),
                 ]);
             }
-            $actual->total = round($actual->lines()->sum('subtotal') * (1 - $actual->discount_percent / 100), 2);
+            $actual->total = round($actual->partidas()->sum('subtotal') * (1 - $actual->porcentaje_descuento / 100), 2);
             $actual->save();
         });
     }

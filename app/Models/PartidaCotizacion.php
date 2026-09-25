@@ -2,33 +2,41 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
 use Illuminate\Database\Eloquent\Model;
 
 class PartidaCotizacion extends Model
 {
-    protected $table = 'quote_lines';
+    use UsaMarcasTiempoEnEspanol;
+
+    protected $table = 'partidas_cotizacion';
 
     protected $fillable = [
-        'quote_id',
-        'catalog_item_id',
-        'type',
-        'description',
-        'quantity',
-        'unit_price',
+        'cotizacion_id',
+        'articulo_catalogo_id',
+        'tipo',
+        'descripcion',
+        'cantidad',
+        'precio_unitario',
         'subtotal',
     ];
 
     protected function casts(): array
     {
         return [
-            'quantity' => 'decimal:2',
-            'unit_price' => 'decimal:2',
+            'cantidad' => 'decimal:2',
+            'precio_unitario' => 'decimal:2',
             'subtotal' => 'decimal:2',
         ];
     }
 
-    public function quote()
+    public function cotizacion()
     {
-        return $this->belongsTo(Cotizacion::class);
+        return $this->belongsTo(Cotizacion::class, 'cotizacion_id');
+    }
+
+    public function articulo()
+    {
+        return $this->belongsTo(ArticuloCatalogo::class, 'articulo_catalogo_id');
     }
 }

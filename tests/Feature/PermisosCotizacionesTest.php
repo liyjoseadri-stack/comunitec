@@ -17,8 +17,8 @@ class PermisosCotizacionesTest extends TestCase
         $cotizacion = $this->preparar();
 
         $this->get('/cotizaciones')->assertOk()->assertDontSee('<form', false);
-        foreach (['draft', 'pending', 'accepted', 'cancelled', 'rejected', 'expired'] as $estado) {
-            $cotizacion->update(['status' => $estado]);
+        foreach (['borrador', 'pendiente', 'aceptada', 'cancelada', 'rechazada', 'vencida'] as $estado) {
+            $cotizacion->update(['estado' => $estado]);
             $this->get("/cotizaciones/{$cotizacion->id}")->assertOk()
                 ->assertSee($cotizacion->folio)->assertDontSee('<form', false);
         }
@@ -29,11 +29,11 @@ class PermisosCotizacionesTest extends TestCase
     public function test_consulta_no_puede_modificar_por_solicitudes_directas(): void
     {
         $cotizacion = $this->preparar();
-        $partida = $cotizacion->lines()->create([
-            'type' => 'other',
-            'description' => 'Servicio de prueba',
-            'quantity' => 1,
-            'unit_price' => 100,
+        $partida = $cotizacion->partidas()->create([
+            'tipo' => 'otro',
+            'descripcion' => 'Servicio de prueba',
+            'cantidad' => 1,
+            'precio_unitario' => 100,
             'subtotal' => 100,
         ]);
 
@@ -44,29 +44,29 @@ class PermisosCotizacionesTest extends TestCase
         }
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}")->assertForbidden();
         $this->delete("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}")->assertForbidden();
-        $this->assertSame('draft', $cotizacion->fresh()->status);
-        $this->assertDatabaseHas('quote_lines', ['id' => $partida->id]);
+        $this->assertSame('borrador', $cotizacion->fresh()->estado);
+        $this->assertDatabaseHas('partidas_cotizacion', ['id' => $partida->id]);
     }
 
     private function preparar(): Cotizacion
     {
-        $usuario = Usuario::factory()->create(['role' => Usuario::ROL_CONSULTA]);
+        $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_CONSULTA]);
         $this->actingAs($usuario);
         $cliente = Cliente::create([
-            'type' => 'fisica',
-            'name' => 'Cliente de prueba',
+            'tipo' => 'fisica',
+            'nombre' => 'Cliente de prueba',
             'rfc' => 'CLI010101AA1',
-            'email' => 'cliente@example.test',
-            'phone' => '9610000000',
-            'address' => 'Domicilio de prueba',
-            'postal_code' => '29000',
+            'correo' => 'cliente@example.test',
+            'telefono' => '9610000000',
+            'direccion' => 'Domicilio de prueba',
+            'codigo_postal' => '29000',
         ]);
 
         return Cotizacion::create([
             'folio' => 'COT-CONSULTA',
-            'customer_id' => $cliente->id,
-            'user_id' => $usuario->id,
-            'status' => 'draft',
+            'cliente_id' => $cliente->id,
+            'usuario_id' => $usuario->id,
+            'estado' => 'borrador',
             'total' => 0,
         ]);
     }

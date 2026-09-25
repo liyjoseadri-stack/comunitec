@@ -2,19 +2,22 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
 use Illuminate\Database\Eloquent\Model;
 
 class Cliente extends Model
 {
-    protected $table = 'customers';
+    use UsaMarcasTiempoEnEspanol;
+
+    protected $table = 'clientes';
 
     protected $fillable = [
-        'type',
-        'name',
+        'tipo',
+        'nombre',
         'rfc',
-        'email',
-        'phone',
-        'address',
-        'postal_code',
+        'correo',
+        'telefono',
+        'direccion',
+        'codigo_postal',
     ];
 }

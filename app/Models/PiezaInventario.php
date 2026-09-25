@@ -2,27 +2,30 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
 use Illuminate\Database\Eloquent\Model;
 
 class PiezaInventario extends Model
 {
-    protected $table = 'inventory_units';
+    use UsaMarcasTiempoEnEspanol;
+
+    protected $table = 'piezas_inventario';
 
     protected $fillable = [
-        'catalog_item_id',
-        'serial_number',
-        'status',
-        'quote_id',
-        'sale_line_id',
+        'articulo_catalogo_id',
+        'numero_serie',
+        'estado',
+        'cotizacion_id',
+        'partida_venta_id',
     ];
 
-    public function item()
+    public function articulo()
     {
-        return $this->belongsTo(ArticuloCatalogo::class, 'catalog_item_id');
+        return $this->belongsTo(ArticuloCatalogo::class, 'articulo_catalogo_id');
     }
 
     public function partidaVenta()
     {
-        return $this->belongsTo(PartidaVenta::class, 'sale_line_id');
+        return $this->belongsTo(PartidaVenta::class, 'partida_venta_id');
     }
 }

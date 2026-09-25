@@ -1,20 +1,18 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>
-            {{ $quote->folio }} | Comunitec
-        </title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
-        <main class="pagina-administrativa detalle-cotizacion">
-            <h1>
-                Cotización {{ $quote->folio }}
-            </h1>
+@extends('layouts.aplicacion')
+
+@section('titulo', $cotizacion->folio)
+@section('clase_pagina', 'detalle-cotizacion')
+
+@section('contenido')
+            <x-encabezado-pagina
+                :titulo="'Cotización '.$cotizacion->folio"
+                :descripcion="'Cliente: '.$cotizacion->cliente->nombre"
+            >
+                <x-slot:acciones>
+                    <x-insignia-estado :estado="$cotizacion->estado" :etiqueta="$cotizacion->etiquetaEstado()" />
+                    <x-boton variante="contorno" :href="route('cotizaciones.pdf', $cotizacion)">Generar PDF</x-boton>
+                </x-slot:acciones>
+            </x-encabezado-pagina>
             @if ($errors->any())
                 <ul role="alert">
                     @foreach ($errors->all() as $error)
@@ -34,40 +32,52 @@
                     {{ session('error') }}
                 </p>
             @endif
-            <p>
-                Cliente:
-                <strong>
-                    {{ $quote->customer->name }}
-                </strong>
-            </p>
-            <p>
-                Estado:
-                <strong>
-                    {{ $quote->etiquetaEstado() }}{{ $quote->venta ? ' · Convertida en venta' : '' }}
-                </strong>
-            </p>
-            @if ($quote->venta)
-                <p>
-                    Venta relacionada:
-                    <a href="{{ route('ventas.detalle', $quote->venta) }}">
-                        {{ $quote->venta->folio }}
-                    </a>
-                </p>
-            @endif
-            @if ($quote->area_requesting)
-                <p>
-                    Área solicitante: {{ $quote->area_requesting }}
-                </p>
-            @endif
-            @if (in_array($quote->status, ['draft', 'pending'], true) && $shortages->isNotEmpty())
+            <section class="bloque-administrativo" aria-labelledby="titulo-resumen-cotizacion">
+                <h2 id="titulo-resumen-cotizacion">Resumen de la cotización</h2>
+                <dl class="datos-operacion">
+                    <div>
+                        <dt>Cliente</dt>
+                        <dd>{{ $cotizacion->cliente->nombre }}</dd>
+                    </div>
+                    <div>
+                        <dt>Estado</dt>
+                        <dd>
+                            <x-insignia-estado :estado="$cotizacion->estado" :etiqueta="$cotizacion->etiquetaEstado()" />
+                            @if ($cotizacion->venta)
+                                <span class="detalle-tabla">Convertida en venta</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>Área solicitante</dt>
+                        <dd>{{ $cotizacion->area_solicitante ?: 'No especificada' }}</dd>
+                    </div>
+                    <div>
+                        <dt>Descuento global</dt>
+                        <dd>{{ number_format((float) $cotizacion->porcentaje_descuento, 2) }}%</dd>
+                    </div>
+                    @if ($cotizacion->venta)
+                        <div>
+                            <dt>Venta relacionada</dt>
+                            <dd>
+                                <x-boton variante="contorno" :href="route('ventas.detalle', $cotizacion->venta)" compacto>
+                                    Ver venta
+                                </x-boton>
+                                <small class="detalle-tabla">{{ $cotizacion->venta->folio }}</small>
+                            </dd>
+                        </div>
+                    @endif
+                </dl>
+            </section>
+            @if (in_array($cotizacion->estado, ['borrador', 'pendiente'], true) && $faltantes->isNotEmpty())
                 <section role="alert">
                     <h2>
                         Advertencia de inventario
                     </h2>
                     <ul>
-                        @foreach ($shortages as $shortage)
+                        @foreach ($faltantes as $faltante)
                             <li>
-                                {{ $shortage['description'] }}: se cotizaron {{ $shortage['requested'] }} piezas y hay {{ $shortage['available'] }} disponibles.
+                                {{ $faltante['descripcion'] }}: se cotizaron {{ $faltante['solicitado'] }} piezas y hay {{ $faltante['disponible'] }} disponibles.
                             </li>
                         @endforeach
                     </ul>
@@ -76,34 +86,30 @@
                     </p>
                 </section>
             @endif
-            <p>
-                Descuento global: {{ $quote->discount_percent }}%
-            </p>
-            @if ($puedeEditar && in_array($quote->status, ['draft', 'pending', 'accepted'], true))
+            @if ($puedeEditar && in_array($cotizacion->estado, ['borrador', 'pendiente', 'aceptada'], true))
                 <details>
                     <summary>
                         Editar datos de la cotización
                     </summary>
-                    <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.actualizar', $quote) }}">
+                    <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.actualizar', $cotizacion) }}">
                         @csrf
                         @method('PUT')
                         <label>
                             Cliente
-                            <select name="customer_id" required>
+                            <select name="cliente_id" required>
                                 @foreach ($clientes as $cliente)
-                                    <option value="{{ $cliente->id }}" @selected(old('customer_id', $quote->
-                                        customer_id) == $cliente->id)>{{ $cliente->name }}
+                                    <option value="{{ $cliente->id }}" @selected(old('cliente_id', $cotizacion->cliente_id) == $cliente->id)>{{ $cliente->nombre }}
                                     </option>
                                 @endforeach
                             </select>
                         </label>
                         <label>
                             Área solicitante
-                            <input name="area_requesting" value="{{ old('area_requesting', $quote->area_requesting) }}" maxlength="255">
+                            <input name="area_solicitante" value="{{ old('area_solicitante', $cotizacion->area_solicitante) }}" maxlength="255">
                         </label>
                         <label>
                             Descuento global (%)
-                            <input type="number" name="discount_percent" value="{{ old('discount_percent', $quote->discount_percent) }}" min="0" max="10" step="0.01">
+                            <input type="number" name="porcentaje_descuento" value="{{ old('porcentaje_descuento', $cotizacion->porcentaje_descuento) }}" min="0" max="10" step="0.01">
                         </label>
                         <p>
                             Usa 0 para no aplicar descuento, o un porcentaje entre 5 y 10.
@@ -114,12 +120,7 @@
                     </form>
                 </details>
             @endif
-            <p>
-                <a href="{{ route('cotizaciones.pdf', $quote) }}">
-                    Descargar PDF
-                </a>
-            </p>
-            @if ($quote->enviosCorreo->isNotEmpty())
+            @if ($cotizacion->enviosCorreo->isNotEmpty())
                 <section class="bloque-administrativo" aria-labelledby="titulo-historial-correo">
                     <h2 id="titulo-historial-correo">
                         Historial de correo
@@ -149,22 +150,22 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($quote->enviosCorreo as $envio)
+                                @foreach ($cotizacion->enviosCorreo as $envio)
                                     <tr>
                                         <td>
-                                            {{ $envio->attempted_at->format('d/m/Y H:i') }}
+                                            {{ $envio->intentado_en->format('d/m/Y H:i') }}
                                         </td>
                                         <td>
-                                            {{ $envio->recipient }}
+                                            {{ $envio->destinatario }}
                                         </td>
                                         <td>
                                             {{ $envio->etiquetaResultado() }}
                                         </td>
                                         <td>
-                                            {{ $envio->usuario?->name ?? 'Usuario no disponible' }}
+                                            {{ $envio->usuario?->nombre ?? 'Usuario no disponible' }}
                                         </td>
                                         <td>
-                                            {{ $envio->message }}
+                                            {{ $envio->mensaje }}
                                         </td>
                                     </tr>
                                 @endforeach
@@ -173,46 +174,36 @@
                     </div>
                 </section>
             @endif
-            @if ($puedeEditar && $quote->status === 'draft')
-                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.enviar', $quote) }}">
+            <div class="grupo-acciones acciones-cotizacion">
+            @if ($puedeEditar && $cotizacion->estado === 'borrador')
+                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.enviar', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Enviar cotización
-                    </button>
+                    <x-boton tipo="submit">Enviar cotización</x-boton>
                 </form>
-                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.cancelar', $quote) }}">
+                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.cancelar', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Cancelar cotización
-                    </button>
+                    <x-boton variante="peligro" tipo="submit">Cancelar cotización</x-boton>
                 </form>
-            @elseif ($puedeEditar && $quote->status === 'pending')
-                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.correo', $quote) }}">
+            @elseif ($puedeEditar && $cotizacion->estado === 'pendiente')
+                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.correo', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Enviar por correo al cliente
-                    </button>
+                    <x-boton tipo="submit">Enviar por correo</x-boton>
                 </form>
-                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.aceptar', $quote) }}">
+                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.aceptar', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Aceptar cotización
-                    </button>
+                    <x-boton variante="exito" tipo="submit">Aceptar cotización</x-boton>
                 </form>
-                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.rechazar', $quote) }}">
+                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.rechazar', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Rechazar cotización
-                    </button>
+                    <x-boton variante="peligro" tipo="submit">Rechazar cotización</x-boton>
                 </form>
-                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.cancelar', $quote) }}">
+                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.cancelar', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Cancelar cotización
-                    </button>
+                    <x-boton variante="secundario" tipo="submit">Cancelar cotización</x-boton>
                 </form>
             @endif
-            @if ($puedeEditar && $quote->status === 'accepted')
+            </div>
+            @if ($puedeEditar && $cotizacion->estado === 'aceptada')
                 <p>
                     Guardar un cambio libera las piezas reservadas y devuelve la cotización a Pendiente para una nueva aceptación.
                 </p>
@@ -223,21 +214,21 @@
                     <p>
                         Confirma el método de pago y asigna una serie reservada a cada pieza entregada. Esta acción cierra la operación y no vuelve a descontar inventario.
                     </p>
-                    <form class="formulario-administrativo formulario-venta" method="post" action="{{ route('ventas.guardar', $quote) }}">
+                    <form class="formulario-administrativo formulario-venta" method="post" action="{{ route('ventas.guardar', $cotizacion) }}">
                         @csrf
                         <label for="metodo-pago">Método de pago</label>
-                        <select id="metodo-pago" name="payment_method" required>
+                        <select id="metodo-pago" name="metodo_pago" required>
                             <option value="">Selecciona un método</option>
-                            <option value="cash" @selected(old('payment_method') === 'cash')>
+                            <option value="cash" @selected(old('metodo_pago') === 'efectivo')>
                                 Efectivo
                             </option>
-                            <option value="transfer" @selected(old('payment_method') === 'transfer')>
+                            <option value="transfer" @selected(old('metodo_pago') === 'transferencia')>
                                 Transferencia
                             </option>
-                            <option value="card" @selected(old('payment_method') === 'card')>
+                            <option value="card" @selected(old('metodo_pago') === 'tarjeta')>
                                 Tarjeta
                             </option>
-                            <option value="other" @selected(old('payment_method') === 'other')>
+                            <option value="otro" @selected(old('metodo_pago') === 'otro')>
                                 Otro
                             </option>
                         </select>
@@ -246,23 +237,23 @@
                         </label>
                         <input
                             id="detalle-metodo-pago"
-                            name="payment_method_detail"
-                            value="{{ old('payment_method_detail') }}"
+                            name="detalle_metodo_pago"
+                            value="{{ old('detalle_metodo_pago') }}"
                             maxlength="255"
                         >
 
-                        @foreach ($quote->lines->where('type', 'product') as $partida)
+                        @foreach ($cotizacion->partidas->where('tipo', 'producto') as $partida)
                             @php
                                 $seriesDisponibles = $piezasReservadas->where(
-                                    'catalog_item_id',
-                                    $partida->catalog_item_id
+                                    'articulo_catalogo_id',
+                                    $partida->articulo_catalogo_id
                                 );
                             @endphp
                             <fieldset>
                                 <legend>
-                                    {{ $partida->description }} — {{ (int) $partida->quantity }} piezas
+                                    {{ $partida->descripcion }} — {{ (int) $partida->cantidad }} piezas
                                 </legend>
-                                @for ($indice = 0; $indice < (int) $partida->quantity; $indice++)
+                                @for ($indice = 0; $indice < (int) $partida->cantidad; $indice++)
                                     <label for="serie-{{ $partida->id }}-{{ $indice }}">
                                         Serie {{ $indice + 1 }}
                                     </label>
@@ -277,7 +268,7 @@
                                                 value="{{ $pieza->id }}"
                                                 @selected(old("series.{$partida->id}.{$indice}") == $pieza->id)
                                             >
-                                                {{ $pieza->serial_number }}
+                                                {{ $pieza->numero_serie }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -293,50 +284,50 @@
                         </button>
                     </form>
                 </section>
-                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.cancelar', $quote) }}">
+                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.cancelar', $cotizacion) }}">
                     @csrf
                     <button type="submit">
                         Cancelar y liberar piezas
                     </button>
                 </form>
             @endif
-            @if ($puedeEditar && in_array($quote->status, ['draft', 'pending', 'accepted'], true))
+            @if ($puedeEditar && in_array($cotizacion->estado, ['borrador', 'pendiente', 'aceptada'], true))
                 <h2>
                     Agregar partida
                 </h2>
-                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.partidas.guardar', $quote) }}">
+                <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.partidas.guardar', $cotizacion) }}">
                     @csrf
                     <label for="tipo-partida">Tipo de partida</label>
-                    <select id="tipo-partida" name="type">
-                        <option value="product">
+                    <select id="tipo-partida" name="tipo">
+                        <option value="producto">
                             Producto
                         </option>
-                        <option value="service">
+                        <option value="servicio">
                             Servicio
                         </option>
-                        <option value="other">
+                        <option value="otro">
                             Otro
                         </option>
                     </select>
                     <label for="articulo-partida">Artículo del catálogo</label>
-                    <select id="articulo-partida" name="catalog_item_id">
+                    <select id="articulo-partida" name="articulo_catalogo_id">
                         <option value="">
                             Concepto libre
                         </option>
-                        @foreach ($items as $item)
-                            <option value="{{ $item->id }}">
-                                {{ $item->name }} — {{ $item->type === 'product' ? 'Producto' : 'Servicio' }} — ${{ $item->price }}
+                        @foreach ($articulos as $articulo)
+                            <option value="{{ $articulo->id }}">
+                                {{ $articulo->nombre }} — {{ $articulo->tipo === 'producto' ? 'Producto' : 'Servicio' }} — ${{ $articulo->precio }}
                             </option>
                         @endforeach
                     </select>
                     <p>Productos y servicios usan el precio vigente del catálogo. La descripción permite precisar lo cotizado.</p>
                     <label for="descripcion-partida">Descripción</label>
-                    <input id="descripcion-partida" name="description" value="{{ old('description') }}" required>
+                    <input id="descripcion-partida" name="descripcion" value="{{ old('descripcion') }}" required>
                     <label for="cantidad-partida">Cantidad</label>
-                    <input id="cantidad-partida" name="quantity" type="number" step="0.01" min="0.01" required>
+                    <input id="cantidad-partida" name="cantidad" type="number" step="0.01" min="0.01" required>
                     <p>Los productos requieren cantidades enteras de piezas.</p>
                     <label for="precio-partida">Precio unitario con IVA (solo para Otro)</label>
-                    <input id="precio-partida" name="unit_price" type="number" step="0.01" min="0" value="{{ old('unit_price') }}">
+                    <input id="precio-partida" name="precio_unitario" type="number" step="0.01" min="0" value="{{ old('precio_unitario') }}">
                     <button type="submit">
                         Agregar partida
                     </button>
@@ -367,22 +358,22 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($quote->lines as $line)
-                            @if ($puedeEditar && in_array($quote->status, ['draft', 'pending', 'accepted'], true))
+                        @foreach ($cotizacion->partidas as $partida)
+                            @if ($puedeEditar && in_array($cotizacion->estado, ['borrador', 'pendiente', 'aceptada'], true))
                                 <tr>
                                     <td colspan="5">
                                         <details>
-                                            <summary>Editar partida: {{ $line->description }}</summary>
-                                            <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.partidas.actualizar', [$quote, $line]) }}">
+                                            <summary>Editar partida: {{ $partida->descripcion }}</summary>
+                                            <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.partidas.actualizar', [$cotizacion, $partida]) }}">
                                                 @csrf
                                                 @method('PUT')
-                                                <input type="hidden" name="type" value="{{ $line->type }}">
-                                                <input type="hidden" name="catalog_item_id" value="{{ $line->catalog_item_id }}">
+                                                <input type="hidden" name="tipo" value="{{ $partida->tipo }}">
+                                                <input type="hidden" name="articulo_catalogo_id" value="{{ $partida->articulo_catalogo_id }}">
                                                 <label>
                                                     Descripción
                                                     <input
-                                                        name="description"
-                                                        value="{{ $line->description }}"
+                                                        name="descripcion"
+                                                        value="{{ $partida->descripcion }}"
                                                         required
                                                     >
                                                 </label>
@@ -390,10 +381,10 @@
                                                     Cantidad
                                                     <input
                                                         type="number"
-                                                        name="quantity"
-                                                        value="{{ $line->quantity }}"
-                                                        min="{{ $line->type === 'product' ? '1' : '0.01' }}"
-                                                        step="{{ $line->type === 'product' ? '1' : '0.01' }}"
+                                                        name="cantidad"
+                                                        value="{{ $partida->cantidad }}"
+                                                        min="{{ $partida->tipo === 'producto' ? '1' : '0.01' }}"
+                                                        step="{{ $partida->tipo === 'producto' ? '1' : '0.01' }}"
                                                         required
                                                     >
                                                 </label>
@@ -401,11 +392,11 @@
                                                     Precio unitario
                                                     <input
                                                         type="number"
-                                                        name="unit_price"
-                                                        value="{{ $line->unit_price }}"
+                                                        name="precio_unitario"
+                                                        value="{{ $partida->precio_unitario }}"
                                                         min="0"
                                                         step="0.01"
-                                                        @readonly($line->type !== 'other')
+                                                        @readonly($partida->tipo !== 'otro')
                                                         required
                                                     >
                                                 </label>
@@ -419,20 +410,20 @@
                             @endif
                             <tr>
                                 <td>
-                                    {{ $line->description }}
+                                    {{ $partida->descripcion }}
                                 </td>
                                 <td>
-                                    {{ $line->quantity }}
+                                    {{ $partida->cantidad }}
                                 </td>
                                 <td>
-                                    ${{ $line->unit_price }}
+                                    ${{ $partida->precio_unitario }}
                                 </td>
                                 <td>
-                                    ${{ $line->subtotal }}
+                                    ${{ $partida->subtotal }}
                                 </td>
                                 <td>
-                                    @if ($puedeEditar && $quote->status === 'draft')
-                                        <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.partidas.eliminar', [$quote, $line]) }}">
+                                    @if ($puedeEditar && $cotizacion->estado === 'borrador')
+                                        <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.partidas.eliminar', [$cotizacion, $partida]) }}">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit">
@@ -448,9 +439,8 @@
             </div>
             <p>
                 <strong>
-                    Total: ${{ $quote->total }}
+                    Total: ${{ $cotizacion->total }}
                 </strong>
             </p>
-        </main>
-    </body>
-</html>
+
+@endsection

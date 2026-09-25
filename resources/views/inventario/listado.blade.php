@@ -1,18 +1,9 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Inventario | Comunitec</title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
-        <main class="pagina-administrativa">
-            <h1>
-                Inventario
-            </h1>
+@extends('layouts.aplicacion')
+
+@section('titulo', 'Inventario')
+
+@section('contenido')
+            <x-encabezado-pagina titulo="Inventario" descripcion="Controla las piezas disponibles, reservadas y entregadas." />
             @if ($errors->any())
                 <ul role="alert">
                     @foreach ($errors->all() as $error)
@@ -25,7 +16,7 @@
                 <form class="formulario-administrativo" method="post" action="{{ route('inventario.categorias') }}">
                     @csrf
                     <label for="categoria">Nombre de la categoría</label>
-                    <input id="categoria" name="name" value="{{ old('name') }}" required>
+                    <input id="categoria" name="nombre" value="{{ old('nombre') }}" required>
                     <button type="submit">
                         Guardar categoría
                     </button>
@@ -33,23 +24,23 @@
             </section>
             <section class="bloque-administrativo" aria-labelledby="titulo-pieza">
                 <h2 id="titulo-pieza">Registrar pieza</h2>
-                @if ($products->isEmpty())
+                @if ($productos->isEmpty())
                     <p>Primero registra un producto en <a href="{{ route('catalogo.listado') }}">Catálogo</a>.</p>
                 @endif
                 <form class="formulario-administrativo" method="post" action="{{ route('inventario.piezas') }}">
                     @csrf
                     <label for="producto">Producto</label>
-                    <select id="producto" name="catalog_item_id" required>
+                    <select id="producto" name="articulo_catalogo_id" required>
                         <option value="">Selecciona un producto</option>
-                        @foreach($products as $p)
-                            <option value="{{ $p->id }}" @selected(old('catalog_item_id') == $p->id)>
-                                {{$p->name}}
+                        @foreach($productos as $p)
+                            <option value="{{ $p->id }}" @selected(old('articulo_catalogo_id') == $p->id)>
+                                {{$p->nombre}}
                             </option>
                         @endforeach
                     </select>
                     <label for="serie">Número de serie</label>
-                    <input id="serie" name="serial_number" value="{{ old('serial_number') }}" required>
-                    <button type="submit" @disabled($products->isEmpty())>
+                    <input id="serie" name="numero_serie" value="{{ old('numero_serie') }}" required>
+                    <button type="submit" @disabled($productos->isEmpty())>
                         Registrar pieza
                     </button>
                 </form>
@@ -75,23 +66,27 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($units as $u)
+                            @forelse ($piezas as $u)
                                 <tr>
                                     <td>
-                                        {{ $u->item?->name }}
+                                        {{ $u->articulo?->nombre }}
                                     </td>
                                     <td>
-                                        {{ $u->serial_number }}
+                                        {{ $u->numero_serie }}
                                     </td>
                                     <td>
-                                        {{ $u->status === 'available' ? 'Disponible' : ($u->status === 'reserved' ? 'Reservada' : 'Entregada') }}
+                                        <x-insignia-estado
+                                            :estado="$u->estado"
+                                            :etiqueta="$u->estado === 'disponible' ? 'Disponible' : ($u->estado === 'reservada' ? 'Reservada' : 'Entregada')"
+                                        />
                                     </td>
                                     <td>
                                         @if ($u->partidaVenta?->venta)
-                                            <a href="{{ route('ventas.detalle', $u->partidaVenta->venta) }}">
-                                                {{ $u->partidaVenta->venta->folio }}
-                                            </a>
+                                            <x-boton variante="contorno" :href="route('ventas.detalle', $u->partidaVenta->venta)" compacto>
+                                                Ver venta
+                                            </x-boton>
                                             <br>
+                                            <small class="detalle-tabla">{{ $u->partidaVenta->venta->folio }}</small>
                                             {{ $u->partidaVenta->venta->nombreClienteMostrado() }}
                                         @else
                                             No aplica
@@ -107,6 +102,5 @@
                     </table>
                 </div>
             </section>
-        </main>
-    </body>
-</html>
+
+@endsection

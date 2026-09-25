@@ -16,7 +16,7 @@ class ControladorVentas extends Controller
     {
         return view('ventas.listado', [
             'ventas' => Venta::with('cotizacion', 'cliente')
-                ->latest('sold_at')
+                ->latest('vendida_en')
                 ->get(),
         ]);
     }
@@ -35,17 +35,17 @@ class ControladorVentas extends Controller
 
     public function guardar(
         Request $solicitud,
-        Cotizacion $quote,
+        Cotizacion $cotizacion,
         ServicioConversionVenta $conversion
     ): RedirectResponse {
         $datos = $solicitud->validate([
-            'payment_method' => [
+            'metodo_pago' => [
                 'required',
                 Rule::in(Venta::metodosPago()),
             ],
-            'payment_method_detail' => [
+            'detalle_metodo_pago' => [
                 'nullable',
-                'required_if:payment_method,'.Venta::METODO_OTRO,
+                'required_if:metodo_pago,'.Venta::METODO_OTRO,
                 'string',
                 'max:255',
             ],
@@ -63,10 +63,10 @@ class ControladorVentas extends Controller
         ]);
 
         $venta = $conversion->convertir(
-            $quote,
+            $cotizacion,
             $solicitud->user(),
-            $datos['payment_method'],
-            $datos['payment_method_detail'] ?? null,
+            $datos['metodo_pago'],
+            $datos['detalle_metodo_pago'] ?? null,
             $datos['series'] ?? []
         );
 

@@ -1,119 +1,110 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>
-            Usuarios | Comunitec
-        </title>
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-    </head>
-    <body class="bg-slate-100 text-slate-900">
-        @include('componentes.navegacion')
-        <main class="mx-auto max-w-5xl p-6">
-            <h1 class="text-2xl font-semibold">
-                Administración de usuarios
-            </h1>
-            @if (session('status'))
-                <p class="mt-2 text-sm text-green-700">
-                    {{ session('status') }}
-                </p>
-            @endif
-            <form class="mt-6 grid gap-3 rounded bg-white p-5 shadow-sm" method="POST" action="{{ route('administracion.usuarios.guardar') }}">
-                @csrf
-                <input class="rounded border-slate-300" name="name" placeholder="Nombre" required>
-                <input class="rounded border-slate-300" name="email" type="email" placeholder="Correo" required>
-                <select class="rounded border-slate-300" name="role" required>
-                    <option value="comercial">
-                        Comercial
-                    </option>
-                    <option value="consulta">
-                        Consulta
-                    </option>
-                    <option value="admin">
-                        Administrador
-                    </option>
+@extends('layouts.aplicacion')
+
+@section('titulo', 'Usuarios')
+
+@section('contenido')
+    <x-encabezado-pagina
+        titulo="Administración de usuarios"
+        descripcion="Gestiona el acceso y los permisos del personal del sistema."
+    >
+        <x-slot:acciones>
+            <span class="contador-registros">{{ $usuarios->count() }} usuarios</span>
+        </x-slot:acciones>
+    </x-encabezado-pagina>
+
+    @include('componentes.errores-validacion')
+
+    <section class="bloque-administrativo" aria-labelledby="titulo-crear-usuario">
+        <h2 id="titulo-crear-usuario">Crear usuario</h2>
+        <form class="formulario-administrativo formulario-dos-columnas" method="POST" action="{{ route('administracion.usuarios.guardar') }}">
+            @csrf
+            <div class="campo-formulario">
+                <label for="nombre-usuario">Nombre</label>
+                <input id="nombre-usuario" name="nombre" value="{{ old('nombre') }}" required>
+            </div>
+            <div class="campo-formulario">
+                <label for="correo-usuario">Correo electrónico</label>
+                <input id="correo-usuario" name="correo" type="email" value="{{ old('correo') }}" required>
+            </div>
+            <div class="campo-formulario">
+                <label for="rol-usuario">Rol</label>
+                <select id="rol-usuario" name="rol" required>
+                    <option value="comercial">Comercial</option>
+                    <option value="consulta">Consulta</option>
+                    <option value="administrador">Administrador</option>
                 </select>
-                <input class="rounded border-slate-300" name="password" type="password" placeholder="Contraseña" required>
-                <input class="rounded border-slate-300" name="password_confirmation" type="password" placeholder="Confirmar contraseña" required>
-                <button class="rounded bg-slate-900 px-4 py-2 text-white" type="submit">
-                    Crear usuario
-                </button>
-            </form>
-            <div class="mt-6 overflow-x-auto rounded bg-white shadow-sm">
-                <table class="w-full text-left text-sm">
-                    <thead>
+            </div>
+            <div class="campo-formulario">
+                <label for="contrasena-usuario">Contraseña</label>
+                <input id="contrasena-usuario" name="contrasena" type="password" required>
+            </div>
+            <div class="campo-formulario">
+                <label for="confirmar-contrasena-usuario">Confirmar contraseña</label>
+                <input id="confirmar-contrasena-usuario" name="contrasena_confirmation" type="password" required>
+            </div>
+            <div class="acciones-formulario campo-formulario--ancho">
+                <x-boton tipo="submit">Crear usuario</x-boton>
+            </div>
+        </form>
+    </section>
+
+    <section class="bloque-administrativo" aria-labelledby="titulo-usuarios-registrados">
+        <h2 id="titulo-usuarios-registrados">Usuarios registrados</h2>
+        <div class="contenedor-tabla" tabindex="0" aria-label="Usuarios registrados">
+            <table class="tabla-registros tabla-catalogo">
+                <thead>
+                    <tr>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Correo</th>
+                        <th scope="col">Rol</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($usuarios as $usuario)
                         <tr>
-                            <th class="p-3">
-                                Nombre
-                            </th>
-                            <th>
-                                Correo
-                            </th>
-                            <th>
-                                Rol
-                            </th>
-                            <th>
-                                Estado
-                            </th>
-                            <th>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($users as $user)
-                            <tr class="border-t">
-                                <td class="p-3">
-                                    {{ $user->name }}
-                                </td>
-                                <td>
-                                    {{ $user->email }}
-                                </td>
-                                <td>
-                                    {{ $user->role }}
-                                </td>
-                                <td>
-                                    {{ $user->active ? 'Activo' : 'Inactivo' }}
-                                </td>
-                                <td>
-                                    <form method="POST" action="{{ route('administracion.usuarios.estado', $user) }}">
+                            <td><strong>{{ $usuario->nombre }}</strong></td>
+                            <td>{{ $usuario->correo }}</td>
+                            <td>{{ ucfirst($usuario->rol) }}</td>
+                            <td>
+                                <x-insignia-estado :estado="$usuario->activo ? 'activo' : 'inactivo'" />
+                            </td>
+                            <td>
+                                <div class="grupo-acciones">
+                                    <form method="POST" action="{{ route('administracion.usuarios.estado', $usuario) }}">
                                         @csrf
                                         @method('PATCH')
-                                        <input name="active" type="hidden" value="{{ $user->active ? 0 : 1 }}">
-                                        <button class="underline" type="submit">
-                                            {{ $user->active ? 'Desactivar' : 'Activar' }}
-                                        </button>
+                                        <input name="activo" type="hidden" value="{{ $usuario->activo ? 0 : 1 }}">
+                                        <x-boton :variante="$usuario->activo ? 'peligro' : 'exito'" tipo="submit" compacto>
+                                            {{ $usuario->activo ? 'Desactivar' : 'Activar' }}
+                                        </x-boton>
                                     </form>
-                                    <details class="mt-2">
-                                        <summary class="cursor-pointer underline">
-                                            Editar
-                                        </summary>
-                                        <form class="mt-2 grid gap-2" method="POST" action="{{ route('administracion.usuarios.actualizar', $user) }}">
+                                    <details class="editor-tabla">
+                                        <summary class="boton boton--secundario boton--compacto">Editar</summary>
+                                        <form class="formulario-administrativo editor-tabla__formulario" method="POST" action="{{ route('administracion.usuarios.actualizar', $usuario) }}">
                                             @csrf
                                             @method('PUT')
-                                            <input class="rounded border-slate-300" name="name" value="{{ $user->name }}" required>
-                                            <input class="rounded border-slate-300" name="email" type="email" value="{{ $user->email }}" required>
-                                            <select class="rounded border-slate-300" name="role">
-                                                @foreach (['admin' => 'Administrador', 'comercial' => 'Comercial', 'consulta' => 'Consulta'] as $value => $label)
-                                                    <option value="{{ $value }}" @selected($user->
-                                                        role === $value)>{{ $label }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <input class="rounded border-slate-300" name="password" type="password" placeholder="Nueva contraseña (opcional)">
-                                            <input class="rounded border-slate-300" name="password_confirmation" type="password" placeholder="Confirmar nueva contraseña">
-                                            <button class="rounded bg-slate-900 px-3 py-2 text-white" type="submit">
-                                                Guardar cambios
-                                            </button>
+                                            <label>Nombre <input name="nombre" value="{{ $usuario->nombre }}" required></label>
+                                            <label>Correo <input name="correo" type="email" value="{{ $usuario->correo }}" required></label>
+                                            <label>Rol
+                                                <select name="rol">
+                                                    @foreach (['administrador' => 'Administrador', 'comercial' => 'Comercial', 'consulta' => 'Consulta'] as $valor => $etiqueta)
+                                                        <option value="{{ $valor }}" @selected($usuario->rol === $valor)>{{ $etiqueta }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </label>
+                                            <label>Nueva contraseña <input name="contrasena" type="password"></label>
+                                            <label>Confirmar contraseña <input name="contrasena_confirmation" type="password"></label>
+                                            <x-boton tipo="submit">Guardar cambios</x-boton>
                                         </form>
                                     </details>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </main>
-    </body>
-</html>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </section>
+@endsection

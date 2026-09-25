@@ -24,67 +24,66 @@ class ControladorCotizaciones extends Controller
     public function listar(): View
     {
         return view('cotizaciones.listado', [
-            'customers' => Cliente::orderBy('name')->get(),
-            'quotes' => Cotizacion::with('venta')->latest()->get(),
+            'clientes' => Cliente::orderBy('nombre')->get(),
+            'cotizaciones' => Cotizacion::with('venta')->latest('creado_en')->get(),
             'puedeEditar' => auth()->user()->esAdministrador() || auth()->user()->esComercial(),
         ]);
     }
 
-    public function mostrar(Cotizacion $quote): View
+    public function mostrar(Cotizacion $cotizacion): View
     {
-        $quote->load('customer', 'lines', 'enviosCorreo.usuario', 'venta');
-        $productos = $quote->lines->where('type', 'product')->groupBy('catalog_item_id');
-        $disponibles = PiezaInventario::whereIn('catalog_item_id', $productos->keys())
-            ->where('status', 'available')->selectRaw('catalog_item_id, COUNT(*) AS cantidad')
-            ->groupBy('catalog_item_id')->pluck('cantidad', 'catalog_item_id');
-        $shortages = $productos
+        $cotizacion->load('cliente', 'partidas', 'enviosCorreo.usuario', 'venta');
+        $productos = $cotizacion->partidas->where('tipo', 'producto')->groupBy('articulo_catalogo_id');
+        $disponibles = PiezaInventario::whereIn('articulo_catalogo_id', $productos->keys())
+            ->where('estado', 'disponible')->selectRaw('articulo_catalogo_id, COUNT(*) AS cantidad')
+            ->groupBy('articulo_catalogo_id')->pluck('cantidad', 'articulo_catalogo_id');
+        $faltantes = $productos
             ->map(function ($partidas, $articulo) use ($disponibles): array {
                 return [
 
-                    'description' => $partidas->first()->description,
+                    'descripcion' => $partidas->first()->descripcion,
 
-                    'requested' => (int) $partidas->sum('quantity'),
+                    'solicitado' => (int) $partidas->sum('cantidad'),
 
-                    'available' => (int) ($disponibles[$articulo] ?? 0),
+                    'disponible' => (int) ($disponibles[$articulo] ?? 0),
 
                 ];
-            })->filter(fn ($faltante) => $faltante['requested'] > $faltante['available']);
-        $piezasReservadas = PiezaInventario::where('quote_id', $quote->id)
-            ->where('status', 'reserved')
-            ->orderBy('serial_number')
+            })->filter(fn ($faltante) => $faltante['solicitado'] > $faltante['disponible']);
+        $piezasReservadas = PiezaInventario::where('cotizacion_id', $cotizacion->id)
+            ->where('estado', 'reservada')
+            ->orderBy('numero_serie')
             ->get();
 
         return view('cotizaciones.detalle', [
-            'quote' => $quote,
-            'puedeEditar' => $quote->venta === null
+            'cotizacion' => $cotizacion,
+            'puedeEditar' => $cotizacion->venta === null
                 && (auth()->user()->esAdministrador() || auth()->user()->esComercial()),
-            'clientes' => Cliente::orderBy('name')->get(),
-            'items' => ArticuloCatalogo::where('active',
-                true)->get(),
-            'shortages' => $shortages,
+            'clientes' => Cliente::orderBy('nombre')->get(),
+            'articulos' => ArticuloCatalogo::where('activo', true)->get(),
+            'faltantes' => $faltantes,
             'piezasReservadas' => $piezasReservadas,
         ]);
     }
 
-    public function pdf(Cotizacion $quote)
+    public function pdf(Cotizacion $cotizacion)
     {
         return Pdf::loadView('cotizaciones.pdf', [
-            'quote' => $quote->load(
-                'customer',
-                'lines',
+            'cotizacion' => $cotizacion->load(
+                'cliente',
+                'partidas.articulo',
                 'responsable'
             ),
-        ])->download("{$quote->folio}.pdf");
+        ])->download("{$cotizacion->folio}.pdf");
     }
 
-    public function enviar(Cotizacion $quote): RedirectResponse
+    public function enviar(Cotizacion $cotizacion): RedirectResponse
     {
-        return $this->procesarCorreo($quote, 'draft');
+        return $this->procesarCorreo($cotizacion, 'borrador');
     }
 
-    public function enviarCorreo(Cotizacion $quote): RedirectResponse
+    public function enviarCorreo(Cotizacion $cotizacion): RedirectResponse
     {
-        return $this->procesarCorreo($quote, 'pending');
+        return $this->procesarCorreo($cotizacion, 'pendiente');
     }
 
     private function procesarCorreo(Cotizacion $cotizacion, string $estadoEsperado): RedirectResponse
@@ -94,39 +93,39 @@ class ControladorCotizaciones extends Controller
             return back()->with('error', 'Configura un servicio de correo real antes de enviar. La cotización conserva su estado.');
         }
 
-        $destinatario = $cotizacion->customer()->value('email');
+        $destinatario = $cotizacion->cliente()->value('correo');
         $usuarioId = (int) auth()->id();
 
         try {
             DB::transaction(function () use ($cotizacion, $destinatario, $estadoEsperado, $usuarioId) {
                 $actual = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
-                abort_unless($actual->status === $estadoEsperado, 422, 'El estado de la cotización no permite este envío.');
-                $actual->load('customer', 'lines', 'responsable');
-                if ($estadoEsperado === 'draft') {
+                abort_unless($actual->estado === $estadoEsperado, 422, 'El estado de la cotización no permite este envío.');
+                $actual->load('cliente', 'partidas', 'responsable');
+                if ($estadoEsperado === 'borrador') {
                     $actual->fill([
-                        'status' => 'pending',
-                        'sent_at' => now(),
-                        'expires_at' => now()->addDays(15),
+                        'estado' => 'pendiente',
+                        'enviada_en' => now(),
+                        'vence_en' => now()->addDays(15),
                     ]);
                 }
                 Mail::to($destinatario)->send(new CorreoCotizacion($actual));
                 $actual->save();
                 $actual->enviosCorreo()->create([
-                    'user_id' => $usuarioId,
-                    'recipient' => $destinatario,
-                    'result' => EnvioCotizacion::RESULTADO_ACEPTADO,
-                    'message' => 'El servicio de correo aceptó el mensaje para su envío.',
-                    'attempted_at' => now(),
+                    'usuario_id' => $usuarioId,
+                    'destinatario' => $destinatario,
+                    'resultado' => EnvioCotizacion::RESULTADO_ACEPTADO,
+                    'mensaje' => 'El servicio de correo aceptó el mensaje para su envío.',
+                    'intentado_en' => now(),
                 ]);
             });
         } catch (TransportExceptionInterface $excepcion) {
             report($excepcion);
             $cotizacion->enviosCorreo()->create([
-                'user_id' => $usuarioId,
-                'recipient' => $destinatario,
-                'result' => EnvioCotizacion::RESULTADO_FALLIDO,
-                'message' => 'El servicio de correo no aceptó el mensaje.',
-                'attempted_at' => now(),
+                'usuario_id' => $usuarioId,
+                'destinatario' => $destinatario,
+                'resultado' => EnvioCotizacion::RESULTADO_FALLIDO,
+                'mensaje' => 'El servicio de correo no aceptó el mensaje.',
+                'intentado_en' => now(),
             ]);
 
             return back()->with('error', 'No se pudo enviar el correo. La cotización conserva su estado y fechas; puedes volver a intentarlo.');
@@ -135,36 +134,36 @@ class ControladorCotizaciones extends Controller
         return back()->with('success', 'El servicio de correo aceptó el envío de la cotización al cliente.');
     }
 
-    public function rechazar(Cotizacion $quote): RedirectResponse
+    public function rechazar(Cotizacion $cotizacion): RedirectResponse
     {
-        DB::transaction(function () use ($quote) {
-            $actual = Cotizacion::whereKey($quote->id)->lockForUpdate()->firstOrFail();
-            abort_unless($actual->status === 'pending', 422, 'Solo se pueden rechazar cotizaciones pendientes.');
+        DB::transaction(function () use ($cotizacion) {
+            $actual = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
+            abort_unless($actual->estado === 'pendiente', 422, 'Solo se pueden rechazar cotizaciones pendientes.');
             $actual->update([
-                'status' => 'rejected',
+                'estado' => 'rechazada',
             ]);
         });
 
         return back()->with('success', 'La cotización fue rechazada.');
     }
 
-    public function cancelar(Cotizacion $quote): RedirectResponse
+    public function cancelar(Cotizacion $cotizacion): RedirectResponse
     {
-        $liberoPiezas = DB::transaction(function () use ($quote): bool {
-            $actual = Cotizacion::whereKey($quote->id)->lockForUpdate()->firstOrFail();
+        $liberoPiezas = DB::transaction(function () use ($cotizacion): bool {
+            $actual = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
             abort_if($actual->venta()->exists(), 422, 'Una cotización convertida en venta ya no puede cancelarse.');
-            abort_unless(in_array($actual->status, [
-                'draft',
-                'pending',
-                'accepted',
+            abort_unless(in_array($actual->estado, [
+                'borrador',
+                'pendiente',
+                'aceptada',
             ], true), 422, 'El estado actual de la cotización no permite cancelarla.');
 
-            if ($actual->status === 'accepted') {
+            if ($actual->estado === 'aceptada') {
                 return app(ServicioInventarioCotizacion::class)->liberar($actual);
             }
 
             $actual->update([
-                'status' => 'cancelled',
+                'estado' => 'cancelada',
             ]);
 
             return false;
@@ -175,12 +174,12 @@ class ControladorCotizaciones extends Controller
             : 'La cotización fue cancelada.');
     }
 
-    public function aceptar(Cotizacion $quote, ServicioInventarioCotizacion $inventory): RedirectResponse
+    public function aceptar(Cotizacion $cotizacion, ServicioInventarioCotizacion $inventario): RedirectResponse
     {
-        abort_unless($quote->status === 'pending', 422);
+        abort_unless($cotizacion->estado === 'pendiente', 422);
 
         try {
-            $inventory->reservar($quote);
+            $inventario->reservar($cotizacion);
         } catch (RuntimeException) {
             return back()->with('error', 'No hay piezas disponibles suficientes para aceptar la cotización.');
         }
@@ -188,14 +187,14 @@ class ControladorCotizaciones extends Controller
         return back()->with('success', 'La cotización fue aceptada y las piezas quedaron reservadas por 5 días.');
     }
 
-    public function guardar(Request $request): RedirectResponse
+    public function guardar(Request $solicitud): RedirectResponse
     {
-        $data = $this->validarEncabezado($request);
+        $datos = $this->validarEncabezado($solicitud);
         Cotizacion::create([
-            ...$data,
-            'user_id' => $request->user()->id,
+            ...$datos,
+            'usuario_id' => $solicitud->user()->id,
             'folio' => 'COT-'.now()->format('Ymd').'-'.Str::ulid(),
-            'status' => 'draft',
+            'estado' => 'borrador',
             'total' => 0,
         ]);
 
@@ -206,18 +205,18 @@ class ControladorCotizaciones extends Controller
     {
         $datos = $solicitud->validate([
 
-            'customer_id' => [
+            'cliente_id' => [
                 'required',
-                'exists:customers,id',
+                'exists:clientes,id',
             ],
 
-            'area_requesting' => [
+            'area_solicitante' => [
                 'nullable',
                 'string',
                 'max:255',
             ],
 
-            'discount_percent' => [
+            'porcentaje_descuento' => [
                 'nullable',
                 'numeric',
                 function ($atributo,
@@ -230,45 +229,45 @@ class ControladorCotizaciones extends Controller
             ],
 
         ]);
-        $datos['discount_percent'] = $datos['discount_percent'] ?? 0;
-        $datos['area_requesting'] = $datos['area_requesting'] ?? null;
+        $datos['porcentaje_descuento'] = $datos['porcentaje_descuento'] ?? 0;
+        $datos['area_solicitante'] = $datos['area_solicitante'] ?? null;
 
         return $datos;
     }
 
-    public function actualizar(Request $solicitud, Cotizacion $quote): RedirectResponse
+    public function actualizar(Request $solicitud, Cotizacion $cotizacion): RedirectResponse
     {
         $datos = $this->validarEncabezado($solicitud);
 
-        DB::transaction(function () use ($quote, $datos) {
-            $cotizacion = Cotizacion::whereKey($quote->id)->lockForUpdate()->firstOrFail();
+        DB::transaction(function () use ($cotizacion, $datos) {
+            $cotizacion = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
             abort_if($cotizacion->venta()->exists(), 422, 'Una cotización convertida en venta ya no admite cambios.');
-            abort_unless(in_array($cotizacion->status, [
-                'draft',
-                'pending',
-                'accepted',
+            abort_unless(in_array($cotizacion->estado, [
+                'borrador',
+                'pendiente',
+                'aceptada',
             ], true), 422, 'Esta cotización ya no admite cambios.');
             $cotizacion->fill($datos);
             if (! $cotizacion->isDirty([
-                'customer_id',
-                'area_requesting',
-                'discount_percent',
+                'cliente_id',
+                'area_solicitante',
+                'porcentaje_descuento',
             ])) {
                 return;
             }
 
-            if ($cotizacion->status === 'accepted') {
-                PiezaInventario::where('quote_id', $cotizacion->id)->where('status', 'reserved')->update([
-                    'status' => 'available',
-                    'quote_id' => null,
+            if ($cotizacion->estado === 'aceptada') {
+                PiezaInventario::where('cotizacion_id', $cotizacion->id)->where('estado', 'reservada')->update([
+                    'estado' => 'disponible',
+                    'cotizacion_id' => null,
                 ]);
                 $cotizacion->fill([
-                    'status' => 'pending',
-                    'accepted_at' => null,
-                    'expires_at' => now()->addDays(15),
+                    'estado' => 'pendiente',
+                    'aceptada_en' => null,
+                    'vence_en' => now()->addDays(15),
                 ]);
             }
-            $cotizacion->total = round($cotizacion->lines()->sum('subtotal') * (1 - $cotizacion->discount_percent / 100), 2);
+            $cotizacion->total = round($cotizacion->partidas()->sum('subtotal') * (1 - $cotizacion->porcentaje_descuento / 100), 2);
             $cotizacion->save();
         });
 

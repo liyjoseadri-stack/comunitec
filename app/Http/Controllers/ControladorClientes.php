@@ -8,43 +8,43 @@ use Illuminate\Validation\Rule;
 
 class ControladorClientes extends Controller
 {
-    public function listar(Request $request)
+    public function listar(Request $solicitud)
     {
-        $customers = Cliente::query()
+        $clientes = Cliente::query()
             ->when(
-                $request->string('search')->toString(),
-                fn ($query, $search) => $query
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('rfc', 'like', "%{$search}%")
+                $solicitud->string('search')->toString(),
+                fn ($consulta, $busqueda) => $consulta
+                    ->where('nombre', 'like', "%{$busqueda}%")
+                    ->orWhere('rfc', 'like', "%{$busqueda}%")
             )
-            ->orderBy('name')
+            ->orderBy('nombre')
             ->get();
 
-        return view('clientes.listado', compact('customers'));
+        return view('clientes.listado', compact('clientes'));
     }
 
-    public function guardar(Request $request)
+    public function guardar(Request $solicitud)
     {
-        Cliente::create($this->datosValidados($request));
+        Cliente::create($this->datosValidados($solicitud));
 
         return redirect()->route('clientes.listado');
     }
 
-    public function actualizar(Request $request, Cliente $customer)
+    public function actualizar(Request $solicitud, Cliente $cliente)
     {
-        $customer->update($this->datosValidados($request, $customer));
+        $cliente->update($this->datosValidados($solicitud, $cliente));
 
         return redirect()->route('clientes.listado');
     }
 
-    private function datosValidados(Request $request, ?Cliente $customer = null): array
+    private function datosValidados(Request $solicitud, ?Cliente $cliente = null): array
     {
-        return $request->validate([
-            'type' => [
+        return $solicitud->validate([
+            'tipo' => [
                 'required',
                 'in:fisica,moral',
             ],
-            'name' => [
+            'nombre' => [
                 'required',
                 'string',
                 'max:255',
@@ -53,23 +53,23 @@ class ControladorClientes extends Controller
                 'required',
                 'string',
                 'max:13',
-                Rule::unique('customers')->ignore($customer),
+                Rule::unique('clientes')->ignore($cliente),
             ],
-            'email' => [
+            'correo' => [
                 'required',
                 'email',
             ],
-            'phone' => [
+            'telefono' => [
                 'required',
                 'string',
                 'max:30',
             ],
-            'address' => [
+            'direccion' => [
                 'required',
                 'string',
                 'max:255',
             ],
-            'postal_code' => [
+            'codigo_postal' => [
                 'required',
                 'string',
                 'max:10',

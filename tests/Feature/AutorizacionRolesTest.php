@@ -16,7 +16,7 @@ class AutorizacionRolesTest extends TestCase
     public function test_el_administrador_puede_gestionar_usuarios(): void
     {
         $this->actingAs(Usuario::factory()->create([
-            'role' => Usuario::ROL_ADMINISTRADOR,
+            'rol' => Usuario::ROL_ADMINISTRADOR,
         ]))
             ->get('/administracion/usuarios')
             ->assertOk()
@@ -26,7 +26,7 @@ class AutorizacionRolesTest extends TestCase
     public function test_el_comercial_no_puede_gestionar_usuarios(): void
     {
         $this->actingAs(Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
         ]))
             ->get('/administracion/usuarios')
             ->assertForbidden();
@@ -35,7 +35,7 @@ class AutorizacionRolesTest extends TestCase
     public function test_el_usuario_de_consulta_no_puede_gestionar_usuarios(): void
     {
         $this->actingAs(Usuario::factory()->create([
-            'role' => Usuario::ROL_CONSULTA,
+            'rol' => Usuario::ROL_CONSULTA,
         ]))
             ->get('/administracion/usuarios')
             ->assertForbidden();
@@ -56,7 +56,7 @@ class AutorizacionRolesTest extends TestCase
 
         foreach ([Usuario::ROL_ADMINISTRADOR, Usuario::ROL_COMERCIAL] as $rol) {
             $this->actingAs(Usuario::factory()->create([
-                'role' => $rol,
+                'rol' => $rol,
             ]));
 
             foreach ($rutas as $ruta) {
@@ -68,7 +68,7 @@ class AutorizacionRolesTest extends TestCase
     public function test_consulta_solo_accede_a_modulos_de_lectura_autorizados(): void
     {
         $this->actingAs(Usuario::factory()->create([
-            'role' => Usuario::ROL_CONSULTA,
+            'rol' => Usuario::ROL_CONSULTA,
         ]));
 
         foreach ([
@@ -94,31 +94,31 @@ class AutorizacionRolesTest extends TestCase
     public function test_consulta_no_puede_escribir_en_modulos_operativos_por_ruta_directa(): void
     {
         $usuario = Usuario::factory()->create([
-            'role' => Usuario::ROL_CONSULTA,
+            'rol' => Usuario::ROL_CONSULTA,
         ]);
         $cliente = Cliente::create([
-            'type' => 'moral',
-            'name' => 'Cliente de permisos',
+            'tipo' => 'moral',
+            'nombre' => 'Cliente de permisos',
             'rfc' => 'PER010101AA1',
-            'email' => 'permisos@example.test',
-            'phone' => '9610000000',
-            'address' => 'Domicilio de prueba',
-            'postal_code' => '29000',
+            'correo' => 'permisos@example.test',
+            'telefono' => '9610000000',
+            'direccion' => 'Domicilio de prueba',
+            'codigo_postal' => '29000',
         ]);
         $cotizacion = Cotizacion::create([
             'folio' => 'COT-PERMISOS',
-            'customer_id' => $cliente->id,
-            'user_id' => $usuario->id,
-            'status' => 'accepted',
+            'cliente_id' => $cliente->id,
+            'usuario_id' => $usuario->id,
+            'estado' => 'aceptada',
             'total' => 100,
         ]);
         $articulo = ArticuloCatalogo::create([
-            'type' => 'service',
-            'name' => 'Servicio de permisos',
-            'code' => 'SER-PERMISOS',
-            'unit' => 'servicio',
-            'price' => 100,
-            'stock' => 0,
+            'tipo' => 'servicio',
+            'nombre' => 'Servicio de permisos',
+            'codigo' => 'SER-PERMISOS',
+            'unidad' => 'servicio',
+            'precio' => 100,
+            'existencias' => 0,
         ]);
 
         $this->actingAs($usuario);

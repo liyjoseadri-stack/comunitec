@@ -2,70 +2,73 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
 use Illuminate\Database\Eloquent\Model;
 
 class Cotizacion extends Model
 {
-    protected $table = 'quotes';
+    use UsaMarcasTiempoEnEspanol;
+
+    protected $table = 'cotizaciones';
 
     protected $fillable = [
         'folio',
-        'customer_id',
-        'user_id',
-        'area_requesting',
-        'status',
-        'sent_at',
-        'accepted_at',
-        'expires_at',
-        'discount_percent',
+        'cliente_id',
+        'usuario_id',
+        'area_solicitante',
+        'estado',
+        'enviada_en',
+        'aceptada_en',
+        'vence_en',
+        'porcentaje_descuento',
         'total',
     ];
 
     protected function casts(): array
     {
         return [
-            'sent_at' => 'datetime',
-            'accepted_at' => 'datetime',
-            'expires_at' => 'datetime',
-            'discount_percent' => 'decimal:2',
+            'enviada_en' => 'datetime',
+            'aceptada_en' => 'datetime',
+            'vence_en' => 'datetime',
+            'porcentaje_descuento' => 'decimal:2',
             'total' => 'decimal:2',
         ];
     }
 
-    public function lines()
+    public function partidas()
     {
-        return $this->hasMany(PartidaCotizacion::class, 'quote_id');
+        return $this->hasMany(PartidaCotizacion::class, 'cotizacion_id');
     }
 
-    public function customer()
+    public function cliente()
     {
-        return $this->belongsTo(Cliente::class);
+        return $this->belongsTo(Cliente::class, 'cliente_id');
     }
 
     public function responsable()
     {
-        return $this->belongsTo(Usuario::class, 'user_id');
+        return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 
     public function enviosCorreo()
     {
-        return $this->hasMany(EnvioCotizacion::class, 'quote_id')->latest('attempted_at');
+        return $this->hasMany(EnvioCotizacion::class, 'cotizacion_id')->latest('intentado_en');
     }
 
     public function venta()
     {
-        return $this->hasOne(Venta::class, 'quote_id');
+        return $this->hasOne(Venta::class, 'cotizacion_id');
     }
 
     public function etiquetaEstado(): string
     {
-        return match ($this->status) {
-            'draft' => 'Borrador',
-            'pending' => 'Pendiente',
-            'accepted' => 'Aceptada',
-            'rejected' => 'Rechazada',
-            'cancelled' => 'Cancelada',
-            'expired' => 'Vencida',
+        return match ($this->estado) {
+            'borrador' => 'Borrador',
+            'pendiente' => 'Pendiente',
+            'aceptada' => 'Aceptada',
+            'rechazada' => 'Rechazada',
+            'cancelada' => 'Cancelada',
+            'vencida' => 'Vencida',
             default => 'Sin definir',
         };
     }
@@ -73,12 +76,12 @@ class Cotizacion extends Model
     public static function estados(): array
     {
         return [
-            'draft',
-            'pending',
-            'accepted',
-            'rejected',
-            'cancelled',
-            'expired',
+            'borrador',
+            'pendiente',
+            'aceptada',
+            'rechazada',
+            'cancelada',
+            'vencida',
         ];
     }
 }

@@ -12,72 +12,72 @@ class AdministracionUsuariosTest extends TestCase
 
     public function test_el_administrador_puede_crear_y_desactivar_usuarios(): void
     {
-        $admin = Usuario::factory()->create([
-            'role' => Usuario::ROL_ADMINISTRADOR,
+        $administrador = Usuario::factory()->create([
+            'rol' => Usuario::ROL_ADMINISTRADOR,
         ]);
 
-        $this->actingAs($admin)->post('/administracion/usuarios', [
+        $this->actingAs($administrador)->post('/administracion/usuarios', [
 
-            'name' => 'Ana Comercial',
+            'nombre' => 'Ana Comercial',
 
-            'email' => 'ana@example.com',
+            'correo' => 'ana@example.com',
 
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
 
-            'password' => 'secret-password',
+            'contrasena' => 'secret-password',
 
-            'password_confirmation' => 'secret-password',
+            'contrasena_confirmation' => 'secret-password',
 
         ])->assertRedirect('/administracion/usuarios');
 
-        $user = Usuario::where('email', 'ana@example.com')->firstOrFail();
-        $this->assertSame(Usuario::ROL_COMERCIAL, $user->role);
-        $this->assertTrue($user->active);
+        $usuario = Usuario::where('correo', 'ana@example.com')->firstOrFail();
+        $this->assertSame(Usuario::ROL_COMERCIAL, $usuario->rol);
+        $this->assertTrue($usuario->activo);
 
-        $this->patch("/administracion/usuarios/{$user->id}/estado", [
-            'active' => false,
+        $this->patch("/administracion/usuarios/{$usuario->id}/estado", [
+            'activo' => false,
         ])
             ->assertRedirect('/administracion/usuarios');
 
-        $this->assertFalse($user->fresh()->active);
+        $this->assertFalse($usuario->fresh()->activo);
     }
 
     public function test_el_administrador_puede_actualizar_usuarios(): void
     {
-        $admin = Usuario::factory()->create([
-            'role' => Usuario::ROL_ADMINISTRADOR,
+        $administrador = Usuario::factory()->create([
+            'rol' => Usuario::ROL_ADMINISTRADOR,
         ]);
-        $user = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
 
-        $this->actingAs($admin)->get('/administracion/usuarios')
+        $this->actingAs($administrador)->get('/administracion/usuarios')
             ->assertOk()
             ->assertSee('Editar');
 
-        $this->actingAs($admin)->put("/administracion/usuarios/{$user->id}", [
+        $this->actingAs($administrador)->put("/administracion/usuarios/{$usuario->id}", [
 
-            'name' => 'Usuario actualizado',
+            'nombre' => 'Usuario actualizado',
 
-            'email' => 'actualizado@example.com',
+            'correo' => 'actualizado@example.com',
 
-            'role' => Usuario::ROL_CONSULTA,
+            'rol' => Usuario::ROL_CONSULTA,
 
-            'password' => '',
+            'contrasena' => '',
 
-            'password_confirmation' => '',
+            'contrasena_confirmation' => '',
 
         ])->assertRedirect('/administracion/usuarios');
 
-        $this->assertDatabaseHas('users', [
+        $this->assertDatabaseHas('usuarios', [
 
-            'id' => $user->id,
+            'id' => $usuario->id,
 
-            'name' => 'Usuario actualizado',
+            'nombre' => 'Usuario actualizado',
 
-            'email' => 'actualizado@example.com',
+            'correo' => 'actualizado@example.com',
 
-            'role' => Usuario::ROL_CONSULTA,
+            'rol' => Usuario::ROL_CONSULTA,
 
         ]);
     }

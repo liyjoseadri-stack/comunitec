@@ -10,9 +10,21 @@ class NavegacionTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_las_paginas_administrativas_comparten_el_layout_visual(): void
+    {
+        $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_ADMINISTRADOR]);
+
+        foreach (['/panel', '/clientes', '/catalogo', '/inventario', '/cotizaciones', '/ventas'] as $ruta) {
+            $this->actingAs($usuario)->get($ruta)
+                ->assertOk()
+                ->assertSee('class="aplicacion"', false)
+                ->assertSee('css/administracion.css', false);
+        }
+    }
+
     public function test_administrador_encuentra_el_menu_en_los_modulos(): void
     {
-        $this->actingAs(Usuario::factory()->create(['role' => Usuario::ROL_ADMINISTRADOR]));
+        $this->actingAs(Usuario::factory()->create(['rol' => Usuario::ROL_ADMINISTRADOR]));
 
         foreach (['/panel', '/clientes', '/catalogo', '/inventario', '/cotizaciones', '/ventas', '/reportes/cotizaciones', '/reportes/ventas', '/administracion/usuarios'] as $ruta) {
             $this->get($ruta)->assertOk()
@@ -28,7 +40,7 @@ class NavegacionTest extends TestCase
 
     public function test_consulta_solo_recibe_enlaces_autorizados(): void
     {
-        $this->actingAs(Usuario::factory()->create(['role' => Usuario::ROL_CONSULTA]));
+        $this->actingAs(Usuario::factory()->create(['rol' => Usuario::ROL_CONSULTA]));
         $this->get('/panel')->assertOk()
             ->assertSee('href="'.route('cotizaciones.listado').'"', false)
             ->assertSee('href="'.route('ventas.listado').'"', false)

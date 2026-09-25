@@ -1,16 +1,8 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Reporte de ventas | Comunitec</title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
+@extends('layouts.aplicacion')
 
-        <main class="pagina-administrativa">
+@section('titulo', 'Reporte de ventas')
+
+@section('contenido')
             <header class="encabezado-pagina">
                 <div>
                     <h1>Reporte de ventas</h1>
@@ -45,7 +37,7 @@
                             <option value="">Todos</option>
                             @foreach ($clientes as $cliente)
                                 <option value="{{ $cliente->id }}" @selected(($filtros['cliente'] ?? null) == $cliente->id)>
-                                    {{ $cliente->name }}
+                                    {{ $cliente->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -56,7 +48,7 @@
                             <option value="">Todos</option>
                             @foreach ($responsables as $responsable)
                                 <option value="{{ $responsable->id }}" @selected(($filtros['responsable'] ?? null) == $responsable->id)>
-                                    {{ $responsable->name }}
+                                    {{ $responsable->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -66,10 +58,10 @@
                         <select id="metodo-pago" name="metodo_pago">
                             <option value="">Todos</option>
                             @foreach ([
-                                'cash' => 'Efectivo',
-                                'transfer' => 'Transferencia',
-                                'card' => 'Tarjeta',
-                                'other' => 'Otro',
+                                'efectivo' => 'Efectivo',
+                                'transferencia' => 'Transferencia',
+                                'tarjeta' => 'Tarjeta',
+                                'otro' => 'Otro',
                             ] as $valor => $etiqueta)
                                 <option value="{{ $valor }}" @selected(($filtros['metodo_pago'] ?? null) === $valor)>
                                     {{ $etiqueta }}
@@ -103,9 +95,12 @@
                         <tbody>
                             @forelse ($ventas as $venta)
                                 <tr>
-                                    <td>{{ $venta->sold_at->format('d/m/Y') }}</td>
+                                    <td>{{ $venta->vendida_en->format('d/m/Y') }}</td>
                                     <td>
-                                        <a href="{{ route('ventas.detalle', $venta) }}">{{ $venta->folio }}</a>
+                                        <x-boton variante="contorno" :href="route('ventas.detalle', $venta)" compacto>
+                                            Ver detalle
+                                        </x-boton>
+                                        <small class="detalle-tabla">{{ $venta->folio }}</small>
                                     </td>
                                     <td>
                                         <a href="{{ route('cotizaciones.detalle', $venta->cotizacion) }}">
@@ -127,6 +122,5 @@
                 </div>
                 @include('componentes.paginacion', ['paginador' => $ventas])
             </section>
-        </main>
-    </body>
-</html>
+
+@endsection

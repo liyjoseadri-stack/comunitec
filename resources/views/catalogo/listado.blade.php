@@ -1,23 +1,15 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Catálogo | Comunitec</title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
+@extends('layouts.aplicacion')
 
-        <main class="pagina-administrativa">
+@section('titulo', 'Catálogo')
+
+@section('contenido')
             <header class="encabezado-pagina">
                 <div>
                     <h1>Catálogo</h1>
                     <p>Administra los productos y servicios disponibles para las cotizaciones.</p>
                 </div>
                 <span class="contador-registros">
-                    {{ $items->count() }} {{ $items->count() === 1 ? 'concepto' : 'conceptos' }}
+                    {{ $articulos->count() }} {{ $articulos->count() === 1 ? 'concepto' : 'conceptos' }}
                 </span>
             </header>
 
@@ -49,19 +41,19 @@
 
                     <div class="campo-formulario">
                         <label for="tipo">Tipo de concepto</label>
-                        <select id="tipo" name="type" required>
-                            <option value="product" @selected(old('type', 'product') === 'product')>Producto</option>
-                            <option value="service" @selected(old('type') === 'service')>Servicio</option>
+                        <select id="tipo" name="tipo" required>
+                            <option value="producto" @selected(old('tipo', 'producto') === 'producto')>Producto</option>
+                            <option value="servicio" @selected(old('tipo') === 'servicio')>Servicio</option>
                         </select>
                     </div>
 
                     <div class="campo-formulario">
                         <label for="categoria">Categoría <span class="texto-opcional">(opcional)</span></label>
-                        <select id="categoria" name="category_id">
+                        <select id="categoria" name="categoria_id">
                             <option value="">Sin categoría</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>
-                                    {{ $category->name }}
+                            @foreach ($categorias as $categoria)
+                                <option value="{{ $categoria->id }}" @selected(old('categoria_id') == $categoria->id)>
+                                    {{ $categoria->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -69,40 +61,40 @@
 
                     <div class="campo-formulario campo-formulario--ancho">
                         <label for="nombre">Nombre <span aria-hidden="true">*</span></label>
-                        <input id="nombre" name="name" value="{{ old('name') }}" autocomplete="off" required>
+                        <input id="nombre" name="nombre" value="{{ old('nombre') }}" autocomplete="off" required>
                     </div>
 
                     <div class="campo-formulario">
                         <label for="codigo">Código <span aria-hidden="true">*</span></label>
-                        <input id="codigo" name="code" value="{{ old('code') }}" autocomplete="off" required>
+                        <input id="codigo" name="codigo" value="{{ old('codigo') }}" autocomplete="off" required>
                     </div>
 
                     <div class="campo-formulario">
                         <label for="unidad">Unidad <span aria-hidden="true">*</span></label>
-                        <input id="unidad" name="unit" value="{{ old('unit') }}" placeholder="Ej. pieza, servicio o metro" required>
+                        <input id="unidad" name="unidad" value="{{ old('unidad') }}" placeholder="Ej. pieza, servicio o metro" required>
                     </div>
 
                     <div class="campo-formulario">
                         <label for="marca">Marca <span class="texto-opcional">(opcional)</span></label>
-                        <input id="marca" name="brand" value="{{ old('brand') }}">
+                        <input id="marca" name="marca" value="{{ old('marca') }}">
                     </div>
 
                     <div class="campo-formulario">
                         <label for="modelo">Modelo <span class="texto-opcional">(opcional)</span></label>
-                        <input id="modelo" name="model" value="{{ old('model') }}">
+                        <input id="modelo" name="modelo" value="{{ old('modelo') }}">
                     </div>
 
                     <div class="campo-formulario">
                         <label for="precio">Precio con IVA</label>
                         <div class="entrada-con-prefijo">
                             <span aria-hidden="true">$</span>
-                            <input id="precio" name="price" type="number" min="0" step="0.01" value="{{ old('price') }}" inputmode="decimal" required>
+                            <input id="precio" name="precio" type="number" min="0" step="0.01" value="{{ old('precio') }}" inputmode="decimal" required>
                         </div>
                     </div>
 
                     <div class="campo-formulario">
                         <label for="existencias">Existencias iniciales</label>
-                        <input id="existencias" name="stock" type="number" min="0" step="1" value="{{ old('stock') }}" inputmode="numeric" aria-describedby="ayuda-existencias">
+                        <input id="existencias" name="existencias" type="number" min="0" step="1" value="{{ old('existencias') }}" inputmode="numeric" aria-describedby="ayuda-existencias">
                         <small id="ayuda-existencias">Obligatorio únicamente para productos.</small>
                     </div>
 
@@ -136,34 +128,36 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($items as $item)
+                            @forelse ($articulos as $articulo)
                                 <tr>
-                                    <td><strong>{{ $item->code }}</strong></td>
+                                    <td><strong>{{ $articulo->codigo }}</strong></td>
                                     <td>
-                                        {{ $item->name }}
-                                        @if ($item->brand || $item->model)
+                                        {{ $articulo->nombre }}
+                                        @if ($articulo->marca || $articulo->modelo)
                                             <small class="detalle-tabla">
-                                                {{ collect([$item->brand, $item->model])->filter()->join(' · ') }}
+                                                {{ collect([$articulo->marca, $articulo->modelo])->filter()->join(' · ') }}
                                             </small>
                                         @endif
                                     </td>
-                                    <td>{{ $item->category?->name ?? 'Sin categoría' }}</td>
+                                    <td>{{ $articulo->categoria?->nombre ?? 'Sin categoría' }}</td>
                                     <td>
                                         <span class="insignia-tipo">
-                                            {{ $item->type === 'product' ? 'Producto' : 'Servicio' }}
+                                            {{ $articulo->tipo === 'producto' ? 'Producto' : 'Servicio' }}
                                         </span>
                                     </td>
-                                    <td>{{ $item->unit }}</td>
-                                    <td>${{ number_format((float) $item->price, 2) }}</td>
-                                    <td>{{ $item->type === 'product' ? $item->stock : 'No aplica' }}</td>
-                                    <td>{{ $item->active ? 'Activo' : 'Inactivo' }}</td>
+                                    <td>{{ $articulo->unidad }}</td>
+                                    <td>${{ number_format((float) $articulo->precio, 2) }}</td>
+                                    <td>{{ $articulo->tipo === 'producto' ? $articulo->existencias : 'No aplica' }}</td>
                                     <td>
-                                        <form method="POST" action="{{ route('catalogo.estado', $item) }}">
+                                        <x-insignia-estado :estado="$articulo->activo ? 'activo' : 'inactivo'" />
+                                    </td>
+                                    <td>
+                                        <form method="POST" action="{{ route('catalogo.estado', $articulo) }}">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit">
-                                                {{ $item->active ? 'Desactivar' : 'Reactivar' }}
-                                            </button>
+                                            <x-boton :variante="$articulo->activo ? 'peligro' : 'exito'" tipo="submit" compacto>
+                                                {{ $articulo->activo ? 'Desactivar' : 'Reactivar' }}
+                                            </x-boton>
                                         </form>
                                     </td>
                                 </tr>
@@ -178,6 +172,5 @@
                     </table>
                 </div>
             </section>
-        </main>
-    </body>
-</html>
+
+@endsection

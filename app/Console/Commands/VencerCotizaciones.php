@@ -11,21 +11,21 @@ class VencerCotizaciones extends Command
     protected $signature = 'cotizaciones:vencer';
 
     protected $aliases = [
-        'quotes:expire',
+        'cotizaciones:vencer',
     ];
 
     protected $description = 'Vence cotizaciones pendientes y libera reservas aceptadas que vencieron';
 
     public function handle(): int
     {
-        $pendingCount = Cotizacion::where('status', 'pending')->whereNotNull('expires_at')->where('expires_at', '<=', now())->update([
-            'status' => 'expired',
+        $pendingCount = Cotizacion::where('estado', 'pendiente')->whereNotNull('vence_en')->where('vence_en', '<=', now())->update([
+            'estado' => 'vencida',
         ]);
-        $acceptedQuotes = Cotizacion::where('status', 'accepted')->whereNotNull('expires_at')->where('expires_at', '<=', now())->get();
+        $cotizacionesAceptadas = Cotizacion::where('estado', 'aceptada')->whereNotNull('vence_en')->where('vence_en', '<=', now())->get();
 
         $reservasLiberadas = 0;
-        foreach ($acceptedQuotes as $quote) {
-            if (app(ServicioInventarioCotizacion::class)->liberar($quote, soloSiVencida: true)) {
+        foreach ($cotizacionesAceptadas as $cotizacion) {
+            if (app(ServicioInventarioCotizacion::class)->liberar($cotizacion, soloSiVencida: true)) {
                 $reservasLiberadas++;
             }
         }

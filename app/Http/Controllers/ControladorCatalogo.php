@@ -11,54 +11,53 @@ class ControladorCatalogo extends Controller
     public function listar()
     {
         return view('catalogo.listado', [
-            'items' => ArticuloCatalogo::with('category')->orderBy('name')->get(),
-            'categories' => Categoria::where('active',
-                true)->orderBy('name')->get(),
+            'articulos' => ArticuloCatalogo::with('categoria')->orderBy('nombre')->get(),
+            'categorias' => Categoria::where('activo', true)->orderBy('nombre')->get(),
         ]);
     }
 
-    public function guardar(Request $request)
+    public function guardar(Request $solicitud)
     {
-        $datos = $request->validate([
-            'type' => [
+        $datos = $solicitud->validate([
+            'tipo' => [
                 'required',
-                'in:product,service',
+                'in:producto,servicio',
             ],
-            'name' => [
+            'nombre' => [
                 'required',
             ],
-            'code' => [
+            'codigo' => [
                 'required',
-                'unique:catalog_items,code',
+                'unique:articulos_catalogo,codigo',
             ],
-            'category_id' => [
+            'categoria_id' => [
                 'nullable',
-                'exists:categories,id',
+                'exists:categorias,id',
             ],
-            'brand' => [
-                'nullable',
-            ],
-            'model' => [
+            'marca' => [
                 'nullable',
             ],
-            'unit' => [
+            'modelo' => [
+                'nullable',
+            ],
+            'unidad' => [
                 'required',
             ],
-            'price' => [
+            'precio' => [
                 'required',
                 'numeric',
                 'min:0',
             ],
-            'stock' => [
+            'existencias' => [
                 'nullable',
-                'required_if:type,product',
+                'required_if:tipo,producto',
                 'integer',
                 'min:0',
             ],
         ]);
 
-        if ($datos['type'] === 'service') {
-            $datos['stock'] = 0;
+        if ($datos['tipo'] === 'servicio') {
+            $datos['existencias'] = 0;
         }
 
         ArticuloCatalogo::create($datos);
@@ -66,15 +65,15 @@ class ControladorCatalogo extends Controller
         return redirect()->route('catalogo.listado');
     }
 
-    public function actualizarEstado(ArticuloCatalogo $item)
+    public function actualizarEstado(ArticuloCatalogo $articulo)
     {
-        $item->update([
-            'active' => ! $item->active,
+        $articulo->update([
+            'activo' => ! $articulo->activo,
         ]);
 
         return redirect()->route('catalogo.listado')->with(
             'success',
-            $item->active ? 'El concepto fue reactivado.' : 'El concepto fue desactivado.'
+            $articulo->activo ? 'El concepto fue reactivado.' : 'El concepto fue desactivado.'
         );
     }
 }

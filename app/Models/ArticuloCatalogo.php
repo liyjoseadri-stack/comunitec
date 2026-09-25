@@ -2,40 +2,43 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
 use Illuminate\Database\Eloquent\Model;
 
 class ArticuloCatalogo extends Model
 {
-    protected $table = 'catalog_items';
+    use UsaMarcasTiempoEnEspanol;
+
+    protected $table = 'articulos_catalogo';
 
     protected $fillable = [
-        'type',
-        'name',
-        'code',
-        'category_id',
-        'brand',
-        'model',
-        'unit',
-        'price',
-        'stock',
-        'active',
+        'tipo',
+        'nombre',
+        'codigo',
+        'categoria_id',
+        'marca',
+        'modelo',
+        'unidad',
+        'precio',
+        'existencias',
+        'activo',
     ];
 
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:2',
-            'active' => 'boolean',
+            'precio' => 'decimal:2',
+            'activo' => 'boolean',
         ];
     }
 
-    public function category()
+    public function categoria()
     {
         return $this->belongsTo(Categoria::class);
     }
 
-    public function inventoryUnits()
+    public function piezasInventario()
     {
-        return $this->hasMany(PiezaInventario::class, 'catalog_item_id');
+        return $this->hasMany(PiezaInventario::class, 'articulo_catalogo_id');
     }
 }

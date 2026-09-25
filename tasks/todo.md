@@ -120,6 +120,24 @@ Este archivo refleja el plan aprobado en `tasks/plan.md`. Una tarea se marca al 
 
 Revisar permisos y transiciones restantes. El envío de Borrador a Pendiente ya ocurre después de que el transporte acepta el mensaje con PDF; los errores de transporte conservan estado y fechas. Reenviar no extiende la vigencia. El modo `log` no se presenta como envío real. La conversión a venta corresponde al bloque posterior del plan.
 
+## Entrega 8: traducción estructural al español
+
+- [x] Crear rama y respaldo previo a la migración.
+- [x] Definir y probar el contrato definitivo de tablas, columnas y valores en español.
+- [x] Reiniciar usuarios y autenticación con autorización expresa para vaciar la base.
+- [x] Traducir clientes, categorías, catálogo e inventario.
+- [x] Traducir cotizaciones, partidas, envíos, estados y reservas.
+- [x] Traducir ventas, partidas, copias históricas y métodos de pago.
+- [x] Traducir variables, relaciones, parámetros, formularios y pruebas propios.
+- [x] Sustituir las migraciones anteriores por un esquema nuevo completamente en español.
+- [x] Ejecutar una migración limpia de MySQL y crear el administrador desde variables locales.
+- [x] Ejecutar suite completa, Blade, formato, rutas, programación y revisión del esquema real.
+- [x] Documentar únicamente las excepciones técnicas impuestas por Laravel y sus protocolos.
+- [x] Crear el commit de Entrega 8 en español.
+- [ ] Subir la rama de la Entrega 8 al remoto.
+
+Verificación: MySQL quedó vacío y reconstruido con `migraciones`, `usuarios`, `clientes`, `categorias`, `articulos_catalogo`, `cotizaciones`, `partidas_cotizacion`, `piezas_inventario`, `envios_correo_cotizacion`, `ventas` y `partidas_venta`. Hay un administrador activo creado desde `.env`. Las 91 pruebas y 579 aserciones aprobaron; Pint, rutas, tarea programada y `git diff --check` aprobaron. Vite continúa bloqueado únicamente dentro del sandbox de Codex porque `esbuild` intenta leer un directorio superior; la compilación local anterior del usuario fue exitosa.
+
 ## Verificación del 23 de septiembre de 2026
 
 - Corrección de legibilidad solicitada por el usuario: clases, arreglos, migraciones, pruebas, traducciones y plantillas expandidos con sangría. CSS del PDF estructurado. Revisión final sin líneas mayores de 180 caracteres en `app`, `database`, `routes`, `tests`, `lang` y `resources`.

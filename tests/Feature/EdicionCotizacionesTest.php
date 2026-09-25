@@ -20,111 +20,111 @@ class EdicionCotizacionesTest extends TestCase
 
     public function test_editar_una_aceptada_libera_reservas_y_exige_nueva_aceptacion(): void
     {
-        [$cotizacion, $partida, $pieza] = $this->preparar('accepted');
+        [$cotizacion, $partida, $pieza] = $this->preparar('aceptada');
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
 
-            'type' => 'product',
-            'catalog_item_id' => $pieza->catalog_item_id,
+            'tipo' => 'producto',
+            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
 
-            'description' => 'Monitor actualizado',
-            'quantity' => 2,
-            'unit_price' => 500,
+            'descripcion' => 'Monitor actualizado',
+            'cantidad' => 2,
+            'precio_unitario' => 500,
 
         ])->assertRedirect();
-        $this->assertSame('pending', $cotizacion->fresh()->status);
-        $this->assertNull($cotizacion->fresh()->accepted_at);
+        $this->assertSame('pendiente', $cotizacion->fresh()->estado);
+        $this->assertNull($cotizacion->fresh()->aceptada_en);
         $this->assertSame('950.00', $cotizacion->fresh()->total);
-        $this->assertDatabaseHas('inventory_units', [
+        $this->assertDatabaseHas('piezas_inventario', [
             'id' => $pieza->id,
-            'status' => 'available',
-            'quote_id' => null,
+            'estado' => 'disponible',
+            'cotizacion_id' => null,
         ]);
-        $this->assertDatabaseHas('quote_lines', [
+        $this->assertDatabaseHas('partidas_cotizacion', [
             'id' => $partida->id,
-            'description' => 'Monitor actualizado',
-            'quantity' => 2,
+            'descripcion' => 'Monitor actualizado',
+            'cantidad' => 2,
         ]);
     }
 
     public function test_datos_invalidos_conservan_la_aceptacion_y_sus_reservas(): void
     {
-        [$cotizacion, $partida, $pieza] = $this->preparar('accepted');
+        [$cotizacion, $partida, $pieza] = $this->preparar('aceptada');
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
 
-            'type' => 'product',
-            'catalog_item_id' => $pieza->catalog_item_id,
+            'tipo' => 'producto',
+            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
 
-            'description' => 'Monitor',
-            'quantity' => 1.5,
-            'unit_price' => 500,
+            'descripcion' => 'Monitor',
+            'cantidad' => 1.5,
+            'precio_unitario' => 500,
 
-        ])->assertSessionHasErrors('quantity');
-        $this->assertSame('accepted', $cotizacion->fresh()->status);
-        $this->assertSame('reserved', $pieza->fresh()->status);
+        ])->assertSessionHasErrors('cantidad');
+        $this->assertSame('aceptada', $cotizacion->fresh()->estado);
+        $this->assertSame('reservada', $pieza->fresh()->estado);
     }
 
     public function test_no_se_pueden_eliminar_partidas_de_cotizaciones_canceladas(): void
     {
-        [$cotizacion, $partida] = $this->preparar('cancelled');
+        [$cotizacion, $partida] = $this->preparar('cancelada');
         $this->delete("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}")->assertStatus(422);
-        $this->assertDatabaseHas('quote_lines', [
+        $this->assertDatabaseHas('partidas_cotizacion', [
             'id' => $partida->id,
         ]);
     }
 
     public function test_editar_encabezado_recalcula_y_libera_la_aceptacion(): void
     {
-        [$cotizacion, $partida, $pieza] = $this->preparar('accepted');
+        [$cotizacion, $partida, $pieza] = $this->preparar('aceptada');
         $this->put("/cotizaciones/{$cotizacion->id}", [
 
-            'customer_id' => $cotizacion->customer_id,
-            'area_requesting' => 'Compras',
+            'cliente_id' => $cotizacion->cliente_id,
+            'area_solicitante' => 'Compras',
 
-            'discount_percent' => 10,
+            'porcentaje_descuento' => 10,
             'total' => 1,
-            'status' => 'accepted',
+            'estado' => 'aceptada',
 
         ])->assertRedirect();
         $this->assertSame('450.00', $cotizacion->fresh()->total);
-        $this->assertSame('pending', $cotizacion->fresh()->status);
-        $this->assertSame('Compras', $cotizacion->fresh()->area_requesting);
-        $this->assertNull($cotizacion->fresh()->accepted_at);
-        $this->assertSame('available', $pieza->fresh()->status);
+        $this->assertSame('pendiente', $cotizacion->fresh()->estado);
+        $this->assertSame('Compras', $cotizacion->fresh()->area_solicitante);
+        $this->assertNull($cotizacion->fresh()->aceptada_en);
+        $this->assertSame('disponible', $pieza->fresh()->estado);
     }
 
     public function test_descuento_fuera_del_rango_conserva_las_reservas(): void
     {
-        [$cotizacion, , $pieza] = $this->preparar('accepted');
+        [$cotizacion, , $pieza] = $this->preparar('aceptada');
         $this->put("/cotizaciones/{$cotizacion->id}", [
 
-            'customer_id' => $cotizacion->customer_id,
-            'discount_percent' => 3,
+            'cliente_id' => $cotizacion->cliente_id,
+            'porcentaje_descuento' => 3,
 
-        ])->assertSessionHasErrors('discount_percent');
-        $this->assertSame('accepted', $cotizacion->fresh()->status);
-        $this->assertSame('reserved', $pieza->fresh()->status);
+        ])->assertSessionHasErrors('porcentaje_descuento');
+        $this->assertSame('aceptada', $cotizacion->fresh()->estado);
+        $this->assertSame('reservada', $pieza->fresh()->estado);
     }
 
     public function test_guardar_encabezado_sin_cambios_conserva_la_aceptacion(): void
     {
-        [$cotizacion, , $pieza] = $this->preparar('accepted');
+        [$cotizacion, , $pieza] = $this->preparar('aceptada');
         $this->put("/cotizaciones/{$cotizacion->id}", [
 
-            'customer_id' => $cotizacion->customer_id,
-            'discount_percent' => 5,
+            'cliente_id' => $cotizacion->cliente_id,
+            'porcentaje_descuento' => 5,
 
         ])->assertRedirect();
-        $this->assertSame('accepted', $cotizacion->fresh()->status);
-        $this->assertSame('reserved', $pieza->fresh()->status);
+        $this->assertSame('aceptada', $cotizacion->fresh()->estado);
+        $this->assertSame('reservada', $pieza->fresh()->estado);
     }
 
     public function test_no_se_puede_editar_encabezado_de_una_cancelada(): void
     {
-        [$cotizacion] = $this->preparar('cancelled');
+        [$cotizacion] = $this->preparar('cancelada');
         $this->put("/cotizaciones/{$cotizacion->id}", [
 
-            'customer_id' => $cotizacion->customer_id,
-            'discount_percent' => 10,
+            'cliente_id' => $cotizacion->cliente_id,
+            'porcentaje_descuento' => 10,
 
         ])->assertStatus(422);
         $this->assertSame('475.00', $cotizacion->fresh()->total);
@@ -132,45 +132,45 @@ class EdicionCotizacionesTest extends TestCase
 
     public function test_crear_rechaza_descuentos_menores_al_cinco_por_ciento(): void
     {
-        [$cotizacion] = $this->preparar('draft');
+        [$cotizacion] = $this->preparar('borrador');
         $this->post('/cotizaciones', [
-            'customer_id' => $cotizacion->customer_id,
-            'discount_percent' => 3,
+            'cliente_id' => $cotizacion->cliente_id,
+            'porcentaje_descuento' => 3,
         ])
-            ->assertSessionHasErrors('discount_percent');
-        $this->assertDatabaseCount('quotes', 1);
+            ->assertSessionHasErrors('porcentaje_descuento');
+        $this->assertDatabaseCount('cotizaciones', 1);
     }
 
     public function test_dos_cotizaciones_en_el_mismo_instante_tienen_folios_distintos(): void
     {
         $this->freezeTime();
-        [$cotizacion] = $this->preparar('draft');
+        [$cotizacion] = $this->preparar('borrador');
         foreach ([
             1,
             2,
         ] as $intento) {
             $this->post('/cotizaciones', [
-                'customer_id' => $cotizacion->customer_id,
+                'cliente_id' => $cotizacion->cliente_id,
             ])
                 ->assertRedirect('/cotizaciones');
         }
         $this->assertSame(3, Cotizacion::distinct()->count('folio'));
-        $this->assertSame('0.00', Cotizacion::latest('id')->first()->discount_percent);
+        $this->assertSame('0.00', Cotizacion::latest('id')->first()->porcentaje_descuento);
     }
 
     public function test_la_advertencia_suma_partidas_del_mismo_producto(): void
     {
-        [$cotizacion, $partida, $pieza] = $this->preparar('draft');
+        [$cotizacion, $partida, $pieza] = $this->preparar('borrador');
         $pieza->update([
-            'status' => 'available',
-            'quote_id' => null,
+            'estado' => 'disponible',
+            'cotizacion_id' => null,
         ]);
-        $cotizacion->lines()->create([
-            'type' => 'product',
-            'catalog_item_id' => $pieza->catalog_item_id,
-            'description' => 'Monitor adicional',
-            'quantity' => 1,
-            'unit_price' => 500,
+        $cotizacion->partidas()->create([
+            'tipo' => 'producto',
+            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+            'descripcion' => 'Monitor adicional',
+            'cantidad' => 1,
+            'precio_unitario' => 500,
             'subtotal' => 500,
         ]);
         $this->get("/cotizaciones/{$cotizacion->id}")->assertOk()
@@ -179,47 +179,47 @@ class EdicionCotizacionesTest extends TestCase
 
     public function test_faltantes_en_partidas_repetidas_no_dejan_reservas_parciales(): void
     {
-        [$cotizacion, $partida, $pieza] = $this->preparar('pending');
+        [$cotizacion, $partida, $pieza] = $this->preparar('pendiente');
         $pieza->update([
-            'status' => 'available',
-            'quote_id' => null,
+            'estado' => 'disponible',
+            'cotizacion_id' => null,
         ]);
-        $cotizacion->lines()->create([
-            'type' => 'product',
-            'catalog_item_id' => $pieza->catalog_item_id,
-            'description' => 'Monitor adicional',
-            'quantity' => 1,
-            'unit_price' => 500,
+        $cotizacion->partidas()->create([
+            'tipo' => 'producto',
+            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+            'descripcion' => 'Monitor adicional',
+            'cantidad' => 1,
+            'precio_unitario' => 500,
             'subtotal' => 500,
         ]);
         $this->post("/cotizaciones/{$cotizacion->id}/aceptar")->assertSessionHas('error');
-        $this->assertSame('pending', $cotizacion->fresh()->status);
-        $this->assertSame('available', $pieza->fresh()->status);
-        $this->assertNull($pieza->fresh()->quote_id);
+        $this->assertSame('pendiente', $cotizacion->fresh()->estado);
+        $this->assertSame('disponible', $pieza->fresh()->estado);
+        $this->assertNull($pieza->fresh()->cotizacion_id);
     }
 
     public function test_no_se_acepta_una_cotizacion_fuera_de_vigencia(): void
     {
-        [$cotizacion, , $pieza] = $this->preparar('pending');
+        [$cotizacion, , $pieza] = $this->preparar('pendiente');
         $cotizacion->update([
-            'expires_at' => now()->subSecond(),
+            'vence_en' => now()->subSecond(),
         ]);
         $pieza->update([
-            'status' => 'available',
-            'quote_id' => null,
+            'estado' => 'disponible',
+            'cotizacion_id' => null,
         ]);
         $this->post("/cotizaciones/{$cotizacion->id}/aceptar")->assertSessionHasErrors('cotizacion');
-        $this->assertSame('pending', $cotizacion->fresh()->status);
-        $this->assertSame('available', $pieza->fresh()->status);
+        $this->assertSame('pendiente', $cotizacion->fresh()->estado);
+        $this->assertSame('disponible', $pieza->fresh()->estado);
     }
 
     public function test_el_servicio_no_puede_reservar_dos_veces_una_cotizacion(): void
     {
-        [$cotizacion, , $pieza] = $this->preparar('accepted');
+        [$cotizacion, , $pieza] = $this->preparar('aceptada');
         $adicional = PiezaInventario::create([
-            'catalog_item_id' => $pieza->catalog_item_id,
-            'serial_number' => 'OTRA-SERIE',
-            'status' => 'available',
+            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+            'numero_serie' => 'OTRA-SERIE',
+            'estado' => 'disponible',
         ]);
         try {
             app(ServicioInventarioCotizacion::class)->reservar($cotizacion);
@@ -227,43 +227,43 @@ class EdicionCotizacionesTest extends TestCase
         } catch (ValidationException $excepcion) {
             $this->assertArrayHasKey('cotizacion', $excepcion->errors());
         }
-        $this->assertSame('available', $adicional->fresh()->status);
+        $this->assertSame('disponible', $adicional->fresh()->estado);
     }
 
     public function test_el_vencimiento_respeta_una_vigencia_actualizada(): void
     {
-        [$cotizacion, , $pieza] = $this->preparar('accepted');
-        $cotizacion->update(['expires_at' => now()->subMinute()]);
-        Cotizacion::whereKey($cotizacion->id)->update(['expires_at' => now()->addDays(5)]);
+        [$cotizacion, , $pieza] = $this->preparar('aceptada');
+        $cotizacion->update(['vence_en' => now()->subMinute()]);
+        Cotizacion::whereKey($cotizacion->id)->update(['vence_en' => now()->addDays(5)]);
 
         $liberada = app(ServicioInventarioCotizacion::class)->liberar($cotizacion, soloSiVencida: true);
 
         $this->assertFalse($liberada);
-        $this->assertSame('accepted', $cotizacion->fresh()->status);
-        $this->assertSame('reserved', $pieza->fresh()->status);
+        $this->assertSame('aceptada', $cotizacion->fresh()->estado);
+        $this->assertSame('reservada', $pieza->fresh()->estado);
     }
 
     public function test_una_copia_antigua_no_cancela_una_cotizacion_que_volvio_a_pendiente(): void
     {
-        [$cotizacion, , $pieza] = $this->preparar('accepted');
-        Cotizacion::whereKey($cotizacion->id)->update(['status' => 'pending']);
+        [$cotizacion, , $pieza] = $this->preparar('aceptada');
+        Cotizacion::whereKey($cotizacion->id)->update(['estado' => 'pendiente']);
 
         $liberada = app(ServicioInventarioCotizacion::class)->liberar($cotizacion, soloSiVencida: true);
 
         $this->assertFalse($liberada);
-        $this->assertSame('pending', $cotizacion->fresh()->status);
-        $this->assertSame('reserved', $pieza->fresh()->status);
+        $this->assertSame('pendiente', $cotizacion->fresh()->estado);
+        $this->assertSame('reservada', $pieza->fresh()->estado);
     }
 
     public function test_el_formulario_muestra_el_error_y_conserva_los_datos(): void
     {
-        [$cotizacion] = $this->preparar('draft');
+        [$cotizacion] = $this->preparar('borrador');
 
         $this->from('/cotizaciones')->post('/cotizaciones', [
-            'customer_id' => $cotizacion->customer_id,
-            'area_requesting' => 'Administración',
-            'discount_percent' => 3,
-        ])->assertRedirect('/cotizaciones')->assertSessionHasErrors('discount_percent');
+            'cliente_id' => $cotizacion->cliente_id,
+            'area_solicitante' => 'Administración',
+            'porcentaje_descuento' => 3,
+        ])->assertRedirect('/cotizaciones')->assertSessionHasErrors('porcentaje_descuento');
 
         $this->get('/cotizaciones')->assertOk()
             ->assertSee('El descuento debe ser 0 (sin descuento) o estar entre 5% y 10%.')
@@ -273,20 +273,20 @@ class EdicionCotizacionesTest extends TestCase
 
     public function test_cancelar_relee_el_estado_y_libera_una_aceptacion_reciente(): void
     {
-        [$cotizacion, , $pieza] = $this->preparar('pending');
-        Cotizacion::whereKey($cotizacion->id)->update(['status' => 'accepted']);
+        [$cotizacion, , $pieza] = $this->preparar('pendiente');
+        Cotizacion::whereKey($cotizacion->id)->update(['estado' => 'aceptada']);
 
         app(ControladorCotizaciones::class)->cancelar($cotizacion);
 
-        $this->assertSame('cancelled', $cotizacion->fresh()->status);
-        $this->assertSame('available', $pieza->fresh()->status);
-        $this->assertNull($pieza->fresh()->quote_id);
+        $this->assertSame('cancelada', $cotizacion->fresh()->estado);
+        $this->assertSame('disponible', $pieza->fresh()->estado);
+        $this->assertNull($pieza->fresh()->cotizacion_id);
     }
 
     public function test_rechazar_no_sobrescribe_una_aceptacion_reciente(): void
     {
-        [$cotizacion, , $pieza] = $this->preparar('pending');
-        Cotizacion::whereKey($cotizacion->id)->update(['status' => 'accepted']);
+        [$cotizacion, , $pieza] = $this->preparar('pendiente');
+        Cotizacion::whereKey($cotizacion->id)->update(['estado' => 'aceptada']);
 
         try {
             app(ControladorCotizaciones::class)->rechazar($cotizacion);
@@ -295,42 +295,42 @@ class EdicionCotizacionesTest extends TestCase
             $this->assertSame(422, $error->getStatusCode());
         }
 
-        $this->assertSame('accepted', $cotizacion->fresh()->status);
-        $this->assertSame('reserved', $pieza->fresh()->status);
+        $this->assertSame('aceptada', $cotizacion->fresh()->estado);
+        $this->assertSame('reservada', $pieza->fresh()->estado);
     }
 
     public function test_no_se_puede_agregar_un_articulo_desactivado_por_solicitud_directa(): void
     {
-        [$cotizacion, , $pieza] = $this->preparar('draft');
-        ArticuloCatalogo::whereKey($pieza->catalog_item_id)->update(['active' => false]);
+        [$cotizacion, , $pieza] = $this->preparar('borrador');
+        ArticuloCatalogo::whereKey($pieza->articulo_catalogo_id)->update(['activo' => false]);
 
         $this->post("/cotizaciones/{$cotizacion->id}/partidas", [
-            'type' => 'product',
-            'catalog_item_id' => $pieza->catalog_item_id,
-            'quantity' => 1,
-        ])->assertSessionHasErrors('catalog_item_id');
+            'tipo' => 'producto',
+            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+            'cantidad' => 1,
+        ])->assertSessionHasErrors('articulo_catalogo_id');
 
-        $this->assertDatabaseCount('quote_lines', 1);
+        $this->assertDatabaseCount('partidas_cotizacion', 1);
         $this->assertSame('475.00', $cotizacion->fresh()->total);
     }
 
     public function test_editar_una_partida_conserva_el_precio_cotizado_aunque_cambie_el_catalogo(): void
     {
-        [$cotizacion, $partida, $pieza] = $this->preparar('draft');
-        ArticuloCatalogo::whereKey($pieza->catalog_item_id)->update(['price' => 900]);
+        [$cotizacion, $partida, $pieza] = $this->preparar('borrador');
+        ArticuloCatalogo::whereKey($pieza->articulo_catalogo_id)->update(['precio' => 900]);
 
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
-            'type' => 'product',
-            'catalog_item_id' => $pieza->catalog_item_id,
-            'description' => 'Monitor para recepción',
-            'quantity' => 2,
+            'tipo' => 'producto',
+            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+            'descripcion' => 'Monitor para recepción',
+            'cantidad' => 2,
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('quote_lines', [
+        $this->assertDatabaseHas('partidas_cotizacion', [
             'id' => $partida->id,
-            'description' => 'Monitor para recepción',
-            'quantity' => 2,
-            'unit_price' => 500,
+            'descripcion' => 'Monitor para recepción',
+            'cantidad' => 2,
+            'precio_unitario' => 500,
             'subtotal' => 1000,
         ]);
         $this->assertSame('950.00', $cotizacion->fresh()->total);
@@ -338,20 +338,20 @@ class EdicionCotizacionesTest extends TestCase
 
     public function test_desactivar_el_articulo_no_bloquea_la_edicion_de_su_partida_historica(): void
     {
-        [$cotizacion, $partida, $pieza] = $this->preparar('draft');
-        ArticuloCatalogo::whereKey($pieza->catalog_item_id)->update(['active' => false]);
+        [$cotizacion, $partida, $pieza] = $this->preparar('borrador');
+        ArticuloCatalogo::whereKey($pieza->articulo_catalogo_id)->update(['activo' => false]);
 
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
-            'type' => 'product',
-            'catalog_item_id' => $pieza->catalog_item_id,
-            'description' => 'Monitor conservado en el historial',
-            'quantity' => 2,
+            'tipo' => 'producto',
+            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+            'descripcion' => 'Monitor conservado en el historial',
+            'cantidad' => 2,
         ])->assertSessionDoesntHaveErrors();
 
-        $this->assertDatabaseHas('quote_lines', [
+        $this->assertDatabaseHas('partidas_cotizacion', [
             'id' => $partida->id,
-            'description' => 'Monitor conservado en el historial',
-            'unit_price' => 500,
+            'descripcion' => 'Monitor conservado en el historial',
+            'precio_unitario' => 500,
             'subtotal' => 1000,
         ]);
     }
@@ -359,48 +359,48 @@ class EdicionCotizacionesTest extends TestCase
     private function preparar(string $estado): array
     {
         $usuario = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
         $this->actingAs($usuario);
         $cliente = Cliente::create([
-            'type' => 'fisica',
-            'name' => 'Ana',
+            'tipo' => 'fisica',
+            'nombre' => 'Ana',
             'rfc' => 'ANA010101AA1',
-            'email' => 'ana@example.test',
-            'phone' => '9610000000',
-            'address' => 'Domicilio de prueba',
-            'postal_code' => '29000',
+            'correo' => 'ana@example.test',
+            'telefono' => '9610000000',
+            'direccion' => 'Domicilio de prueba',
+            'codigo_postal' => '29000',
         ]);
         $articulo = ArticuloCatalogo::create([
-            'type' => 'product',
-            'name' => 'Monitor',
-            'code' => 'MON-EDITAR',
-            'unit' => 'pieza',
-            'price' => 500,
-            'stock' => 1,
+            'tipo' => 'producto',
+            'nombre' => 'Monitor',
+            'codigo' => 'MON-EDITAR',
+            'unidad' => 'pieza',
+            'precio' => 500,
+            'existencias' => 1,
         ]);
         $cotizacion = Cotizacion::create([
             'folio' => 'COT-EDITAR',
-            'customer_id' => $cliente->id,
-            'user_id' => $usuario->id,
-            'status' => $estado,
-            'accepted_at' => now(),
-            'discount_percent' => 5,
+            'cliente_id' => $cliente->id,
+            'usuario_id' => $usuario->id,
+            'estado' => $estado,
+            'aceptada_en' => now(),
+            'porcentaje_descuento' => 5,
             'total' => 475,
         ]);
-        $partida = $cotizacion->lines()->create([
-            'type' => 'product',
-            'catalog_item_id' => $articulo->id,
-            'description' => 'Monitor',
-            'quantity' => 1,
-            'unit_price' => 500,
+        $partida = $cotizacion->partidas()->create([
+            'tipo' => 'producto',
+            'articulo_catalogo_id' => $articulo->id,
+            'descripcion' => 'Monitor',
+            'cantidad' => 1,
+            'precio_unitario' => 500,
             'subtotal' => 500,
         ]);
         $pieza = PiezaInventario::create([
-            'catalog_item_id' => $articulo->id,
-            'serial_number' => 'SERIE-EDITAR',
-            'status' => 'reserved',
-            'quote_id' => $cotizacion->id,
+            'articulo_catalogo_id' => $articulo->id,
+            'numero_serie' => 'SERIE-EDITAR',
+            'estado' => 'reservada',
+            'cotizacion_id' => $cotizacion->id,
         ]);
 
         return [

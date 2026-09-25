@@ -1,16 +1,8 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Reporte de cotizaciones | Comunitec</title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
+@extends('layouts.aplicacion')
 
-        <main class="pagina-administrativa">
+@section('titulo', 'Reporte de cotizaciones')
+
+@section('contenido')
             <header class="encabezado-pagina">
                 <div>
                     <h1>Reporte de cotizaciones</h1>
@@ -45,7 +37,7 @@
                             <option value="">Todos</option>
                             @foreach ($clientes as $cliente)
                                 <option value="{{ $cliente->id }}" @selected(($filtros['cliente'] ?? null) == $cliente->id)>
-                                    {{ $cliente->name }}
+                                    {{ $cliente->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -56,7 +48,7 @@
                             <option value="">Todos</option>
                             @foreach ($responsables as $responsable)
                                 <option value="{{ $responsable->id }}" @selected(($filtros['responsable'] ?? null) == $responsable->id)>
-                                    {{ $responsable->name }}
+                                    {{ $responsable->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -66,12 +58,12 @@
                         <select id="estado" name="estado">
                             <option value="">Todos</option>
                             @foreach ([
-                                'draft' => 'Borrador',
-                                'pending' => 'Pendiente',
-                                'accepted' => 'Aceptada',
-                                'rejected' => 'Rechazada',
-                                'cancelled' => 'Cancelada',
-                                'expired' => 'Vencida',
+                                'borrador' => 'Borrador',
+                                'pendiente' => 'Pendiente',
+                                'aceptada' => 'Aceptada',
+                                'rechazada' => 'Rechazada',
+                                'cancelada' => 'Cancelada',
+                                'vencida' => 'Vencida',
                             ] as $valor => $etiqueta)
                                 <option value="{{ $valor }}" @selected(($filtros['estado'] ?? null) === $valor)>
                                     {{ $etiqueta }}
@@ -104,15 +96,18 @@
                         <tbody>
                             @forelse ($cotizaciones as $cotizacion)
                                 <tr>
-                                    <td>{{ $cotizacion->created_at->format('d/m/Y') }}</td>
+                                    <td>{{ $cotizacion->creado_en->format('d/m/Y') }}</td>
                                     <td>
-                                        <a href="{{ route('cotizaciones.detalle', $cotizacion) }}">
-                                            {{ $cotizacion->folio }}
-                                        </a>
+                                        <x-boton variante="contorno" :href="route('cotizaciones.detalle', $cotizacion)" compacto>
+                                            Ver detalle
+                                        </x-boton>
+                                        <small class="detalle-tabla">{{ $cotizacion->folio }}</small>
                                     </td>
-                                    <td>{{ $cotizacion->customer->name }}</td>
-                                    <td>{{ $cotizacion->responsable->name }}</td>
-                                    <td>{{ $cotizacion->etiquetaEstado() }}</td>
+                                    <td>{{ $cotizacion->cliente->nombre }}</td>
+                                    <td>{{ $cotizacion->responsable->nombre }}</td>
+                                    <td>
+                                        <x-insignia-estado :estado="$cotizacion->estado" :etiqueta="$cotizacion->etiquetaEstado()" />
+                                    </td>
                                     <td>${{ number_format((float) $cotizacion->total, 2) }}</td>
                                 </tr>
                             @empty
@@ -125,6 +120,5 @@
                 </div>
                 @include('componentes.paginacion', ['paginador' => $cotizaciones])
             </section>
-        </main>
-    </body>
-</html>
+
+@endsection
