@@ -102,6 +102,7 @@ class ServicioConversionVenta
             }
 
             $cotizacion->update([
+                'estado' => Cotizacion::ESTADO_VENTA,
                 'vence_en' => null,
             ]);
 
@@ -111,14 +112,14 @@ class ServicioConversionVenta
 
     private function validarCotizacion(Cotizacion $cotizacion): void
     {
-        if ($cotizacion->estado !== 'aceptada') {
-            throw ValidationException::withMessages([
-                'cotizacion' => 'Solo una cotización aceptada puede convertirse en venta.',
-            ]);
-        }
         if ($cotizacion->venta()->exists()) {
             throw ValidationException::withMessages([
                 'cotizacion' => 'Esta cotización ya fue convertida en venta.',
+            ]);
+        }
+        if ($cotizacion->estado !== 'aceptada') {
+            throw ValidationException::withMessages([
+                'cotizacion' => 'Solo una cotización aceptada puede convertirse en venta.',
             ]);
         }
         if ($cotizacion->vence_en === null || $cotizacion->vence_en->lessThanOrEqualTo(now())) {

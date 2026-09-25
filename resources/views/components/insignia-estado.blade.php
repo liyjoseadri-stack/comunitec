@@ -3,7 +3,7 @@
 @php
     $estadoNormalizado = strtolower((string) $estado);
     $clase = match ($estadoNormalizado) {
-        'aceptada', 'activo', 'disponible', 'entregada', 'cerrada' => 'exito',
+        'aceptada', 'venta', 'activo', 'disponible', 'entregada', 'cerrada' => 'exito',
         'pendiente', 'reservada', 'borrador' => 'advertencia',
         'rechazada', 'cancelada', 'vencida', 'inactivo' => 'peligro',
         default => 'neutra',

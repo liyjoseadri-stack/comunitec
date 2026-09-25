@@ -9,6 +9,20 @@ class Cotizacion extends Model
 {
     use UsaMarcasTiempoEnEspanol;
 
+    public const ESTADO_BORRADOR = 'borrador';
+
+    public const ESTADO_PENDIENTE = 'pendiente';
+
+    public const ESTADO_ACEPTADA = 'aceptada';
+
+    public const ESTADO_RECHAZADA = 'rechazada';
+
+    public const ESTADO_CANCELADA = 'cancelada';
+
+    public const ESTADO_VENCIDA = 'vencida';
+
+    public const ESTADO_VENTA = 'venta';
+
     protected $table = 'cotizaciones';
 
     protected $fillable = [
@@ -69,6 +83,7 @@ class Cotizacion extends Model
             'rechazada' => 'Rechazada',
             'cancelada' => 'Cancelada',
             'vencida' => 'Vencida',
+            self::ESTADO_VENTA => 'Venta',
             default => 'Sin definir',
         };
     }
@@ -82,6 +97,7 @@ class Cotizacion extends Model
             'rechazada',
             'cancelada',
             'vencida',
+            self::ESTADO_VENTA,
         ];
     }
 }

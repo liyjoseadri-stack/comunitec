@@ -64,6 +64,7 @@
                                 'rechazada' => 'Rechazada',
                                 'cancelada' => 'Cancelada',
                                 'vencida' => 'Vencida',
+                                'venta' => 'Venta',
                             ] as $valor => $etiqueta)
                                 <option value="{{ $valor }}" @selected(($filtros['estado'] ?? null) === $valor)>
                                     {{ $etiqueta }}

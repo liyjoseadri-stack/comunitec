@@ -37,13 +37,18 @@ class ControladorPanel extends Controller
             'rechazada',
             'cancelada',
             'vencida',
+            Cotizacion::ESTADO_VENTA,
         ])->mapWithKeys(fn (string $estado): array => [
             $estado => (int) ($conteos[$estado] ?? 0),
         ])->all();
         $totalCotizaciones = array_sum($resumenCotizaciones);
         $porcentajeAceptacion = $totalCotizaciones === 0
             ? 0.0
-            : round($resumenCotizaciones['aceptada'] * 100 / $totalCotizaciones, 1);
+            : round(
+                ($resumenCotizaciones['aceptada'] + $resumenCotizaciones[Cotizacion::ESTADO_VENTA])
+                * 100 / $totalCotizaciones,
+                1
+            );
 
         $consultaVentas = Venta::query()
             ->where('vendida_en', '>=', $periodo->inicio)

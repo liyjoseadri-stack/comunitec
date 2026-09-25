@@ -46,6 +46,7 @@
                     'rechazada' => 'Rechazadas',
                     'cancelada' => 'Canceladas',
                     'vencida' => 'Vencidas',
+                    'venta' => 'Ventas',
                 ] as $estado => $etiqueta)
                     <a class="tarjeta-indicador" href="{{ route('reportes.cotizaciones', [
                         'desde' => $periodo->inicio->format('Y-m-d'),

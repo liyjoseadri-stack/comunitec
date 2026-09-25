@@ -500,7 +500,7 @@ class VentasTest extends TestCase
             'cantidad' => 2,
         ])->assertStatus(422);
 
-        $this->assertSame('aceptada', $cotizacion->fresh()->estado);
+        $this->assertSame('venta', $cotizacion->fresh()->estado);
         $this->assertSame('Equipo físico', $partidaProducto->fresh()->descripcion);
         foreach ($piezas as $pieza) {
             $this->assertSame('entregada', $pieza->fresh()->estado);
