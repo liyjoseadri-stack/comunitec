@@ -34,4 +34,9 @@ class PartidaCotizacion extends Model
     {
         return $this->belongsTo(Cotizacion::class, 'cotizacion_id');
     }
+
+    public function articulo()
+    {
+        return $this->belongsTo(ArticuloCatalogo::class, 'articulo_catalogo_id');
+    }
 }

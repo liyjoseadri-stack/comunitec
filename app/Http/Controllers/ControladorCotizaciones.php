@@ -70,7 +70,7 @@ class ControladorCotizaciones extends Controller
         return Pdf::loadView('cotizaciones.pdf', [
             'cotizacion' => $cotizacion->load(
                 'cliente',
-                'partidas',
+                'partidas.articulo',
                 'responsable'
             ),
         ])->download("{$cotizacion->folio}.pdf");

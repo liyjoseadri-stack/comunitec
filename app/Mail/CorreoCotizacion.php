@@ -29,6 +29,8 @@ class CorreoCotizacion extends Mailable
 
     public function attachments(): array
     {
+        $this->cotizacion->loadMissing('cliente', 'partidas.articulo', 'responsable');
+
         return [
 
             Attachment::fromData(

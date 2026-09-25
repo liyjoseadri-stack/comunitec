@@ -206,8 +206,31 @@ class CotizacionesTest extends TestCase
         $this->assertStringContainsString('COT-PDF-1', $contenido);
         $this->assertStringContainsString('Marta', $contenido);
         $this->assertStringContainsString('Configuración especializada', $contenido);
-        $this->assertStringContainsString('5.00%', $contenido);
+        $this->assertStringContainsString('CARACTERÍSTICAS', $contenido);
+        $this->assertStringContainsString('class="totales"', $contenido);
+        $this->assertStringContainsString('SUBTOTAL:', $contenido);
+        $this->assertStringContainsString('DESCUENTO (5.00%):', $contenido);
+        $this->assertStringContainsString('-$75.00', $contenido);
+        $this->assertStringContainsString('IVA:', $contenido);
+        $this->assertStringNotContainsString('<table class="resumen">', $contenido);
+        $this->assertStringContainsString('Tiempo de entrega: 5 días hábiles', $contenido);
+        $this->assertStringContainsString('L.I. RICARDO VELÁZQUEZ HERNÁNDEZ', $contenido);
+        $this->assertStringContainsString('servicios.comunitec@gmail.com', $contenido);
+        $this->assertStringContainsString('nube-comunitec-marca-agua-pdf.jpg', $contenido);
         $this->assertStringContainsString('$1,425.00', $contenido);
+
+        $cotizacion->update([
+            'porcentaje_descuento' => 0,
+            'total' => 1500,
+        ]);
+
+        $contenidoSinDescuento = view('cotizaciones.pdf', [
+            'cotizacion' => $cotizacion->fresh()->load('cliente', 'partidas'),
+        ])->render();
+
+        $this->assertStringContainsString('DESCUENTO (0.00%):', $contenidoSinDescuento);
+        $this->assertStringContainsString('<span class="valor-total">$0.00</span>', $contenidoSinDescuento);
+        $this->assertStringNotContainsString('-$0.00', $contenidoSinDescuento);
     }
 
     public function test_los_estados_se_muestran_en_espanol(): void
