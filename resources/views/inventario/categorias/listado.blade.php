@@ -3,12 +3,6 @@
 @section('titulo', 'Categorías de inventario')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Categorías" descripcion="Organiza los productos y servicios del inventario.">
-        <x-slot:acciones>
-            <x-boton variante="contorno" :href="route('inventario.listado')">Volver a Inventario</x-boton>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
-
     @include('componentes.errores-validacion')
     @if (session('success'))
         <p class="mensaje-exito" role="status">{{ session('success') }}</p>
@@ -50,7 +44,7 @@
                     @forelse ($categorias as $categoria)
                         <tr>
                             <td><strong>{{ $categoria->nombre }}</strong></td>
-                            <td>{{ $categoria->articulos_count }}</td>
+                            <td>{{ $categoria->productos_count + $categoria->servicios_count }}</td>
                             <td><x-insignia-estado :estado="$categoria->activo ? 'activa' : 'inactiva'" /></td>
                             <td class="acciones-tabla">
                                 <x-boton variante="contorno" :href="route('inventario.categorias.detalle', $categoria)" compacto>Ver</x-boton>

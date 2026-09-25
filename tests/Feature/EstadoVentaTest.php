@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
+use App\Models\Producto;
 use App\Models\Usuario;
 use App\Models\Venta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,8 +35,8 @@ class EstadoVentaTest extends TestCase
     public function test_convertir_una_cotizacion_cambia_su_estado_persistente_a_venta(): void
     {
         [$usuario, $cliente] = $this->datosBase();
-        $producto = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $producto = Producto::create([
+
             'nombre' => 'Consumible',
             'codigo' => 'CON-ESTADO',
             'unidad' => 'pieza',
@@ -54,8 +54,8 @@ class EstadoVentaTest extends TestCase
             'total' => 100,
         ]);
         $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $producto->id,
-            'tipo' => 'producto',
+            'producto_id' => $producto->id,
+
             'descripcion' => 'Consumible',
             'cantidad' => 1,
             'precio_unitario' => 100,

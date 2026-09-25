@@ -13,12 +13,17 @@ class EnvioCotizacion extends Model
 
     public const RESULTADO_FALLIDO = 'fallido';
 
+    public const TIPO_COTIZACION = 'cotizacion';
+
+    public const TIPO_RECORDATORIO = 'recordatorio';
+
     protected $table = 'envios_correo_cotizacion';
 
     protected $fillable = [
         'cotizacion_id',
         'usuario_id',
         'destinatario',
+        'tipo',
         'resultado',
         'mensaje',
         'intentado_en',
@@ -47,6 +52,14 @@ class EnvioCotizacion extends Model
             self::RESULTADO_ACEPTADO => 'Aceptado por el servicio de correo',
             self::RESULTADO_FALLIDO => 'Fallido',
             default => 'Sin definir',
+        };
+    }
+
+    public function etiquetaTipo(): string
+    {
+        return match ($this->tipo) {
+            self::TIPO_RECORDATORIO => 'Recordatorio de vencimiento',
+            default => 'Envío de cotización',
         };
     }
 }

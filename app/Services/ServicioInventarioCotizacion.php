@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Cotizacion;
+use App\Models\Producto;
+use App\Support\PlazosHabiles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -25,7 +26,7 @@ class ServicioInventarioCotizacion
                 ]);
             }
             $cantidades = $this->cantidadesReservadas($cotizacion);
-            $articulos = ArticuloCatalogo::whereKey($cantidades->keys())
+            $articulos = Producto::whereKey($cantidades->keys())
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
@@ -44,7 +45,7 @@ class ServicioInventarioCotizacion
             $cotizacion->update([
                 'estado' => 'aceptada',
                 'aceptada_en' => now(),
-                'vence_en' => now()->addDays(5),
+                'entrega_limite_en' => PlazosHabiles::sumar(now(), 5),
             ]);
         });
     }
@@ -69,12 +70,13 @@ class ServicioInventarioCotizacion
             if ($cotizacion->estado !== 'aceptada') {
                 return false;
             }
-            if ($soloSiVencida && ($cotizacion->vence_en === null || $cotizacion->vence_en->isFuture())) {
+            $limiteEntrega = $cotizacion->fechaLimiteEntrega();
+            if ($soloSiVencida && ($limiteEntrega === null || $limiteEntrega->isFuture())) {
                 return false;
             }
 
             $cantidades = $this->cantidadesReservadas($cotizacion);
-            $articulos = ArticuloCatalogo::whereKey($cantidades->keys())
+            $articulos = Producto::whereKey($cantidades->keys())
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
@@ -86,7 +88,7 @@ class ServicioInventarioCotizacion
             $cotizacion->update([
                 'estado' => $estadoDestino,
                 'aceptada_en' => $estadoDestino === 'pendiente' ? null : $cotizacion->aceptada_en,
-                'vence_en' => $estadoDestino === 'pendiente' ? now()->addDays(15) : $cotizacion->vence_en,
+                'entrega_limite_en' => $estadoDestino === 'pendiente' ? null : $cotizacion->entrega_limite_en,
             ]);
 
             return true;
@@ -97,9 +99,9 @@ class ServicioInventarioCotizacion
     {
         return $cotizacion->partidas()
             ->where('tipo', 'producto')
-            ->selectRaw('articulo_catalogo_id, SUM(cantidad) AS cantidad')
-            ->groupBy('articulo_catalogo_id')
-            ->pluck('cantidad', 'articulo_catalogo_id')
+            ->selectRaw('producto_id, SUM(cantidad) AS cantidad')
+            ->groupBy('producto_id')
+            ->pluck('cantidad', 'producto_id')
             ->map(fn ($cantidad): int => (int) $cantidad);
     }
 }

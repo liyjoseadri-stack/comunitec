@@ -29,7 +29,7 @@ class ServicioConversionVenta
         ): Venta {
             $cotizacion = Cotizacion::whereKey($cotizacion->id)
                 ->lockForUpdate()
-                ->with('cliente', 'partidas.articulo')
+                ->with('cliente', 'partidas.producto', 'partidas.servicio')
                 ->firstOrFail();
 
             $this->validarCotizacion($cotizacion);
@@ -63,7 +63,8 @@ class ServicioConversionVenta
             foreach ($cotizacion->partidas as $partidaCotizada) {
                 $partidaVendida = $venta->partidas()->create([
                     'partida_cotizacion_id' => $partidaCotizada->id,
-                    'articulo_catalogo_id' => $partidaCotizada->articulo_catalogo_id,
+                    'producto_id' => $partidaCotizada->producto_id,
+                    'servicio_id' => $partidaCotizada->servicio_id,
                     'tipo' => $partidaCotizada->tipo,
                     'descripcion' => $partidaCotizada->descripcion,
                     'cantidad' => $partidaCotizada->cantidad,
@@ -76,7 +77,7 @@ class ServicioConversionVenta
                         'LOWER(numero_serie) = ?',
                         [mb_strtolower($numeroSerie)]
                     )
-                        ->where('articulo_catalogo_id', $partidaCotizada->articulo_catalogo_id)
+                        ->where('producto_id', $partidaCotizada->producto_id)
                         ->where('cotizacion_id', $cotizacion->id)
                         ->where('estado', 'reservada')
                         ->lockForUpdate()
@@ -93,7 +94,7 @@ class ServicioConversionVenta
                     }
 
                     $partidaVendida->piezas()->create([
-                        'articulo_catalogo_id' => $partidaCotizada->articulo_catalogo_id,
+                        'producto_id' => $partidaCotizada->producto_id,
                         'numero_serie' => $numeroSerie,
                         'estado' => 'entregada',
                         'cotizacion_id' => null,
@@ -103,7 +104,7 @@ class ServicioConversionVenta
 
             $cotizacion->update([
                 'estado' => Cotizacion::ESTADO_VENTA,
-                'vence_en' => null,
+                'entrega_limite_en' => null,
             ]);
 
             return $venta->load('partidas.piezas');
@@ -122,7 +123,8 @@ class ServicioConversionVenta
                 'cotizacion' => 'Solo una cotización aceptada puede convertirse en venta.',
             ]);
         }
-        if ($cotizacion->vence_en === null || $cotizacion->vence_en->lessThanOrEqualTo(now())) {
+        $limiteEntrega = $cotizacion->fechaLimiteEntrega();
+        if ($limiteEntrega === null || $limiteEntrega->lessThanOrEqualTo(now())) {
             throw ValidationException::withMessages([
                 'cotizacion' => 'La reserva de la cotización venció; no puede convertirse en venta.',
             ]);
@@ -178,7 +180,7 @@ class ServicioConversionVenta
                     ->first();
                 $esReservaAnterior = $existente !== null
                     && $existente->cotizacion_id === $cotizacion->id
-                    && $existente->articulo_catalogo_id === $partida->articulo_catalogo_id
+                    && $existente->producto_id === $partida->producto_id
                     && $existente->estado === 'reservada';
                 if ($existente !== null && ! $esReservaAnterior) {
                     $this->fallarSeries($partida, "El número de serie {$numero} ya está registrado.");

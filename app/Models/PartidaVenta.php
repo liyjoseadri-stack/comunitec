@@ -14,7 +14,8 @@ class PartidaVenta extends Model
     protected $fillable = [
         'venta_id',
         'partida_cotizacion_id',
-        'articulo_catalogo_id',
+        'producto_id',
+        'servicio_id',
         'tipo',
         'descripcion',
         'cantidad',
@@ -41,9 +42,19 @@ class PartidaVenta extends Model
         return $this->belongsTo(PartidaCotizacion::class, 'partida_cotizacion_id');
     }
 
-    public function articulo()
+    public function producto()
     {
-        return $this->belongsTo(ArticuloCatalogo::class, 'articulo_catalogo_id');
+        return $this->belongsTo(Producto::class, 'producto_id');
+    }
+
+    public function servicio()
+    {
+        return $this->belongsTo(Servicio::class, 'servicio_id');
+    }
+
+    public function getArticuloAttribute(): Producto|Servicio|null
+    {
+        return $this->producto ?? $this->servicio;
     }
 
     public function piezas()

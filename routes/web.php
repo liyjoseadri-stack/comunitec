@@ -7,8 +7,10 @@ use App\Http\Controllers\ControladorClientes;
 use App\Http\Controllers\ControladorCotizaciones;
 use App\Http\Controllers\ControladorPanel;
 use App\Http\Controllers\ControladorPartidas;
+use App\Http\Controllers\ControladorPerfil;
 use App\Http\Controllers\ControladorProductos;
 use App\Http\Controllers\ControladorReportes;
+use App\Http\Controllers\ControladorServicios;
 use App\Http\Controllers\ControladorVentas;
 use Illuminate\Support\Facades\Route;
 
@@ -36,7 +38,23 @@ Route::middleware('auth')->group(function () {
         ControladorSesion::class,
         'eliminar',
     ])->name('logout');
+    Route::get('/mi-perfil', [
+        ControladorPerfil::class,
+        'mostrar',
+    ])->name('perfil.mostrar');
+    Route::put('/mi-perfil', [
+        ControladorPerfil::class,
+        'actualizar',
+    ])->name('perfil.actualizar');
+    Route::put('/mi-perfil/contrasena', [
+        ControladorPerfil::class,
+        'actualizarContrasena',
+    ])->name('perfil.contrasena');
     Route::middleware('rol:administrador,comercial,consulta')->group(function () {
+        Route::get('/reportes', [
+            ControladorReportes::class,
+            'resumen',
+        ])->name('reportes.resumen');
         Route::get('/cotizaciones', [
             ControladorCotizaciones::class,
             'listar',
@@ -53,6 +71,10 @@ Route::middleware('auth')->group(function () {
             ControladorVentas::class,
             'listar',
         ])->name('ventas.listado');
+        Route::get('/ventas/{venta}/pdf', [
+            ControladorVentas::class,
+            'pdf',
+        ])->name('ventas.pdf');
         Route::get('/ventas/{venta}', [
             ControladorVentas::class,
             'mostrar',
@@ -68,6 +90,10 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('rol:administrador,comercial')->group(function () {
+        Route::get('/ventas/registrar/{cotizacion}', [
+            ControladorVentas::class,
+            'crear',
+        ])->name('ventas.crear');
         Route::put('/cotizaciones/{cotizacion}', [
             ControladorCotizaciones::class,
             'actualizar',
@@ -100,6 +126,10 @@ Route::middleware('auth')->group(function () {
             ControladorCotizaciones::class,
             'guardar',
         ])->name('cotizaciones.guardar');
+        Route::post('/api/cotizaciones', [
+            ControladorCotizaciones::class,
+            'guardarCompleta',
+        ])->name('api.cotizaciones.guardar');
         Route::post('/cotizaciones/{cotizacion}/partidas', [
             ControladorPartidas::class,
             'guardar',
@@ -112,15 +142,17 @@ Route::middleware('auth')->group(function () {
             ControladorPartidas::class,
             'actualizar',
         ])->name('cotizaciones.partidas.actualizar');
-        Route::get('/inventario', [
-            ControladorProductos::class,
-            'listar',
-        ])->name('inventario.listado');
+        Route::get('/inventario', [ControladorProductos::class, 'listar'])->name('inventario.listado');
         Route::get('/inventario/productos', [ControladorProductos::class, 'listar'])->name('inventario.productos.listado');
         Route::post('/inventario/productos', [ControladorProductos::class, 'guardar'])->name('inventario.productos.guardar');
-        Route::get('/inventario/productos/{articulo}', [ControladorProductos::class, 'mostrar'])->name('inventario.productos.detalle');
-        Route::put('/inventario/productos/{articulo}', [ControladorProductos::class, 'actualizar'])->name('inventario.productos.actualizar');
-        Route::patch('/inventario/productos/{articulo}/estado', [ControladorProductos::class, 'actualizarEstado'])->name('inventario.productos.estado');
+        Route::get('/inventario/productos/{producto}', [ControladorProductos::class, 'mostrar'])->name('inventario.productos.detalle');
+        Route::put('/inventario/productos/{producto}', [ControladorProductos::class, 'actualizar'])->name('inventario.productos.actualizar');
+        Route::patch('/inventario/productos/{producto}/estado', [ControladorProductos::class, 'actualizarEstado'])->name('inventario.productos.estado');
+        Route::get('/inventario/servicios', [ControladorServicios::class, 'listar'])->name('inventario.servicios.listado');
+        Route::post('/inventario/servicios', [ControladorServicios::class, 'guardar'])->name('inventario.servicios.guardar');
+        Route::get('/inventario/servicios/{servicio}', [ControladorServicios::class, 'mostrar'])->name('inventario.servicios.detalle');
+        Route::put('/inventario/servicios/{servicio}', [ControladorServicios::class, 'actualizar'])->name('inventario.servicios.actualizar');
+        Route::patch('/inventario/servicios/{servicio}/estado', [ControladorServicios::class, 'actualizarEstado'])->name('inventario.servicios.estado');
         Route::post('/inventario/categorias', [
             ControladorCategorias::class,
             'guardar',

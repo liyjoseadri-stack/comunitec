@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
+use App\Models\Producto;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,8 +27,8 @@ class IntegracionInventarioCotizacionesTest extends TestCase
             'codigo_postal' => '29000',
         ]);
         $categoria = Categoria::create(['nombre' => 'Redes', 'activo' => true]);
-        ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        Producto::create([
+
             'nombre' => 'Access Point',
             'codigo' => 'AP-001',
             'categoria_id' => $categoria->id,
@@ -49,7 +49,12 @@ class IntegracionInventarioCotizacionesTest extends TestCase
         $this->actingAs($usuario)
             ->get(route('cotizaciones.detalle', $cotizacion))
             ->assertOk()
-            ->assertSee('AP-001 · Access Point · Redes', false);
+            ->assertSee('AP-001 · Access Point · Redes', false)
+            ->assertSee('Agregar producto o servicio')
+            ->assertSee('Conceptos de la cotización')
+            ->assertSee('formulario-administrativo formulario-concepto', false)
+            ->assertDontSee('>Partidas<', false)
+            ->assertDontSee('Agregar partida');
     }
 
     public function test_la_partida_conserva_su_descripcion_y_precio_historicos(): void
@@ -64,8 +69,8 @@ class IntegracionInventarioCotizacionesTest extends TestCase
             'direccion' => 'Dirección de prueba',
             'codigo_postal' => '29000',
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $articulo = Producto::create([
+
             'nombre' => 'Switch original',
             'codigo' => 'SW-001',
             'unidad' => 'pieza',
@@ -83,8 +88,8 @@ class IntegracionInventarioCotizacionesTest extends TestCase
         ]);
 
         $this->actingAs($usuario)->post(route('cotizaciones.partidas.guardar', $cotizacion), [
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $articulo->id,
+
+            'producto_id' => $articulo->id,
             'descripcion' => 'Switch administrable cotizado',
             'cantidad' => 1,
         ])->assertRedirect();

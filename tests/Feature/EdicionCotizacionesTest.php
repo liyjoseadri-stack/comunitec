@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\ControladorCotizaciones;
-use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\PiezaInventario;
+use App\Models\Producto;
 use App\Models\Usuario;
 use App\Services\ServicioInventarioCotizacion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,8 +23,7 @@ class EdicionCotizacionesTest extends TestCase
         [$cotizacion, $partida, $pieza] = $this->preparar('aceptada');
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
 
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+            'producto_id' => $pieza->producto_id,
 
             'descripcion' => 'Monitor actualizado',
             'cantidad' => 2,
@@ -47,8 +46,7 @@ class EdicionCotizacionesTest extends TestCase
         [$cotizacion, $partida, $pieza] = $this->preparar('aceptada');
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
 
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+            'producto_id' => $pieza->producto_id,
 
             'descripcion' => 'Monitor',
             'cantidad' => 1.5,
@@ -162,8 +160,8 @@ class EdicionCotizacionesTest extends TestCase
             'cotizacion_id' => null,
         ]);
         $cotizacion->partidas()->create([
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+
+            'producto_id' => $pieza->producto_id,
             'descripcion' => 'Monitor adicional',
             'cantidad' => 1,
             'precio_unitario' => 500,
@@ -181,8 +179,8 @@ class EdicionCotizacionesTest extends TestCase
             'cotizacion_id' => null,
         ]);
         $cotizacion->partidas()->create([
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+
+            'producto_id' => $pieza->producto_id,
             'descripcion' => 'Monitor adicional',
             'cantidad' => 1,
             'precio_unitario' => 500,
@@ -213,7 +211,7 @@ class EdicionCotizacionesTest extends TestCase
     {
         [$cotizacion, , $pieza] = $this->preparar('aceptada');
         $adicional = PiezaInventario::create([
-            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+            'producto_id' => $pieza->producto_id,
             'numero_serie' => 'OTRA-SERIE',
             'estado' => 'disponible',
         ]);
@@ -298,13 +296,13 @@ class EdicionCotizacionesTest extends TestCase
     public function test_no_se_puede_agregar_un_articulo_desactivado_por_solicitud_directa(): void
     {
         [$cotizacion, , $pieza] = $this->preparar('borrador');
-        ArticuloCatalogo::whereKey($pieza->articulo_catalogo_id)->update(['activo' => false]);
+        Producto::whereKey($pieza->producto_id)->update(['activo' => false]);
 
         $this->post("/cotizaciones/{$cotizacion->id}/partidas", [
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+
+            'producto_id' => $pieza->producto_id,
             'cantidad' => 1,
-        ])->assertSessionHasErrors('articulo_catalogo_id');
+        ])->assertSessionHasErrors('producto_id');
 
         $this->assertDatabaseCount('partidas_cotizacion', 1);
         $this->assertSame('475.00', $cotizacion->fresh()->total);
@@ -313,11 +311,11 @@ class EdicionCotizacionesTest extends TestCase
     public function test_editar_una_partida_conserva_el_precio_cotizado_aunque_cambie_el_catalogo(): void
     {
         [$cotizacion, $partida, $pieza] = $this->preparar('borrador');
-        ArticuloCatalogo::whereKey($pieza->articulo_catalogo_id)->update(['precio' => 900]);
+        Producto::whereKey($pieza->producto_id)->update(['precio' => 900]);
 
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+
+            'producto_id' => $pieza->producto_id,
             'descripcion' => 'Monitor para recepción',
             'cantidad' => 2,
         ])->assertRedirect();
@@ -335,11 +333,11 @@ class EdicionCotizacionesTest extends TestCase
     public function test_desactivar_el_articulo_no_bloquea_la_edicion_de_su_partida_historica(): void
     {
         [$cotizacion, $partida, $pieza] = $this->preparar('borrador');
-        ArticuloCatalogo::whereKey($pieza->articulo_catalogo_id)->update(['activo' => false]);
+        Producto::whereKey($pieza->producto_id)->update(['activo' => false]);
 
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $pieza->articulo_catalogo_id,
+
+            'producto_id' => $pieza->producto_id,
             'descripcion' => 'Monitor conservado en el historial',
             'cantidad' => 2,
         ])->assertSessionDoesntHaveErrors();
@@ -367,8 +365,8 @@ class EdicionCotizacionesTest extends TestCase
             'direccion' => 'Domicilio de prueba',
             'codigo_postal' => '29000',
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $articulo = Producto::create([
+
             'nombre' => 'Monitor',
             'codigo' => 'MON-EDITAR',
             'unidad' => 'pieza',
@@ -385,15 +383,15 @@ class EdicionCotizacionesTest extends TestCase
             'total' => 475,
         ]);
         $partida = $cotizacion->partidas()->create([
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $articulo->id,
+
+            'producto_id' => $articulo->id,
             'descripcion' => 'Monitor',
             'cantidad' => 1,
             'precio_unitario' => 500,
             'subtotal' => 500,
         ]);
         $pieza = PiezaInventario::create([
-            'articulo_catalogo_id' => $articulo->id,
+            'producto_id' => $articulo->id,
             'numero_serie' => 'SERIE-EDITAR',
             'estado' => 'reservada',
             'cotizacion_id' => $cotizacion->id,

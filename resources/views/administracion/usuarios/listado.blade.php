@@ -1,6 +1,6 @@
 @extends('layouts.aplicacion')
 
-@section('titulo', 'Usuarios')
+@section('titulo', 'Administración de usuarios')
 
 @section('contenido')
     <x-encabezado-pagina

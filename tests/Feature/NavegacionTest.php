@@ -28,11 +28,11 @@ class NavegacionTest extends TestCase
 
         foreach (['/panel', '/clientes', '/inventario', '/cotizaciones', '/ventas', '/reportes/cotizaciones', '/reportes/ventas', '/administracion/usuarios'] as $ruta) {
             $this->get($ruta)->assertOk()
-                ->assertSee('aria-label="Navegación principal"', false)
+                ->assertSee('aria-label="Navegación administrativa"', false)
                 ->assertSee('href="'.route('cotizaciones.listado').'"', false)
                 ->assertSee('href="'.route('ventas.listado').'"', false)
                 ->assertSee('href="'.route('reportes.cotizaciones').'"', false)
-                ->assertSee('href="'.route('inventario.listado').'"', false)
+                ->assertSee(route('inventario.listado'), false)
                 ->assertSee('href="'.route('administracion.usuarios.listado').'"', false)
                 ->assertSee('aria-current="page"', false);
         }

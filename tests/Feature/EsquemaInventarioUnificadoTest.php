@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\PartidaVenta;
 use App\Models\PiezaInventario;
+use App\Models\Producto;
 use App\Models\Usuario;
 use App\Models\Venta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,13 +20,13 @@ class EsquemaInventarioUnificadoTest extends TestCase
 
     public function test_el_esquema_configura_descripcion_y_series_por_producto(): void
     {
-        $this->assertTrue(Schema::hasColumns('articulos_catalogo', [
+        $this->assertTrue(Schema::hasColumns('productos', [
             'descripcion',
             'requiere_numero_serie',
         ]));
 
-        $producto = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $producto = Producto::create([
+
             'nombre' => 'Switch',
             'codigo' => 'SW-DEFAULT',
             'unidad' => 'pieza',
@@ -40,8 +40,8 @@ class EsquemaInventarioUnificadoTest extends TestCase
     public function test_categoria_y_producto_tienen_relaciones_navegables(): void
     {
         $categoria = Categoria::create(['nombre' => 'Redes']);
-        $producto = $categoria->articulos()->create([
-            'tipo' => 'producto',
+        $producto = $categoria->productos()->create([
+
             'nombre' => 'Switch',
             'codigo' => 'SW-01',
             'descripcion' => 'Switch administrable de 24 puertos',
@@ -52,7 +52,7 @@ class EsquemaInventarioUnificadoTest extends TestCase
         ]);
 
         $this->assertTrue($producto->categoria->is($categoria));
-        $this->assertTrue($categoria->articulos->contains($producto));
+        $this->assertTrue($categoria->productos->contains($producto));
         $this->assertTrue($producto->requiere_numero_serie);
     }
 
@@ -60,7 +60,7 @@ class EsquemaInventarioUnificadoTest extends TestCase
     {
         [$producto, $partidaVenta] = $this->crearPartidaVendida();
         $serie = PiezaInventario::create([
-            'articulo_catalogo_id' => $producto->id,
+            'producto_id' => $producto->id,
             'numero_serie' => 'SERIE-HISTORICA-01',
             'estado' => 'entregada',
             'partida_venta_id' => $partidaVenta->id,
@@ -82,8 +82,8 @@ class EsquemaInventarioUnificadoTest extends TestCase
             'direccion' => 'Dirección de prueba',
             'codigo_postal' => '29000',
         ]);
-        $producto = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $producto = Producto::create([
+
             'nombre' => 'Access Point',
             'codigo' => 'AP-01',
             'unidad' => 'pieza',
@@ -98,8 +98,8 @@ class EsquemaInventarioUnificadoTest extends TestCase
             'total' => 1500,
         ]);
         $partidaCotizacion = $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $producto->id,
-            'tipo' => 'producto',
+            'producto_id' => $producto->id,
+
             'descripcion' => 'Access Point',
             'cantidad' => 1,
             'precio_unitario' => 1500,
@@ -128,8 +128,8 @@ class EsquemaInventarioUnificadoTest extends TestCase
         $partidaVenta = PartidaVenta::create([
             'venta_id' => $venta->id,
             'partida_cotizacion_id' => $partidaCotizacion->id,
-            'articulo_catalogo_id' => $producto->id,
-            'tipo' => 'producto',
+            'producto_id' => $producto->id,
+
             'descripcion' => 'Access Point',
             'cantidad' => 1,
             'precio_unitario' => 1500,

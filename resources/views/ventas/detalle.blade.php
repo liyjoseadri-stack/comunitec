@@ -1,14 +1,14 @@
 @extends('layouts.aplicacion')
 
-@section('titulo', $venta->folio)
+@section('titulo', 'Venta '.$venta->folio)
 
 @section('contenido')
             <header class="encabezado-pagina">
-                <div>
-                    <h1>Venta {{ $venta->folio }}</h1>
-                    <p>Registrada el {{ $venta->vendida_en->format('d/m/Y H:i') }}.</p>
+                <p>Registrada el {{ $venta->vendida_en->format('d/m/Y H:i') }}.</p>
+                <div class="grupo-acciones">
+                    <span class="insignia-tipo">Venta cerrada</span>
+                    <x-boton variante="contorno" :href="route('ventas.pdf', $venta)">Descargar PDF</x-boton>
                 </div>
-                <span class="insignia-tipo">Venta cerrada</span>
             </header>
 
             @if (session('success'))
@@ -42,12 +42,7 @@
                     </div>
                     <div>
                         <dt>Cotización de origen</dt>
-                        <dd>
-                            <x-boton variante="contorno" :href="route('cotizaciones.detalle', $venta->cotizacion)" compacto>
-                                Ver cotización
-                            </x-boton>
-                            <small class="detalle-tabla">{{ $venta->cotizacion->folio }}</small>
-                        </dd>
+                        <dd>{{ $venta->cotizacion->folio }}</dd>
                     </div>
                     <div>
                         <dt>Responsable</dt>
@@ -65,14 +60,17 @@
             </section>
 
             <section class="bloque-administrativo" aria-labelledby="titulo-partidas-venta">
-                <h2 id="titulo-partidas-venta">Partidas entregadas</h2>
-                <div class="contenedor-tabla" tabindex="0" aria-label="Partidas de la venta">
+                <h2 id="titulo-partidas-venta">Productos y servicios vendidos</h2>
+                <div class="contenedor-tabla" tabindex="0" aria-label="Productos y servicios de la venta">
                     <table class="tabla-registros tabla-catalogo">
                         <thead>
                             <tr>
+                                <th scope="col">Tipo</th>
+                                <th scope="col">Concepto</th>
                                 <th scope="col">Descripción</th>
                                 <th scope="col">Cantidad</th>
                                 <th scope="col">Precio unitario</th>
+                                <th scope="col">Descuento</th>
                                 <th scope="col">Subtotal</th>
                                 <th scope="col">Series entregadas</th>
                             </tr>
@@ -80,9 +78,12 @@
                         <tbody>
                             @foreach ($venta->partidas as $partida)
                                 <tr>
+                                    <td><span class="insignia-tipo">{{ ucfirst($partida->tipo) }}</span></td>
+                                    <td>{{ $partida->articulo?->nombre ?? 'Concepto libre' }}</td>
                                     <td>{{ $partida->descripcion }}</td>
                                     <td>{{ number_format((float) $partida->cantidad, 2) }}</td>
                                     <td>${{ number_format((float) $partida->precio_unitario, 2) }}</td>
+                                    <td>{{ (float) $venta->porcentaje_descuento > 0 ? number_format((float) $venta->porcentaje_descuento, 2).'% global' : 'Sin descuento' }}</td>
                                     <td>${{ number_format((float) $partida->subtotal, 2) }}</td>
                                     <td>
                                         {{ $partida->piezas->pluck('numero_serie')->join(', ') ?: 'No aplica' }}

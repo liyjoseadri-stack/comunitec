@@ -2,11 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\PartidaVenta;
 use App\Models\PiezaInventario;
+use App\Models\Producto;
+use App\Models\Servicio;
 use App\Models\Usuario;
 use App\Models\Venta;
 use App\Services\ServicioConversionVenta;
@@ -47,7 +48,7 @@ class VentasTest extends TestCase
         $this->assertTrue(Schema::hasColumns('partidas_venta', [
             'venta_id',
             'partida_cotizacion_id',
-            'articulo_catalogo_id',
+            'producto_id',
             'tipo',
             'descripcion',
             'cantidad',
@@ -72,8 +73,8 @@ class VentasTest extends TestCase
             'direccion' => 'Domicilio de prueba',
             'codigo_postal' => '29000',
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $articulo = Producto::create([
+
             'nombre' => 'Equipo',
             'codigo' => 'EQU-VENTA',
             'unidad' => 'pieza',
@@ -89,8 +90,8 @@ class VentasTest extends TestCase
             'total' => 1000,
         ]);
         $partidaCotizada = $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $articulo->id,
-            'tipo' => 'producto',
+            'producto_id' => $articulo->id,
+
             'descripcion' => 'Equipo cotizado',
             'cantidad' => 1,
             'precio_unitario' => 1000,
@@ -118,15 +119,15 @@ class VentasTest extends TestCase
         ]);
         $partidaVendida = $venta->partidas()->create([
             'partida_cotizacion_id' => $partidaCotizada->id,
-            'articulo_catalogo_id' => $articulo->id,
-            'tipo' => 'producto',
+            'producto_id' => $articulo->id,
+
             'descripcion' => 'Equipo cotizado',
             'cantidad' => 1,
             'precio_unitario' => 1000,
             'subtotal' => 1000,
         ]);
         $pieza = PiezaInventario::create([
-            'articulo_catalogo_id' => $articulo->id,
+            'producto_id' => $articulo->id,
             'numero_serie' => 'SERIE-VENTA-1',
             'estado' => 'entregada',
             'partida_venta_id' => $partidaVendida->id,
@@ -179,7 +180,8 @@ class VentasTest extends TestCase
             $this->assertNotNull($pieza->fresh()->partida_venta_id);
         }
         $this->assertSame('disponible', $piezaDisponible->fresh()->estado);
-        $this->assertNull($cotizacion->fresh()->vence_en);
+        $this->assertNotNull($cotizacion->fresh()->vence_en);
+        $this->assertNull($cotizacion->fresh()->entrega_limite_en);
     }
 
     public function test_la_venta_conserva_los_datos_historicos_del_cliente(): void
@@ -210,16 +212,22 @@ class VentasTest extends TestCase
             'correo' => 'responsable-nuevo@example.test',
         ]);
 
-        $this->get("/ventas/{$venta->id}")
+        $respuesta = $this->get("/ventas/{$venta->id}")
             ->assertOk()
             ->assertSee('Cliente de venta')
             ->assertSee('venta@example.test')
             ->assertSee($nombreResponsable)
             ->assertSee($correoResponsable)
             ->assertDontSee('Nombre modificado después de la venta')
-            ->assertDontSee('nuevo@example.test')
-            ->assertDontSee('Responsable modificado después de la venta')
-            ->assertDontSee('responsable-nuevo@example.test');
+            ->assertDontSee('nuevo@example.test');
+
+        $detalle = strstr(
+            strstr($respuesta->getContent(), '<main'),
+            '</main>',
+            true
+        );
+        $this->assertStringNotContainsString('Responsable modificado después de la venta', $detalle);
+        $this->assertStringNotContainsString('responsable-nuevo@example.test', $detalle);
     }
 
     public function test_una_cotizacion_convertida_no_puede_generar_otra_venta(): void
@@ -419,10 +427,11 @@ class VentasTest extends TestCase
             'piezas' => $piezas,
         ] = $this->prepararCotizacionAceptada();
 
-        $respuesta = $this->actingAs($usuario)->get("/cotizaciones/{$cotizacion->id}");
+        $detalleCotizacion = $this->actingAs($usuario)->get(route('cotizaciones.detalle', $cotizacion));
+        $respuesta = $this->get(route('ventas.crear', $cotizacion));
 
         $respuesta->assertOk()
-            ->assertSee('Convertir en venta')
+            ->assertSee('Registrar venta')
             ->assertSee('Método de pago')
             ->assertSee('Efectivo')
             ->assertSee('Transferencia')
@@ -435,6 +444,59 @@ class VentasTest extends TestCase
                 'name="series['.$partidaProducto->id.'][]"'
             )
         );
+        $detalleCotizacion
+            ->assertSee(route('ventas.crear', $cotizacion), false)
+            ->assertDontSee('action="'.route('ventas.guardar', $cotizacion).'"', false);
+    }
+
+    public function test_ventas_lista_las_cotizaciones_aceptadas_para_registrarlas(): void
+    {
+        [
+            'usuario' => $usuario,
+            'cotizacion' => $cotizacion,
+        ] = $this->prepararCotizacionAceptada();
+
+        $this->actingAs($usuario)->get(route('ventas.listado'))
+            ->assertOk()
+            ->assertSee('Cotizaciones aceptadas por registrar')
+            ->assertSee($cotizacion->folio)
+            ->assertSee(route('ventas.crear', $cotizacion), false);
+    }
+
+    public function test_el_pdf_de_venta_incluye_los_numeros_de_serie_entregados(): void
+    {
+        [
+            'usuario' => $usuario,
+            'cotizacion' => $cotizacion,
+            'partidaProducto' => $partidaProducto,
+            'piezas' => $piezas,
+        ] = $this->prepararCotizacionAceptada();
+
+        $this->actingAs($usuario)->post(route('ventas.guardar', $cotizacion), [
+            'metodo_pago' => Venta::METODO_TRANSFERENCIA,
+            'series' => [
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
+            ],
+        ])->assertRedirect();
+
+        $venta = Venta::with(
+            'cotizacion',
+            'cliente',
+            'responsable',
+            'partidas.producto',
+            'partidas.servicio',
+            'partidas.piezas'
+        )->sole();
+
+        $html = view('ventas.pdf', compact('venta'))->render();
+
+        $this->assertStringContainsString('Comprobante administrativo de venta', $html);
+        $this->assertStringContainsString('SERIE-CONVERSION-1', $html);
+        $this->assertStringContainsString('SERIE-CONVERSION-2', $html);
+        $this->actingAs($usuario)->get(route('ventas.pdf', $venta))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertDownload($venta->folio.'.pdf');
     }
 
     public function test_consulta_puede_ver_ventas_pero_no_convertir_cotizaciones(): void
@@ -459,13 +521,13 @@ class VentasTest extends TestCase
         $this->actingAs($consulta)->get('/ventas')
             ->assertOk()
             ->assertSee($venta->folio)
-            ->assertDontSee('<form', false);
+            ->assertDontSee('action="'.route('ventas.guardar', $cotizacion).'"', false);
         $this->get("/ventas/{$venta->id}")
             ->assertOk()
             ->assertSee($venta->folio)
             ->assertSee('SERIE-CONVERSION-1')
             ->assertSee('SERIE-CONVERSION-2')
-            ->assertDontSee('<form', false);
+            ->assertDontSee('action="'.route('ventas.guardar', $cotizacion).'"', false);
         $this->post("/cotizaciones/{$cotizacion->id}/venta", [
             'metodo_pago' => Venta::METODO_EFECTIVO,
         ])->assertForbidden();
@@ -494,8 +556,8 @@ class VentasTest extends TestCase
             'porcentaje_descuento' => 10,
         ])->assertStatus(422);
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partidaProducto->id}", [
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $partidaProducto->articulo_catalogo_id,
+
+            'producto_id' => $partidaProducto->producto_id,
             'descripcion' => 'Intento de cambio',
             'cantidad' => 2,
         ])->assertStatus(422);
@@ -545,8 +607,8 @@ class VentasTest extends TestCase
             'direccion' => 'Domicilio de prueba',
             'codigo_postal' => '29000',
         ]);
-        $producto = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $producto = Producto::create([
+
             'nombre' => 'Equipo físico',
             'codigo' => 'EQU-CONVERSION',
             'unidad' => 'pieza',
@@ -554,13 +616,11 @@ class VentasTest extends TestCase
             'existencias' => 3,
             'requiere_numero_serie' => true,
         ]);
-        $servicio = ArticuloCatalogo::create([
-            'tipo' => 'servicio',
+        $servicio = Servicio::create([
             'nombre' => 'Instalación',
             'codigo' => 'SER-CONVERSION',
             'unidad' => 'servicio',
             'precio' => 500,
-            'existencias' => 0,
         ]);
         $cotizacion = Cotizacion::create([
             'folio' => 'COT-CONVERSION-1',
@@ -573,15 +633,15 @@ class VentasTest extends TestCase
             'total' => 2430,
         ]);
         $partidaProducto = $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $producto->id,
-            'tipo' => 'producto',
+            'producto_id' => $producto->id,
+
             'descripcion' => 'Equipo físico',
             'cantidad' => 2,
             'precio_unitario' => 1000,
             'subtotal' => 2000,
         ]);
         $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $servicio->id,
+            'servicio_id' => $servicio->id,
             'tipo' => 'servicio',
             'descripcion' => 'Instalación',
             'cantidad' => 1,
@@ -598,14 +658,14 @@ class VentasTest extends TestCase
         $piezas = new Collection;
         foreach (['SERIE-CONVERSION-1', 'SERIE-CONVERSION-2'] as $serie) {
             $piezas->push(PiezaInventario::create([
-                'articulo_catalogo_id' => $producto->id,
+                'producto_id' => $producto->id,
                 'numero_serie' => $serie,
                 'estado' => 'reservada',
                 'cotizacion_id' => $cotizacion->id,
             ]));
         }
         $piezaDisponible = PiezaInventario::create([
-            'articulo_catalogo_id' => $producto->id,
+            'producto_id' => $producto->id,
             'numero_serie' => 'SERIE-DISPONIBLE',
             'estado' => 'disponible',
         ]);

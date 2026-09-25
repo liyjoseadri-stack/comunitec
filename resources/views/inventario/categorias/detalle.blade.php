@@ -25,15 +25,31 @@
     </section>
 
     <section class="bloque-administrativo">
-        <h2>Productos y servicios</h2>
+        <h2>Productos</h2>
         <div class="contenedor-tabla" tabindex="0">
             <table class="tabla-registros">
-                <thead><tr><th>SKU</th><th>Nombre</th><th>Tipo</th><th>Estado</th></tr></thead>
+                <thead><tr><th>SKU</th><th>Nombre</th><th>Estado</th></tr></thead>
                 <tbody>
-                    @forelse ($categoria->articulos as $articulo)
-                        <tr><td>{{ $articulo->codigo }}</td><td>{{ $articulo->nombre }}</td><td>{{ ucfirst($articulo->tipo) }}</td><td>{{ $articulo->activo ? 'Activo' : 'Inactivo' }}</td></tr>
+                    @forelse ($categoria->productos as $producto)
+                        <tr><td>{{ $producto->codigo }}</td><td>{{ $producto->nombre }}</td><td>{{ $producto->activo ? 'Activo' : 'Inactivo' }}</td></tr>
                     @empty
-                        <tr><td colspan="4" class="estado-vacio">Esta categoría todavía no tiene artículos.</td></tr>
+                        <tr><td colspan="3" class="estado-vacio">Esta categoría todavía no tiene productos.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="bloque-administrativo">
+        <h2>Servicios</h2>
+        <div class="contenedor-tabla" tabindex="0">
+            <table class="tabla-registros">
+                <thead><tr><th>Código</th><th>Nombre</th><th>Estado</th></tr></thead>
+                <tbody>
+                    @forelse ($categoria->servicios as $servicio)
+                        <tr><td>{{ $servicio->codigo }}</td><td>{{ $servicio->nombre }}</td><td>{{ $servicio->activo ? 'Activo' : 'Inactivo' }}</td></tr>
+                    @empty
+                        <tr><td colspan="3" class="estado-vacio">Esta categoría todavía no tiene servicios.</td></tr>
                     @endforelse
                 </tbody>
             </table>

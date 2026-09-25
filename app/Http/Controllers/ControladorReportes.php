@@ -14,6 +14,45 @@ use Illuminate\View\View;
 
 class ControladorReportes extends Controller
 {
+    public function resumen(Request $solicitud): View
+    {
+        $datos = $solicitud->validate([
+            'mes' => ['nullable', 'date_format:Y-m'],
+        ], [
+            'mes.date_format' => 'Selecciona un mes válido.',
+        ]);
+        $periodo = PeriodoReporte::desdeMes($datos['mes'] ?? null);
+        $consultaCotizaciones = Cotizacion::query()
+            ->where('creado_en', '>=', $periodo->inicio)
+            ->where('creado_en', '<', $periodo->finExclusivo);
+        $conteos = (clone $consultaCotizaciones)
+            ->selectRaw('estado, COUNT(*) AS cantidad')
+            ->groupBy('estado')
+            ->pluck('cantidad', 'estado');
+        $resumenCotizaciones = collect(Cotizacion::estados())
+            ->mapWithKeys(fn (string $estado): array => [$estado => (int) ($conteos[$estado] ?? 0)])
+            ->all();
+        $totalCotizaciones = array_sum($resumenCotizaciones);
+        $consultaVentas = Venta::query()
+            ->where('vendida_en', '>=', $periodo->inicio)
+            ->where('vendida_en', '<', $periodo->finExclusivo);
+
+        return view('reportes.resumen', [
+            'periodo' => $periodo,
+            'totalCotizaciones' => $totalCotizaciones,
+            'resumenCotizaciones' => $resumenCotizaciones,
+            'porcentajeAceptacion' => $totalCotizaciones === 0 ? 0.0 : round(
+                ($resumenCotizaciones['aceptada'] + $resumenCotizaciones[Cotizacion::ESTADO_VENTA])
+                * 100 / $totalCotizaciones,
+                1
+            ),
+            'cantidadVentas' => (clone $consultaVentas)->count(),
+            'totalVentas' => (float) (clone $consultaVentas)->sum('total'),
+            'cotizacionesRecientes' => (clone $consultaCotizaciones)->with('cliente')->latest('creado_en')->limit(5)->get(),
+            'ventasRecientes' => (clone $consultaVentas)->with('cliente')->latest('vendida_en')->limit(5)->get(),
+        ]);
+    }
+
     public function cotizaciones(Request $solicitud): View
     {
         $datos = $solicitud->validate([

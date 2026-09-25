@@ -2,85 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Cotizacion;
-use App\Models\Venta;
-use App\Support\PeriodoReporte;
-use Illuminate\Http\Request;
+use App\Models\Producto;
+use App\Support\PlazosHabiles;
 use Illuminate\View\View;
 
 class ControladorPanel extends Controller
 {
-    public function mostrar(Request $solicitud): View
+    public function mostrar(): View
     {
-        $datos = $solicitud->validate([
-            'mes' => [
-                'nullable',
-                'date_format:Y-m',
-            ],
-        ], [
-            'mes.date_format' => 'Selecciona un mes válido.',
-        ]);
-        $periodo = PeriodoReporte::desdeMes($datos['mes'] ?? null);
-
-        $consultaCotizaciones = Cotizacion::query()
-            ->where('creado_en', '>=', $periodo->inicio)
-            ->where('creado_en', '<', $periodo->finExclusivo);
-        $conteos = (clone $consultaCotizaciones)
-            ->selectRaw('estado, COUNT(*) AS cantidad')
-            ->groupBy('estado')
-            ->pluck('cantidad', 'estado');
-        $resumenCotizaciones = collect([
-            'borrador',
-            'pendiente',
-            'aceptada',
-            'rechazada',
-            'cancelada',
-            'vencida',
-            Cotizacion::ESTADO_VENTA,
-        ])->mapWithKeys(fn (string $estado): array => [
-            $estado => (int) ($conteos[$estado] ?? 0),
-        ])->all();
-        $totalCotizaciones = array_sum($resumenCotizaciones);
-        $porcentajeAceptacion = $totalCotizaciones === 0
-            ? 0.0
-            : round(
-                ($resumenCotizaciones['aceptada'] + $resumenCotizaciones[Cotizacion::ESTADO_VENTA])
-                * 100 / $totalCotizaciones,
-                1
-            );
-
-        $consultaVentas = Venta::query()
-            ->where('vendida_en', '>=', $periodo->inicio)
-            ->where('vendida_en', '<', $periodo->finExclusivo);
-
         return view('panel', [
-            'periodo' => $periodo,
-            'totalCotizaciones' => $totalCotizaciones,
-            'resumenCotizaciones' => $resumenCotizaciones,
-            'porcentajeAceptacion' => $porcentajeAceptacion,
-            'cantidadVentas' => (clone $consultaVentas)->count(),
-            'totalVentas' => (float) (clone $consultaVentas)->sum('total'),
-            'cotizacionesRecientes' => (clone $consultaCotizaciones)
-                ->with('cliente')
-                ->latest('creado_en')
-                ->limit(5)
-                ->get(),
-            'ventasRecientes' => (clone $consultaVentas)
-                ->with('cliente')
-                ->latest('vendida_en')
-                ->limit(5)
-                ->get(),
-            'productosStockBajo' => $this->productosConStockBajo(),
+            'entregasPorVencer' => auth()->user()->esAdministrador()
+                ? Cotizacion::with('cliente')
+                    ->where('estado', Cotizacion::ESTADO_ACEPTADA)
+                    ->whereNotNull('entrega_limite_en')
+                    ->get()
+                    ->filter(fn (Cotizacion $cotizacion): bool => PlazosHabiles::diaHabilAnterior(
+                        $cotizacion->entrega_limite_en
+                    )->isSameDay(today()))
+                : collect(),
+            'productosStockBajo' => auth()->user()->esAdministrador()
+                ? Producto::where('activo', true)
+                    ->where('existencias', '<=', 5)
+                    ->orderBy('existencias')
+                    ->get()
+                : collect(),
         ]);
-    }
-
-    private function productosConStockBajo()
-    {
-        return ArticuloCatalogo::where('tipo', 'producto')
-            ->where('activo', true)
-            ->where('existencias', '<=', 5)
-            ->orderBy('existencias')
-            ->get();
     }
 }

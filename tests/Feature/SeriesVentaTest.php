@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\PiezaInventario;
+use App\Models\Producto;
 use App\Models\Usuario;
 use App\Models\Venta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,7 +19,8 @@ class SeriesVentaTest extends TestCase
     {
         [$usuario, $cotizacion, $partidaSerializable, $partidaSinSerie] = $this->prepararVenta();
 
-        $respuesta = $this->actingAs($usuario)->get(route('cotizaciones.detalle', $cotizacion));
+        $detalleCotizacion = $this->actingAs($usuario)->get(route('cotizaciones.detalle', $cotizacion));
+        $respuesta = $this->get(route('ventas.crear', $cotizacion));
 
         $respuesta->assertOk();
         $this->assertSame(
@@ -27,6 +28,9 @@ class SeriesVentaTest extends TestCase
             substr_count($respuesta->getContent(), 'name="series['.$partidaSerializable->id.'][]"')
         );
         $respuesta->assertDontSee('name="series['.$partidaSinSerie->id.'][]"', false);
+        $detalleCotizacion
+            ->assertSee(route('ventas.crear', $cotizacion), false)
+            ->assertDontSee('name="series[', false);
     }
 
     public function test_registra_las_series_escritas_en_la_venta_y_su_producto(): void
@@ -47,7 +51,7 @@ class SeriesVentaTest extends TestCase
 
         $this->assertDatabaseHas('piezas_inventario', [
             'numero_serie' => 'AP-ABC-001',
-            'articulo_catalogo_id' => $partidaSerializable->articulo_catalogo_id,
+            'producto_id' => $partidaSerializable->producto_id,
             'partida_venta_id' => $partidaVendida->id,
             'estado' => 'entregada',
         ]);
@@ -80,7 +84,7 @@ class SeriesVentaTest extends TestCase
     {
         [$usuario, $cotizacion, $partidaSerializable, $partidaSinSerie] = $this->prepararVenta();
         PiezaInventario::create([
-            'articulo_catalogo_id' => $partidaSerializable->articulo_catalogo_id,
+            'producto_id' => $partidaSerializable->producto_id,
             'numero_serie' => 'SERIE-USADA',
             'estado' => 'entregada',
         ]);
@@ -128,8 +132,8 @@ class SeriesVentaTest extends TestCase
             'direccion' => 'Dirección de prueba',
             'codigo_postal' => '29000',
         ]);
-        $serializable = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $serializable = Producto::create([
+
             'nombre' => 'Access Point',
             'codigo' => fake()->unique()->bothify('AP-####'),
             'unidad' => 'pieza',
@@ -137,8 +141,8 @@ class SeriesVentaTest extends TestCase
             'existencias' => 3,
             'requiere_numero_serie' => true,
         ]);
-        $sinSerie = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $sinSerie = Producto::create([
+
             'nombre' => 'Cable de red',
             'codigo' => fake()->unique()->bothify('CAB-####'),
             'unidad' => 'pieza',
@@ -157,16 +161,16 @@ class SeriesVentaTest extends TestCase
             'total' => 2100,
         ]);
         $partidaSerializable = $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $serializable->id,
-            'tipo' => 'producto',
+            'producto_id' => $serializable->id,
+
             'descripcion' => 'Access Point',
             'cantidad' => 2,
             'precio_unitario' => 1000,
             'subtotal' => 2000,
         ]);
         $partidaSinSerie = $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $sinSerie->id,
-            'tipo' => 'producto',
+            'producto_id' => $sinSerie->id,
+
             'descripcion' => 'Cable de red',
             'cantidad' => 1,
             'precio_unitario' => 100,

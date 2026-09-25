@@ -10,24 +10,30 @@
         @stack('estilos')
     </head>
     <body class="aplicacion">
-        @include('componentes.navegacion')
+        <div class="estructura-aplicacion">
+            @include('componentes.navegacion-lateral')
+            <div class="estructura-aplicacion__principal">
+                @include('componentes.barra-superior')
+                <main class="pagina-administrativa @yield('clase_pagina')" id="contenido-principal">
+                    @if (session('estado'))
+                        <div class="alerta alerta--exito" role="status">
+                            {{ session('estado') }}
+                        </div>
+                    @endif
 
-        <main class="pagina-administrativa @yield('clase_pagina')" id="contenido-principal">
-            @if (session('estado'))
-                <div class="alerta alerta--exito" role="status">
-                    {{ session('estado') }}
-                </div>
-            @endif
+                    @if (session('error'))
+                        <div class="alerta alerta--peligro" role="alert">
+                            {{ session('error') }}
+                        </div>
+                    @endif
 
-            @if (session('error'))
-                <div class="alerta alerta--peligro" role="alert">
-                    {{ session('error') }}
-                </div>
-            @endif
+                    @yield('contenido')
+                </main>
+            </div>
+        </div>
+        <button class="fondo-menu" type="button" aria-label="Cerrar menú"></button>
 
-            @yield('contenido')
-        </main>
-
+        <script src="{{ asset('js/navegacion.js') }}" defer></script>
         @stack('scripts')
     </body>
 </html>

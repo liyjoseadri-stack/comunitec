@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Categoria;
+use App\Models\Producto;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -35,8 +35,8 @@ class CategoriasTest extends TestCase
     {
         $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_COMERCIAL]);
         $categoria = Categoria::create(['nombre' => 'Redes']);
-        ArticuloCatalogo::create([
-            'categoria_id' => $categoria->id, 'tipo' => 'producto', 'nombre' => 'Switch',
+        Producto::create([
+            'categoria_id' => $categoria->id,  'nombre' => 'Switch',
             'codigo' => 'SW-CAT', 'unidad' => 'pieza', 'precio' => 1000, 'existencias' => 3,
         ]);
 

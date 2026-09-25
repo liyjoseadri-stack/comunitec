@@ -15,7 +15,7 @@ class InventarioTest extends TestCase
         $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_COMERCIAL]);
 
         $this->actingAs($usuario)->post('/inventario/series', [
-            'articulo_catalogo_id' => 1,
+            'producto_id' => 1,
             'numero_serie' => 'SN-ANTICIPADA',
         ])->assertNotFound();
     }

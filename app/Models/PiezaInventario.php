@@ -12,16 +12,26 @@ class PiezaInventario extends Model
     protected $table = 'piezas_inventario';
 
     protected $fillable = [
-        'articulo_catalogo_id',
+        'producto_id',
         'numero_serie',
         'estado',
         'cotizacion_id',
         'partida_venta_id',
     ];
 
+    public function producto()
+    {
+        return $this->belongsTo(Producto::class, 'producto_id');
+    }
+
     public function articulo()
     {
-        return $this->belongsTo(ArticuloCatalogo::class, 'articulo_catalogo_id');
+        return $this->producto();
+    }
+
+    public function getArticuloAttribute(): ?Producto
+    {
+        return $this->producto;
     }
 
     public function partidaVenta()

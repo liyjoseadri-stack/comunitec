@@ -40,19 +40,34 @@ return new class extends Migration
             $this->marcasTiempo($tabla);
         });
 
-        Schema::create('articulos_catalogo', function (Blueprint $tabla) {
+        Schema::create('productos', function (Blueprint $tabla) {
             $tabla->id();
             $tabla->foreignId('categoria_id')->nullable()->constrained('categorias')->nullOnDelete();
-            $tabla->string('tipo');
             $tabla->string('nombre');
+            $tabla->text('descripcion')->nullable();
             $tabla->string('codigo')->unique();
             $tabla->string('marca')->nullable();
             $tabla->string('modelo')->nullable();
             $tabla->string('unidad');
             $tabla->decimal('precio', 12, 2);
             $tabla->unsignedInteger('existencias')->default(0);
+            $tabla->boolean('requiere_numero_serie')->default(false);
             $tabla->boolean('activo')->default(true);
             $this->marcasTiempo($tabla);
+            $tabla->index(['categoria_id', 'activo']);
+        });
+
+        Schema::create('servicios', function (Blueprint $tabla) {
+            $tabla->id();
+            $tabla->foreignId('categoria_id')->nullable()->constrained('categorias')->nullOnDelete();
+            $tabla->string('nombre');
+            $tabla->text('descripcion')->nullable();
+            $tabla->string('codigo')->unique();
+            $tabla->string('unidad');
+            $tabla->decimal('precio', 12, 2);
+            $tabla->boolean('activo')->default(true);
+            $this->marcasTiempo($tabla);
+            $tabla->index(['categoria_id', 'activo']);
         });
 
         Schema::create('cotizaciones', function (Blueprint $tabla) {
@@ -73,8 +88,9 @@ return new class extends Migration
         Schema::create('partidas_cotizacion', function (Blueprint $tabla) {
             $tabla->id();
             $tabla->foreignId('cotizacion_id')->constrained('cotizaciones')->cascadeOnDelete();
-            $tabla->foreignId('articulo_catalogo_id')->nullable()->constrained('articulos_catalogo')->nullOnDelete();
-            $tabla->string('tipo');
+            $tabla->foreignId('producto_id')->nullable()->constrained('productos')->nullOnDelete();
+            $tabla->foreignId('servicio_id')->nullable()->constrained('servicios')->nullOnDelete();
+            $tabla->string('tipo')->default('producto');
             $tabla->string('descripcion');
             $tabla->decimal('cantidad', 10, 2);
             $tabla->decimal('precio_unitario', 12, 2);
@@ -84,7 +100,7 @@ return new class extends Migration
 
         Schema::create('piezas_inventario', function (Blueprint $tabla) {
             $tabla->id();
-            $tabla->foreignId('articulo_catalogo_id')->constrained('articulos_catalogo')->cascadeOnDelete();
+            $tabla->foreignId('producto_id')->constrained('productos')->restrictOnDelete();
             $tabla->foreignId('cotizacion_id')->nullable()->constrained('cotizaciones')->nullOnDelete();
             $tabla->string('numero_serie')->unique();
             $tabla->string('estado')->default('disponible');
@@ -131,8 +147,9 @@ return new class extends Migration
             $tabla->id();
             $tabla->foreignId('venta_id')->constrained('ventas')->cascadeOnDelete();
             $tabla->foreignId('partida_cotizacion_id')->unique()->constrained('partidas_cotizacion');
-            $tabla->foreignId('articulo_catalogo_id')->nullable()->constrained('articulos_catalogo')->nullOnDelete();
-            $tabla->string('tipo');
+            $tabla->foreignId('producto_id')->nullable()->constrained('productos')->nullOnDelete();
+            $tabla->foreignId('servicio_id')->nullable()->constrained('servicios')->nullOnDelete();
+            $tabla->string('tipo')->default('producto');
             $tabla->string('descripcion');
             $tabla->decimal('cantidad', 10, 2);
             $tabla->decimal('precio_unitario', 12, 2);
@@ -154,7 +171,8 @@ return new class extends Migration
         Schema::dropIfExists('piezas_inventario');
         Schema::dropIfExists('partidas_cotizacion');
         Schema::dropIfExists('cotizaciones');
-        Schema::dropIfExists('articulos_catalogo');
+        Schema::dropIfExists('servicios');
+        Schema::dropIfExists('productos');
         Schema::dropIfExists('categorias');
         Schema::dropIfExists('clientes');
         Schema::dropIfExists('usuarios');

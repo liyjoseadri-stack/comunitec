@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AdministracionUsuariosTest extends TestCase
@@ -33,6 +34,8 @@ class AdministracionUsuariosTest extends TestCase
         $usuario = Usuario::where('correo', 'ana@example.com')->firstOrFail();
         $this->assertSame(Usuario::ROL_COMERCIAL, $usuario->rol);
         $this->assertTrue($usuario->activo);
+        $this->assertNotSame('secret-password', $usuario->contrasena);
+        $this->assertTrue(Hash::check('secret-password', $usuario->contrasena));
 
         $this->patch("/administracion/usuarios/{$usuario->id}/estado", [
             'activo' => false,

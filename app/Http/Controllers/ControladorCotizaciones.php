@@ -2,38 +2,90 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SolicitudGuardarCotizacionCompleta;
 use App\Mail\CorreoCotizacion;
-use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\EnvioCotizacion;
+use App\Models\Producto;
+use App\Models\Servicio;
+use App\Services\ServicioCreacionCotizacion;
 use App\Services\ServicioInventarioCotizacion;
+use App\Support\PlazosHabiles;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use RuntimeException;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class ControladorCotizaciones extends Controller
 {
-    public function listar(): View
+    public function listar(Request $solicitud): View
     {
+        $datos = $solicitud->validate([
+            'estado' => ['nullable', Rule::in(Cotizacion::estados())],
+        ]);
+        $estado = $datos['estado'] ?? null;
+        $clientes = Cliente::orderBy('nombre')->get();
+        $productos = Producto::with('categoria')
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get();
+        $servicios = Servicio::with('categoria')
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get();
+
         return view('cotizaciones.listado', [
-            'clientes' => Cliente::orderBy('nombre')->get(),
-            'cotizaciones' => Cotizacion::with('venta')->latest('creado_en')->get(),
+            'clientes' => $clientes,
+            'productos' => $productos,
+            'servicios' => $servicios,
+            'datosCreador' => [
+                'clientes' => $clientes->map(fn (Cliente $cliente): array => [
+                    'id' => $cliente->id,
+                    'nombre' => $cliente->nombre,
+                    'rfc' => $cliente->rfc,
+                ])->values(),
+                'catalogo' => $productos->map(fn (Producto $producto): array => [
+                    'id' => $producto->id,
+                    'tipo' => 'producto',
+                    'nombre' => $producto->nombre,
+                    'codigo' => $producto->codigo,
+                    'categoria' => $producto->categoria?->nombre,
+                    'descripcion' => $producto->descripcion,
+                    'precio' => (float) $producto->precio,
+                ])->concat($servicios->map(fn (Servicio $servicio): array => [
+                    'id' => $servicio->id,
+                    'tipo' => 'servicio',
+                    'nombre' => $servicio->nombre,
+                    'codigo' => $servicio->codigo,
+                    'categoria' => $servicio->categoria?->nombre,
+                    'descripcion' => $servicio->descripcion,
+                    'precio' => (float) $servicio->precio,
+                ]))->values(),
+            ],
+            'cotizaciones' => Cotizacion::with('venta', 'cliente')
+                ->when($estado, fn ($consulta, $valor) => $consulta->where('estado', $valor))
+                ->latest('creado_en')
+                ->get(),
+            'estadoFiltrado' => $estado,
             'puedeEditar' => auth()->user()->esAdministrador() || auth()->user()->esComercial(),
+            'folioInformativo' => 'COT-'.now()->format('Ymd').'-AUTOMÁTICO',
+            'vigenciaEstimada' => PlazosHabiles::sumar(now(), 15),
         ]);
     }
 
     public function mostrar(Cotizacion $cotizacion): View
     {
-        $cotizacion->load('cliente', 'partidas.articulo', 'enviosCorreo.usuario', 'venta');
-        $productos = $cotizacion->partidas->where('tipo', 'producto')->groupBy('articulo_catalogo_id');
-        $disponibles = ArticuloCatalogo::whereIn('id', $productos->keys())
+        $cotizacion->load('cliente', 'partidas.producto', 'partidas.servicio', 'enviosCorreo.usuario', 'venta');
+        $productos = $cotizacion->partidas->where('tipo', 'producto')->groupBy('producto_id');
+        $disponibles = Producto::whereIn('id', $productos->keys())
             ->pluck('existencias', 'id');
         $faltantes = $productos
             ->map(function ($partidas, $articulo) use ($disponibles): array {
@@ -53,7 +105,11 @@ class ControladorCotizaciones extends Controller
             'puedeEditar' => $cotizacion->venta === null
                 && (auth()->user()->esAdministrador() || auth()->user()->esComercial()),
             'clientes' => Cliente::orderBy('nombre')->get(),
-            'articulos' => ArticuloCatalogo::with('categoria')
+            'productos' => Producto::with('categoria')
+                ->where('activo', true)
+                ->orderBy('nombre')
+                ->get(),
+            'servicios' => Servicio::with('categoria')
                 ->where('activo', true)
                 ->orderBy('nombre')
                 ->get(),
@@ -66,7 +122,8 @@ class ControladorCotizaciones extends Controller
         return Pdf::loadView('cotizaciones.pdf', [
             'cotizacion' => $cotizacion->load(
                 'cliente',
-                'partidas.articulo',
+                'partidas.producto',
+                'partidas.servicio',
                 'responsable'
             ),
         ])->download("{$cotizacion->folio}.pdf");
@@ -101,7 +158,7 @@ class ControladorCotizaciones extends Controller
                     $actual->fill([
                         'estado' => 'pendiente',
                         'enviada_en' => now(),
-                        'vence_en' => now()->addDays(15),
+                        'vence_en' => PlazosHabiles::sumar(now(), 15),
                     ]);
                 }
                 Mail::to($destinatario)->send(new CorreoCotizacion($actual));
@@ -109,6 +166,7 @@ class ControladorCotizaciones extends Controller
                 $actual->enviosCorreo()->create([
                     'usuario_id' => $usuarioId,
                     'destinatario' => $destinatario,
+                    'tipo' => EnvioCotizacion::TIPO_COTIZACION,
                     'resultado' => EnvioCotizacion::RESULTADO_ACEPTADO,
                     'mensaje' => 'El servicio de correo aceptó el mensaje para su envío.',
                     'intentado_en' => now(),
@@ -119,6 +177,7 @@ class ControladorCotizaciones extends Controller
             $cotizacion->enviosCorreo()->create([
                 'usuario_id' => $usuarioId,
                 'destinatario' => $destinatario,
+                'tipo' => EnvioCotizacion::TIPO_COTIZACION,
                 'resultado' => EnvioCotizacion::RESULTADO_FALLIDO,
                 'mensaje' => 'El servicio de correo no aceptó el mensaje.',
                 'intentado_en' => now(),
@@ -197,6 +256,20 @@ class ControladorCotizaciones extends Controller
         return redirect()->route('cotizaciones.listado')->with('success', 'Se creó la cotización en borrador.');
     }
 
+    public function guardarCompleta(
+        SolicitudGuardarCotizacionCompleta $solicitud,
+        ServicioCreacionCotizacion $creador
+    ): JsonResponse {
+        $cotizacion = $creador->crear($solicitud->validated(), $solicitud->user());
+
+        return response()->json([
+            'mensaje' => 'La cotización se guardó correctamente.',
+            'cotizacion_id' => $cotizacion->id,
+            'folio' => $cotizacion->folio,
+            'redireccion' => route('cotizaciones.detalle', $cotizacion),
+        ], 201);
+    }
+
     private function validarEncabezado(Request $solicitud): array
     {
         $datos = $solicitud->validate([
@@ -210,6 +283,12 @@ class ControladorCotizaciones extends Controller
                 'nullable',
                 'string',
                 'max:255',
+            ],
+
+            'notas' => [
+                'nullable',
+                'string',
+                'max:3000',
             ],
 
             'porcentaje_descuento' => [
@@ -227,6 +306,7 @@ class ControladorCotizaciones extends Controller
         ]);
         $datos['porcentaje_descuento'] = $datos['porcentaje_descuento'] ?? 0;
         $datos['area_solicitante'] = $datos['area_solicitante'] ?? null;
+        $datos['notas'] = $datos['notas'] ?? null;
 
         return $datos;
     }
@@ -247,6 +327,7 @@ class ControladorCotizaciones extends Controller
             if (! $cotizacion->isDirty([
                 'cliente_id',
                 'area_solicitante',
+                'notas',
                 'porcentaje_descuento',
             ])) {
                 return;

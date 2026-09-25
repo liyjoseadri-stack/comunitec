@@ -13,11 +13,13 @@ class PartidaCotizacion extends Model
 
     protected $fillable = [
         'cotizacion_id',
-        'articulo_catalogo_id',
+        'producto_id',
+        'servicio_id',
         'tipo',
         'descripcion',
         'cantidad',
         'precio_unitario',
+        'porcentaje_descuento',
         'subtotal',
     ];
 
@@ -26,6 +28,7 @@ class PartidaCotizacion extends Model
         return [
             'cantidad' => 'decimal:2',
             'precio_unitario' => 'decimal:2',
+            'porcentaje_descuento' => 'decimal:2',
             'subtotal' => 'decimal:2',
         ];
     }
@@ -35,8 +38,18 @@ class PartidaCotizacion extends Model
         return $this->belongsTo(Cotizacion::class, 'cotizacion_id');
     }
 
-    public function articulo()
+    public function producto()
     {
-        return $this->belongsTo(ArticuloCatalogo::class, 'articulo_catalogo_id');
+        return $this->belongsTo(Producto::class, 'producto_id');
+    }
+
+    public function servicio()
+    {
+        return $this->belongsTo(Servicio::class, 'servicio_id');
+    }
+
+    public function getArticuloAttribute(): Producto|Servicio|null
+    {
+        return $this->producto ?? $this->servicio;
     }
 }

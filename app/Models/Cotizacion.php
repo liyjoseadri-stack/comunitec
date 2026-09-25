@@ -30,10 +30,12 @@ class Cotizacion extends Model
         'cliente_id',
         'usuario_id',
         'area_solicitante',
+        'notas',
         'estado',
         'enviada_en',
         'aceptada_en',
         'vence_en',
+        'entrega_limite_en',
         'porcentaje_descuento',
         'total',
     ];
@@ -44,6 +46,7 @@ class Cotizacion extends Model
             'enviada_en' => 'datetime',
             'aceptada_en' => 'datetime',
             'vence_en' => 'datetime',
+            'entrega_limite_en' => 'datetime',
             'porcentaje_descuento' => 'decimal:2',
             'total' => 'decimal:2',
         ];
@@ -72,6 +75,11 @@ class Cotizacion extends Model
     public function venta()
     {
         return $this->hasOne(Venta::class, 'cotizacion_id');
+    }
+
+    public function fechaLimiteEntrega()
+    {
+        return $this->entrega_limite_en ?? $this->vence_en;
     }
 
     public function etiquetaEstado(): string

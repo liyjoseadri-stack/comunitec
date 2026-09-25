@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
+use App\Models\Servicio;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -111,13 +111,11 @@ class AutorizacionRolesTest extends TestCase
             'estado' => 'aceptada',
             'total' => 100,
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'servicio',
+        $articulo = Servicio::create([
             'nombre' => 'Servicio de permisos',
             'codigo' => 'SER-PERMISOS',
             'unidad' => 'servicio',
             'precio' => 100,
-            'existencias' => 0,
         ]);
 
         $this->actingAs($usuario);
@@ -125,7 +123,7 @@ class AutorizacionRolesTest extends TestCase
         $this->post('/clientes')->assertForbidden();
         $this->put("/clientes/{$cliente->id}")->assertForbidden();
         $this->post('/inventario/productos')->assertForbidden();
-        $this->patch("/inventario/productos/{$articulo->id}/estado")->assertForbidden();
+        $this->patch("/inventario/servicios/{$articulo->id}/estado")->assertForbidden();
         $this->post('/inventario/categorias')->assertForbidden();
         $this->post("/cotizaciones/{$cotizacion->id}/venta")->assertForbidden();
         $this->post('/administracion/usuarios')->assertForbidden();

@@ -13,7 +13,7 @@ class ControladorCategorias extends Controller
     public function listar(Request $solicitud): View
     {
         $categorias = Categoria::query()
-            ->withCount('articulos')
+            ->withCount(['productos', 'servicios'])
             ->when($solicitud->filled('buscar'), fn ($consulta) => $consulta
                 ->where('nombre', 'like', '%'.$solicitud->string('buscar')->trim().'%'))
             ->when($solicitud->input('estado') === 'activas', fn ($consulta) => $consulta->where('activo', true))
@@ -37,7 +37,10 @@ class ControladorCategorias extends Controller
     public function mostrar(Categoria $categoria): View
     {
         return view('inventario.categorias.detalle', [
-            'categoria' => $categoria->load(['articulos' => fn ($consulta) => $consulta->orderBy('nombre')]),
+            'categoria' => $categoria->load([
+                'productos' => fn ($consulta) => $consulta->orderBy('nombre'),
+                'servicios' => fn ($consulta) => $consulta->orderBy('nombre'),
+            ]),
         ]);
     }
 

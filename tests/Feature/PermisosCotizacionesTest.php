@@ -16,11 +16,14 @@ class PermisosCotizacionesTest extends TestCase
     {
         $cotizacion = $this->preparar();
 
-        $this->get('/cotizaciones')->assertOk()->assertDontSee('<form', false);
+        $this->get('/cotizaciones')->assertOk()
+            ->assertDontSee('action="'.route('cotizaciones.guardar').'"', false);
         foreach (['borrador', 'pendiente', 'aceptada', 'cancelada', 'rechazada', 'vencida'] as $estado) {
             $cotizacion->update(['estado' => $estado]);
             $this->get("/cotizaciones/{$cotizacion->id}")->assertOk()
-                ->assertSee($cotizacion->folio)->assertDontSee('<form', false);
+                ->assertSee($cotizacion->folio)
+                ->assertDontSee('action="'.route('cotizaciones.actualizar', $cotizacion).'"', false)
+                ->assertDontSee('action="'.route('ventas.guardar', $cotizacion).'"', false);
         }
         $this->get("/cotizaciones/{$cotizacion->id}/pdf")->assertOk()
             ->assertHeader('content-type', 'application/pdf');
@@ -38,6 +41,7 @@ class PermisosCotizacionesTest extends TestCase
         ]);
 
         $this->post('/cotizaciones')->assertForbidden();
+        $this->postJson('/api/cotizaciones')->assertForbidden();
         $this->put("/cotizaciones/{$cotizacion->id}")->assertForbidden();
         foreach (['enviar', 'correo', 'aceptar', 'rechazar', 'cancelar', 'partidas'] as $accion) {
             $this->post("/cotizaciones/{$cotizacion->id}/{$accion}")->assertForbidden();

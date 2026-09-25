@@ -18,18 +18,18 @@ class DatabaseSeeder extends Seeder
 
         if (! $correo || ! $contrasena) {
             $this->command?->warn('No se creó el administrador: configura USUARIO_ADMIN_CORREO y USUARIO_ADMIN_CONTRASENA.');
-
-            return;
+        } else {
+            Usuario::query()->updateOrCreate(
+                ['correo' => $correo],
+                [
+                    'nombre' => env('USUARIO_ADMIN_NOMBRE', 'Administrador Comunitec'),
+                    'contrasena' => Hash::make($contrasena),
+                    'rol' => Usuario::ROL_ADMINISTRADOR,
+                    'activo' => true,
+                ]
+            );
         }
 
-        Usuario::query()->updateOrCreate(
-            ['correo' => $correo],
-            [
-                'nombre' => env('USUARIO_ADMIN_NOMBRE', 'Administrador Comunitec'),
-                'contrasena' => Hash::make($contrasena),
-                'rol' => Usuario::ROL_ADMINISTRADOR,
-                'activo' => true,
-            ]
-        );
+        $this->call(DatosDemostracionSeeder::class);
     }
 }

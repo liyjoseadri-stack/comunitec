@@ -5,18 +5,17 @@ namespace App\Models;
 use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
 use Illuminate\Database\Eloquent\Model;
 
-class ArticuloCatalogo extends Model
+class Producto extends Model
 {
     use UsaMarcasTiempoEnEspanol;
 
-    protected $table = 'articulos_catalogo';
+    protected $table = 'productos';
 
     protected $fillable = [
-        'tipo',
+        'categoria_id',
         'nombre',
         'descripcion',
         'codigo',
-        'categoria_id',
         'marca',
         'modelo',
         'unidad',
@@ -42,22 +41,21 @@ class ArticuloCatalogo extends Model
 
     public function piezasInventario()
     {
-        return $this->hasMany(PiezaInventario::class, 'articulo_catalogo_id');
+        return $this->hasMany(PiezaInventario::class, 'producto_id');
     }
 
     public function seriesVendidas()
     {
-        return $this->hasMany(PiezaInventario::class, 'articulo_catalogo_id')
-            ->whereNotNull('partida_venta_id');
+        return $this->piezasInventario()->whereNotNull('partida_venta_id');
     }
 
     public function partidasCotizacion()
     {
-        return $this->hasMany(PartidaCotizacion::class, 'articulo_catalogo_id');
+        return $this->hasMany(PartidaCotizacion::class, 'producto_id');
     }
 
     public function partidasVenta()
     {
-        return $this->hasMany(PartidaVenta::class, 'articulo_catalogo_id');
+        return $this->hasMany(PartidaVenta::class, 'producto_id');
     }
 }

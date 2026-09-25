@@ -23,8 +23,13 @@ class Categoria extends Model
         ];
     }
 
-    public function articulos()
+    public function productos()
     {
-        return $this->hasMany(ArticuloCatalogo::class, 'categoria_id');
+        return $this->hasMany(Producto::class, 'categoria_id');
+    }
+
+    public function servicios()
+    {
+        return $this->hasMany(Servicio::class, 'categoria_id');
     }
 }

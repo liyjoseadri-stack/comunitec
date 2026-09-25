@@ -26,7 +26,7 @@ class EnvioCotizacionesTest extends TestCase
         $this->assertSame('pdf', $mensaje->getAttachments()[0]->getMediaSubtype());
         $this->assertSame('pendiente', $cotizacion->fresh()->estado);
         $this->assertTrue($cotizacion->fresh()->enviada_en->equalTo(now()));
-        $this->assertTrue($cotizacion->fresh()->vence_en->equalTo(now()->addDays(15)));
+        $this->assertTrue($cotizacion->fresh()->vence_en->equalTo(now()->addWeekdays(15)));
         $this->assertDatabaseHas('envios_correo_cotizacion', [
             'cotizacion_id' => $cotizacion->id,
             'destinatario' => 'cliente@example.test',

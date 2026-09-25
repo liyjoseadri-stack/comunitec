@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Mail\CorreoCotizacion;
-use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
+use App\Models\Producto;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -29,8 +29,8 @@ class CotizacionesTest extends TestCase
             'direccion' => 'Dirección 1',
             'codigo_postal' => '29000',
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $articulo = Producto::create([
+
             'nombre' => 'Laptop',
             'codigo' => 'LAP-01',
             'unidad' => 'pieza',
@@ -47,8 +47,8 @@ class CotizacionesTest extends TestCase
         $this->assertSame('borrador', $cotizacion->estado);
 
         $this->post("/cotizaciones/{$cotizacion->id}/partidas", [
-            'articulo_catalogo_id' => $articulo->id,
-            'tipo' => 'producto',
+            'producto_id' => $articulo->id,
+
             'descripcion' => 'Laptop',
             'cantidad' => 2,
             'precio_unitario' => 1000,
@@ -287,8 +287,8 @@ class CotizacionesTest extends TestCase
             'direccion' => 'Dirección 1',
             'codigo_postal' => '29000',
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $articulo = Producto::create([
+
             'nombre' => 'Cámara',
             'codigo' => 'CAM-01',
             'unidad' => 'pieza',
@@ -303,8 +303,8 @@ class CotizacionesTest extends TestCase
             'total' => 500,
         ]);
         $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $articulo->id,
-            'tipo' => 'producto',
+            'producto_id' => $articulo->id,
+
             'descripcion' => 'Cámara',
             'cantidad' => 1,
             'precio_unitario' => 500,
@@ -331,8 +331,8 @@ class CotizacionesTest extends TestCase
             'direccion' => 'Dirección 1',
             'codigo_postal' => '29000',
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $articulo = Producto::create([
+
             'nombre' => 'Router',
             'codigo' => 'ROU-01',
             'unidad' => 'pieza',
@@ -347,8 +347,8 @@ class CotizacionesTest extends TestCase
             'total' => 500,
         ]);
         $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $articulo->id,
-            'tipo' => 'producto',
+            'producto_id' => $articulo->id,
+
             'descripcion' => 'Router',
             'cantidad' => 1,
             'precio_unitario' => 500,
@@ -376,8 +376,8 @@ class CotizacionesTest extends TestCase
             'direccion' => 'Dirección 1',
             'codigo_postal' => '29000',
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $articulo = Producto::create([
+
             'nombre' => 'Monitor',
             'codigo' => 'MON-01',
             'unidad' => 'pieza',
@@ -392,8 +392,8 @@ class CotizacionesTest extends TestCase
             'total' => 500,
         ]);
         $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $articulo->id,
-            'tipo' => 'producto',
+            'producto_id' => $articulo->id,
+
             'descripcion' => 'Monitor',
             'cantidad' => 1,
             'precio_unitario' => 500,
@@ -418,8 +418,8 @@ class CotizacionesTest extends TestCase
             'direccion' => 'Dirección 1',
             'codigo_postal' => '29000',
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $articulo = Producto::create([
+
             'nombre' => 'Teclado',
             'codigo' => 'TEC-01',
             'unidad' => 'pieza',
@@ -435,8 +435,8 @@ class CotizacionesTest extends TestCase
             'total' => 300,
         ]);
         $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $articulo->id,
-            'tipo' => 'producto',
+            'producto_id' => $articulo->id,
+
             'descripcion' => 'Teclado',
             'cantidad' => 1,
             'precio_unitario' => 300,
@@ -463,8 +463,8 @@ class CotizacionesTest extends TestCase
             'direccion' => 'Dirección 1',
             'codigo_postal' => '29000',
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $articulo = Producto::create([
+
             'nombre' => 'Switch',
             'codigo' => 'SWI-01',
             'unidad' => 'pieza',
@@ -479,8 +479,8 @@ class CotizacionesTest extends TestCase
             'total' => 1000,
         ]);
         $cotizacion->partidas()->create([
-            'articulo_catalogo_id' => $articulo->id,
-            'tipo' => 'producto',
+            'producto_id' => $articulo->id,
+
             'descripcion' => 'Switch',
             'cantidad' => 2,
             'precio_unitario' => 500,
@@ -507,8 +507,8 @@ class CotizacionesTest extends TestCase
             'direccion' => 'Dirección de prueba',
             'codigo_postal' => '29000',
         ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $articulo = Producto::create([
+
             'nombre' => 'Equipo de cómputo',
             'codigo' => 'EQ-PROTEGIDO',
             'unidad' => 'pieza',
@@ -525,8 +525,8 @@ class CotizacionesTest extends TestCase
         ]);
 
         $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/partidas", [
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $articulo->id,
+
+            'producto_id' => $articulo->id,
             'descripcion' => 'Equipo para el área administrativa',
             'cantidad' => 2,
         ])->assertRedirect();

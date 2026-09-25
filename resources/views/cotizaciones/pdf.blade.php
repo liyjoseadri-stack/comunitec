@@ -39,9 +39,14 @@
 </head>
 <body>
     @php
-        $subtotalPartidas = (float) $cotizacion->partidas->sum('subtotal');
+        $subtotalBruto = (float) $cotizacion->partidas->sum(
+            fn ($partida) => (float) $partida->cantidad * (float) $partida->precio_unitario
+        );
         $total = (float) $cotizacion->total;
-        $descuento = max(0, $subtotalPartidas - $total);
+        $descuento = max(0, $subtotalBruto - $total);
+        $tieneDescuentoPorConcepto = $cotizacion->partidas->contains(
+            fn ($partida) => (float) $partida->porcentaje_descuento > 0
+        );
         $subtotalSinIva = $total / 1.16;
         $ivaIncluido = $total - $subtotalSinIva;
         $fechaDocumento = $cotizacion->enviada_en ?? $cotizacion->creado_en;
@@ -99,6 +104,13 @@
                     <td class="cantidad">{{ number_format((float) $partida->cantidad, 2) }}</td>
                     <td class="descripcion">{{ $partida->descripcion }}</td>
                     <td class="caracteristicas">
+                        <span class="detalle-secundario">
+                            Tipo: {{ ucfirst($partida->tipo) }}
+                            · Concepto: {{ $articulo?->nombre ?? 'Concepto libre' }}
+                        </span>
+                        @if ($caracteristicas->isNotEmpty())
+                            <br>
+                        @endif
                         @if ($caracteristicas->isNotEmpty())
                             {{ $caracteristicas->join(' · ') }}
                         @else
@@ -108,10 +120,15 @@
                         @endif
                     </td>
                     <td class="importe">${{ number_format((float) $partida->precio_unitario, 2) }}</td>
-                    <td class="importe">${{ number_format((float) $partida->subtotal, 2) }}</td>
+                    <td class="importe">
+                        ${{ number_format((float) $partida->subtotal, 2) }}
+                        @if ((float) $partida->porcentaje_descuento > 0)
+                            <br><span class="detalle-secundario">−{{ number_format((float) $partida->porcentaje_descuento, 2) }}%</span>
+                        @endif
+                    </td>
                 </tr>
             @empty
-                <tr><td colspan="5">Esta cotización todavía no contiene partidas.</td></tr>
+                <tr><td colspan="5">Esta cotización todavía no contiene productos o servicios.</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -119,7 +136,9 @@
     <div class="totales">
         <div class="linea-total">
             <span class="etiqueta-total">
-                DESCUENTO ({{ number_format((float) $cotizacion->porcentaje_descuento, 2) }}%):
+                {{ $tieneDescuentoPorConcepto
+                    ? 'DESCUENTO ACUMULADO:'
+                    : 'DESCUENTO ('.number_format((float) $cotizacion->porcentaje_descuento, 2).'%):' }}
             </span>
             <span class="valor-total">{{ $descuento > 0 ? '-' : '' }}${{ number_format($descuento, 2) }}</span>
         </div>
@@ -138,6 +157,10 @@
     </div>
 
     <p class="nota-iva">Los precios ya incluyen IVA; el desglose es informativo y no se suma nuevamente.</p>
+
+    @if ($cotizacion->notas)
+        <p><strong>Notas y términos:</strong> {{ $cotizacion->notas }}</p>
+    @endif
 
     <p class="cierre">
         Esperando que el contenido de la presente sea de su utilidad, me pongo a sus órdenes

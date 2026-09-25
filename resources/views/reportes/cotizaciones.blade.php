@@ -4,10 +4,7 @@
 
 @section('contenido')
             <header class="encabezado-pagina">
-                <div>
-                    <h1>Reporte de cotizaciones</h1>
-                    <p>Consulta las cotizaciones que forman los indicadores comerciales.</p>
-                </div>
+                <p>Consulta las cotizaciones que forman los indicadores comerciales.</p>
                 <span class="contador-registros">
                     {{ $cantidadResultados }} {{ $cantidadResultados === 1 ? 'resultado' : 'resultados' }}
                 </span>
@@ -16,6 +13,7 @@
             @include('componentes.errores-validacion')
 
             <nav class="pestanas-reportes" aria-label="Tipos de reporte">
+                <a href="{{ route('reportes.resumen') }}">Resumen</a>
                 <a href="{{ route('reportes.cotizaciones') }}" aria-current="page">Cotizaciones</a>
                 <a href="{{ route('reportes.ventas') }}">Ventas</a>
             </nav>

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Cotizacion;
 use App\Models\PartidaCotizacion;
+use App\Models\Producto;
+use App\Models\Servicio;
 use App\Services\ServicioInventarioCotizacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,12 +40,30 @@ class ControladorPartidas extends Controller
 
     private function validar(Request $solicitud, ?PartidaCotizacion $partida = null): array
     {
-        $reglaArticulo = Rule::exists('articulos_catalogo', 'id')
-            ->where('tipo', $solicitud->input('tipo'));
-        $conservaArticuloHistorico = $partida !== null
-            && (int) $partida->articulo_catalogo_id === (int) $solicitud->input('articulo_catalogo_id');
-        if (! $conservaArticuloHistorico) {
-            $reglaArticulo->where('activo', true);
+        if (! $solicitud->filled('porcentaje_descuento')) {
+            $solicitud->merge([
+                'porcentaje_descuento' => $partida?->porcentaje_descuento ?? 0,
+            ]);
+        }
+
+        if (! $solicitud->filled('tipo')) {
+            $tipo = $solicitud->filled('producto_id')
+                ? 'producto'
+                : ($solicitud->filled('servicio_id') ? 'servicio' : $partida?->tipo);
+            $solicitud->merge(['tipo' => $tipo]);
+        }
+
+        $conservaProducto = $partida !== null
+            && (int) $partida->producto_id === (int) $solicitud->input('producto_id');
+        $conservaServicio = $partida !== null
+            && (int) $partida->servicio_id === (int) $solicitud->input('servicio_id');
+        $reglaProducto = Rule::exists('productos', 'id');
+        $reglaServicio = Rule::exists('servicios', 'id');
+        if (! $conservaProducto) {
+            $reglaProducto->where('activo', true);
+        }
+        if (! $conservaServicio) {
+            $reglaServicio->where('activo', true);
         }
 
         $datos = $solicitud->validate([
@@ -58,10 +77,16 @@ class ControladorPartidas extends Controller
                 ]),
             ],
 
-            'articulo_catalogo_id' => [
-                'required_unless:tipo,otro',
+            'producto_id' => [
+                'required_if:tipo,producto',
                 'nullable',
-                $reglaArticulo,
+                $reglaProducto,
+            ],
+
+            'servicio_id' => [
+                'required_if:tipo,servicio',
+                'nullable',
+                $reglaServicio,
             ],
 
             'descripcion' => [
@@ -83,22 +108,37 @@ class ControladorPartidas extends Controller
                 'min:0',
             ],
 
+            'porcentaje_descuento' => [
+                'required',
+                'numeric',
+                'between:0,100',
+            ],
+
         ]);
         if ($datos['tipo'] === 'otro') {
-            $datos['articulo_catalogo_id'] = null;
+            $datos['producto_id'] = null;
+            $datos['servicio_id'] = null;
         } else {
-            $articulo = ArticuloCatalogo::findOrFail($datos['articulo_catalogo_id']);
-            $mismoArticulo = $partida !== null
-                && (int) $partida->articulo_catalogo_id === (int) $articulo->id;
-            $datos['precio_unitario'] = $mismoArticulo
+            $esProducto = $datos['tipo'] === 'producto';
+            $elemento = $esProducto
+                ? Producto::findOrFail($datos['producto_id'])
+                : Servicio::findOrFail($datos['servicio_id']);
+            $mismoElemento = $esProducto ? $conservaProducto : $conservaServicio;
+            $datos['producto_id'] = $esProducto ? $elemento->id : null;
+            $datos['servicio_id'] = $esProducto ? null : $elemento->id;
+            $datos['precio_unitario'] = $mismoElemento
                 ? $partida->precio_unitario
-                : $articulo->precio;
+                : $elemento->precio;
         }
 
         return [
             ...$datos,
-            'subtotal' => round($datos['cantidad'] * $datos['precio_unitario'],
-                2),
+            'subtotal' => round(
+                $datos['cantidad']
+                    * $datos['precio_unitario']
+                    * (1 - $datos['porcentaje_descuento'] / 100),
+                2
+            ),
         ];
     }
 

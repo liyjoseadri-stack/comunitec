@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
+use App\Models\Producto;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -59,7 +59,7 @@ class ReservasInventarioTest extends TestCase
         $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/aceptar");
         $this->assertSame('aceptada', $cotizacion->fresh()->estado);
         $this->assertSame(3, $producto->fresh()->existencias);
-        $cotizacion->update(['vence_en' => now()->subMinute()]);
+        $cotizacion->update(['entrega_limite_en' => now()->subMinute()]);
 
         $this->artisan('cotizaciones:vencer')->assertSuccessful();
 
@@ -90,8 +90,8 @@ class ReservasInventarioTest extends TestCase
         $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/aceptar");
 
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
-            'tipo' => 'producto',
-            'articulo_catalogo_id' => $producto->id,
+
+            'producto_id' => $producto->id,
             'descripcion' => 'Memoria RAM actualizada',
             'cantidad' => 1,
             'precio_unitario' => 800,
@@ -114,8 +114,8 @@ class ReservasInventarioTest extends TestCase
             'direccion' => 'Dirección de prueba',
             'codigo_postal' => '29000',
         ]);
-        $producto = ArticuloCatalogo::create([
-            'tipo' => 'producto',
+        $producto = Producto::create([
+
             'nombre' => 'Memoria RAM',
             'codigo' => 'RAM-RESERVA',
             'unidad' => 'pieza',
@@ -133,8 +133,8 @@ class ReservasInventarioTest extends TestCase
 
         foreach ($cantidades as $indice => $cantidad) {
             $cotizacion->partidas()->create([
-                'articulo_catalogo_id' => $producto->id,
-                'tipo' => 'producto',
+                'producto_id' => $producto->id,
+
                 'descripcion' => 'Memoria RAM partida '.($indice + 1),
                 'cantidad' => $cantidad,
                 'precio_unitario' => 800,

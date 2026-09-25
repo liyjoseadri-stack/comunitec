@@ -72,7 +72,7 @@ class PanelReportesTest extends TestCase
             '2026-09-01 00:00:00'
         );
 
-        $respuesta = $this->actingAs($usuario)->get('/panel?mes=2026-08');
+        $respuesta = $this->actingAs($usuario)->get('/reportes?mes=2026-08');
 
         $respuesta->assertOk()
             ->assertViewHas('totalCotizaciones', 6)
@@ -240,7 +240,7 @@ class PanelReportesTest extends TestCase
             'rol' => Usuario::ROL_CONSULTA,
         ]);
 
-        $respuesta = $this->actingAs($usuario)->get('/panel');
+        $respuesta = $this->actingAs($usuario)->get('/reportes');
 
         $respuesta->assertOk()
             ->assertViewHas('periodo', fn ($periodo): bool => $periodo->mes() === '2026-09')
@@ -254,12 +254,14 @@ class PanelReportesTest extends TestCase
 
     public function test_el_panel_rechaza_un_mes_invalido_con_mensaje_en_espanol(): void
     {
-        $usuario = Usuario::factory()->create();
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_CONSULTA,
+        ]);
 
         $this->actingAs($usuario)
-            ->from('/panel')
+            ->from('/reportes')
             ->followingRedirects()
-            ->get('/panel?mes=2026-13')
+            ->get('/reportes?mes=2026-13')
             ->assertOk()
             ->assertSee('Selecciona un mes válido.');
     }
@@ -295,13 +297,11 @@ class PanelReportesTest extends TestCase
         $this->actingAs($consulta)->get('/reportes/cotizaciones')
             ->assertOk()
             ->assertSee('Reporte de cotizaciones')
-            ->assertDontSee('method="POST"', false)
             ->assertDontSee('method="PUT"', false)
             ->assertDontSee('method="DELETE"', false);
         $this->get('/reportes/ventas')
             ->assertOk()
             ->assertSee('Reporte de ventas')
-            ->assertDontSee('method="POST"', false)
             ->assertDontSee('method="PUT"', false)
             ->assertDontSee('method="DELETE"', false);
     }

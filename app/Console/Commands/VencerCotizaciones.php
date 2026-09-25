@@ -21,7 +21,15 @@ class VencerCotizaciones extends Command
         $pendingCount = Cotizacion::where('estado', 'pendiente')->whereNotNull('vence_en')->where('vence_en', '<=', now())->update([
             'estado' => 'vencida',
         ]);
-        $cotizacionesAceptadas = Cotizacion::where('estado', 'aceptada')->whereNotNull('vence_en')->where('vence_en', '<=', now())->get();
+        $cotizacionesAceptadas = Cotizacion::where('estado', 'aceptada')
+            ->where(function ($consulta) {
+                $consulta->where('entrega_limite_en', '<=', now())
+                    ->orWhere(function ($consulta) {
+                        $consulta->whereNull('entrega_limite_en')
+                            ->where('vence_en', '<=', now());
+                    });
+            })
+            ->get();
 
         $reservasLiberadas = 0;
         foreach ($cotizacionesAceptadas as $cotizacion) {
