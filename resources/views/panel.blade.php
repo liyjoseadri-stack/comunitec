@@ -113,7 +113,7 @@
                 @else
                     <ul class="lista-alertas">
                         @foreach ($productosStockBajo as $articulo)
-                            <li>{{ $articulo->nombre }}: {{ $articulo->cantidad_piezas_disponibles }} piezas disponibles.</li>
+                            <li>{{ $articulo->nombre }}: {{ $articulo->existencias }} piezas disponibles.</li>
                         @endforeach
                     </ul>
                 @endif

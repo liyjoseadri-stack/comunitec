@@ -124,10 +124,9 @@ class AutorizacionRolesTest extends TestCase
 
         $this->post('/clientes')->assertForbidden();
         $this->put("/clientes/{$cliente->id}")->assertForbidden();
-        $this->post('/catalogo')->assertForbidden();
-        $this->patch("/catalogo/{$articulo->id}/estado")->assertForbidden();
+        $this->post('/inventario/productos')->assertForbidden();
+        $this->patch("/inventario/productos/{$articulo->id}/estado")->assertForbidden();
         $this->post('/inventario/categorias')->assertForbidden();
-        $this->post('/inventario/series')->assertForbidden();
         $this->post("/cotizaciones/{$cotizacion->id}/venta")->assertForbidden();
         $this->post('/administracion/usuarios')->assertForbidden();
     }

@@ -2,11 +2,9 @@
 
 use App\Http\Controllers\Administracion\ControladorUsuarios;
 use App\Http\Controllers\Auth\ControladorSesion;
-use App\Http\Controllers\ControladorCatalogo;
 use App\Http\Controllers\ControladorCategorias;
 use App\Http\Controllers\ControladorClientes;
 use App\Http\Controllers\ControladorCotizaciones;
-use App\Http\Controllers\ControladorInventario;
 use App\Http\Controllers\ControladorPanel;
 use App\Http\Controllers\ControladorPartidas;
 use App\Http\Controllers\ControladorProductos;
@@ -143,19 +141,8 @@ Route::middleware('auth')->group(function () {
             ControladorCategorias::class,
             'actualizarEstado',
         ])->name('inventario.categorias.estado');
-        Route::post('/inventario/series', [
-            ControladorInventario::class,
-            'registrarPieza',
-        ])->name('inventario.piezas');
-        Route::redirect('/catalogo', '/inventario')->name('catalogo.listado');
-        Route::post('/catalogo', [
-            ControladorCatalogo::class,
-            'guardar',
-        ])->name('catalogo.guardar');
-        Route::patch('/catalogo/{articulo}/estado', [
-            ControladorCatalogo::class,
-            'actualizarEstado',
-        ])->name('catalogo.estado');
+        Route::get('/catalogo', fn () => redirect()->route('inventario.listado'))
+            ->name('catalogo.listado');
         Route::get('/clientes', [
             ControladorClientes::class,
             'listar',

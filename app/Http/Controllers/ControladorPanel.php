@@ -77,13 +77,10 @@ class ControladorPanel extends Controller
 
     private function productosConStockBajo()
     {
-        return ArticuloCatalogo::where('tipo', 'producto')->withCount([
-            'piezasInventario as cantidad_piezas_disponibles' => fn ($consulta) => $consulta->where(
-                'estado',
-                'disponible'
-            ),
-        ])->get()
-            ->filter(fn ($articulo) => $articulo->cantidad_piezas_disponibles <= 5)
-            ->sortBy('cantidad_piezas_disponibles');
+        return ArticuloCatalogo::where('tipo', 'producto')
+            ->where('activo', true)
+            ->where('existencias', '<=', 5)
+            ->orderBy('existencias')
+            ->get();
     }
 }

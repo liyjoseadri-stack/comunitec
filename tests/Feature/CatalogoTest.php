@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\ArticuloCatalogo;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -11,128 +10,18 @@ class CatalogoTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_el_catalogo_muestra_un_formulario_etiquetado_y_conserva_los_datos_anteriores(): void
+    public function test_la_ruta_anterior_del_catalogo_dirige_al_inventario_unificado(): void
     {
-        $usuario = Usuario::factory()->create([
-            'rol' => Usuario::ROL_COMERCIAL,
-        ]);
+        $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_COMERCIAL]);
 
-        $response = $this->actingAs($usuario)
-            ->withSession([
-                '_old_input' => [
-                    'tipo' => 'servicio',
-                    'nombre' => 'Instalación de red',
-                    'codigo' => 'SER-001',
-                    'precio' => '1250.00',
-                ],
-            ])
-            ->get('/inventario');
-
-        $response->assertOk()
-            ->assertSee('css/administracion.css', false)
-            ->assertSee('<label for="tipo">Tipo</label>', false)
-            ->assertSee('<label for="precio">Precio con IVA</label>', false)
-            ->assertSee('<label for="existencias">Existencias</label>', false)
-            ->assertSee('value="Instalación de red"', false)
-            ->assertSee('value="SER-001"', false)
-            ->assertSee('value="1250.00"', false)
-            ->assertSee('<option value="servicio" selected>', false);
+        $this->actingAs($usuario)->get('/catalogo')->assertRedirect('/inventario');
     }
 
-    public function test_el_comercial_puede_crear_un_producto(): void
+    public function test_las_escrituras_del_catalogo_anterior_ya_no_existen(): void
     {
-        $usuario = Usuario::factory()->create([
-            'rol' => Usuario::ROL_COMERCIAL,
-        ]);
-        $this->actingAs($usuario)->post('/catalogo', [
-            'tipo' => 'producto',
-            'nombre' => 'Laptop',
-            'codigo' => 'LAP-001',
-            'marca' => 'Dell',
-            'model' => 'Latitude',
-            'unidad' => 'pieza',
-            'precio' => '12000.00',
-            'existencias' => 3,
-        ])->assertRedirect('/catalogo');
-        $this->assertDatabaseHas('articulos_catalogo', [
-            'codigo' => 'LAP-001',
-            'tipo' => 'producto',
-        ]);
-    }
+        $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_COMERCIAL]);
 
-    public function test_un_servicio_puede_crearse_sin_existencias(): void
-    {
-        $usuario = Usuario::factory()->create([
-            'rol' => Usuario::ROL_COMERCIAL,
-        ]);
-
-        $this->actingAs($usuario)->post('/catalogo', [
-            'tipo' => 'servicio',
-            'nombre' => 'Instalación de red',
-            'codigo' => 'SER-001',
-            'unidad' => 'servicio',
-            'precio' => '1250.00',
-            'existencias' => '',
-        ])->assertRedirect('/catalogo')
-            ->assertSessionHasNoErrors();
-
-        $this->assertDatabaseHas('articulos_catalogo', [
-            'codigo' => 'SER-001',
-            'tipo' => 'servicio',
-            'existencias' => 0,
-        ]);
-    }
-
-    public function test_un_producto_sigue_requiriendo_existencias_enteras(): void
-    {
-        $usuario = Usuario::factory()->create([
-            'rol' => Usuario::ROL_COMERCIAL,
-        ]);
-
-        $this->actingAs($usuario)->post('/catalogo', [
-            'tipo' => 'producto',
-            'nombre' => 'Laptop',
-            'codigo' => 'LAP-SIN-STOCK',
-            'unidad' => 'pieza',
-            'precio' => '12000.00',
-            'existencias' => '',
-        ])->assertSessionHasErrors('existencias');
-
-        $this->assertDatabaseMissing('articulos_catalogo', [
-            'codigo' => 'LAP-SIN-STOCK',
-        ]);
-    }
-
-    public function test_el_comercial_puede_desactivar_y_reactivar_un_articulo(): void
-    {
-        $usuario = Usuario::factory()->create([
-            'rol' => Usuario::ROL_COMERCIAL,
-        ]);
-        $articulo = ArticuloCatalogo::create([
-            'tipo' => 'servicio',
-            'nombre' => 'Instalación de red',
-            'codigo' => 'SER-ESTADO',
-            'unidad' => 'servicio',
-            'precio' => 1250,
-            'existencias' => 0,
-            'activo' => true,
-        ]);
-
-        $this->actingAs($usuario)
-            ->patch("/catalogo/{$articulo->id}/estado")
-            ->assertRedirect('/catalogo');
-
-        $this->assertDatabaseHas('articulos_catalogo', [
-            'id' => $articulo->id,
-            'activo' => false,
-        ]);
-
-        $this->patch("/catalogo/{$articulo->id}/estado")
-            ->assertRedirect('/catalogo');
-
-        $this->assertDatabaseHas('articulos_catalogo', [
-            'id' => $articulo->id,
-            'activo' => true,
-        ]);
+        $this->actingAs($usuario)->post('/catalogo')->assertStatus(405);
+        $this->patch('/catalogo/1/estado')->assertNotFound();
     }
 }
