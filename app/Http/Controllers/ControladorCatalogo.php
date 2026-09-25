@@ -19,7 +19,7 @@ class ControladorCatalogo extends Controller
 
     public function guardar(Request $request)
     {
-        ArticuloCatalogo::create($request->validate([
+        $datos = $request->validate([
             'type' => [
                 'required',
                 'in:product,service',
@@ -50,12 +50,31 @@ class ControladorCatalogo extends Controller
                 'min:0',
             ],
             'stock' => [
+                'nullable',
                 'required_if:type,product',
                 'integer',
                 'min:0',
             ],
-        ]));
+        ]);
+
+        if ($datos['type'] === 'service') {
+            $datos['stock'] = 0;
+        }
+
+        ArticuloCatalogo::create($datos);
 
         return redirect()->route('catalogo.listado');
+    }
+
+    public function actualizarEstado(ArticuloCatalogo $item)
+    {
+        $item->update([
+            'active' => ! $item->active,
+        ]);
+
+        return redirect()->route('catalogo.listado')->with(
+            'success',
+            $item->active ? 'El concepto fue reactivado.' : 'El concepto fue desactivado.'
+        );
     }
 }

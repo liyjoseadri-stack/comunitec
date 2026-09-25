@@ -132,6 +132,10 @@ Route::middleware('auth')->group(function () {
             ControladorCatalogo::class,
             'guardar',
         ])->name('catalogo.guardar');
+        Route::patch('/catalogo/{item}/estado', [
+            ControladorCatalogo::class,
+            'actualizarEstado',
+        ])->name('catalogo.estado');
         Route::get('/clientes', [
             ControladorClientes::class,
             'listar',

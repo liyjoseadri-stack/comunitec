@@ -32,6 +32,10 @@
                 </div>
             @endif
 
+            @if (session('success'))
+                <p class="mensaje-exito" role="status">{{ session('success') }}</p>
+            @endif
+
             <section class="bloque-administrativo" aria-labelledby="titulo-nuevo-concepto">
                 <div class="encabezado-seccion">
                     <div>
@@ -127,6 +131,8 @@
                                 <th scope="col">Unidad</th>
                                 <th scope="col">Precio</th>
                                 <th scope="col">Existencias</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -150,10 +156,20 @@
                                     <td>{{ $item->unit }}</td>
                                     <td>${{ number_format((float) $item->price, 2) }}</td>
                                     <td>{{ $item->type === 'product' ? $item->stock : 'No aplica' }}</td>
+                                    <td>{{ $item->active ? 'Activo' : 'Inactivo' }}</td>
+                                    <td>
+                                        <form method="POST" action="{{ route('catalogo.estado', $item) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit">
+                                                {{ $item->active ? 'Desactivar' : 'Reactivar' }}
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td class="estado-vacio" colspan="7">
+                                    <td class="estado-vacio" colspan="9">
                                         Aún no hay productos ni servicios registrados.
                                     </td>
                                 </tr>

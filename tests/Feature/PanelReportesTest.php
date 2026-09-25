@@ -214,7 +214,23 @@ class PanelReportesTest extends TestCase
             ->assertViewHas('cantidadResultados', 21)
             ->assertViewHas('totalImporte', 2100.0)
             ->assertViewHas('ventas', fn ($ventas): bool => $ventas->count() === 20
-                && $ventas->total() === 21);
+                && $ventas->total() === 21)
+            ->assertSee('cliente='.$cliente->id, false)
+            ->assertSee('responsable='.$responsable->id, false)
+            ->assertSee('metodo_pago='.Venta::METODO_TRANSFERENCIA, false);
+
+        $this->actingAs($responsable)->get('/reportes/ventas?'.http_build_query([
+            'desde' => '2026-08-01',
+            'hasta' => '2026-08-31',
+            'cliente' => $cliente->id,
+            'responsable' => $responsable->id,
+            'metodo_pago' => Venta::METODO_TRANSFERENCIA,
+            'page' => 2,
+        ]))->assertOk()
+            ->assertViewHas('cantidadResultados', 21)
+            ->assertViewHas('totalImporte', 2100.0)
+            ->assertViewHas('ventas', fn ($ventas): bool => $ventas->count() === 1
+                && $ventas->currentPage() === 2);
     }
 
     public function test_el_panel_usa_el_mes_actual_y_muestra_ceros_sin_operaciones(): void
