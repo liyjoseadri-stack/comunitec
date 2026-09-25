@@ -212,20 +212,20 @@
                         Convertir en venta
                     </h2>
                     <p>
-                        Confirma el método de pago y asigna una serie reservada a cada pieza entregada. Esta acción cierra la operación y no vuelve a descontar inventario.
+                        Confirma el método de pago y captura los números de serie de los equipos entregados. Esta acción cierra la operación y no vuelve a descontar inventario.
                     </p>
                     <form class="formulario-administrativo formulario-venta" method="post" action="{{ route('ventas.guardar', $cotizacion) }}">
                         @csrf
                         <label for="metodo-pago">Método de pago</label>
                         <select id="metodo-pago" name="metodo_pago" required>
                             <option value="">Selecciona un método</option>
-                            <option value="cash" @selected(old('metodo_pago') === 'efectivo')>
+                            <option value="efectivo" @selected(old('metodo_pago') === 'efectivo')>
                                 Efectivo
                             </option>
-                            <option value="transfer" @selected(old('metodo_pago') === 'transferencia')>
+                            <option value="transferencia" @selected(old('metodo_pago') === 'transferencia')>
                                 Transferencia
                             </option>
-                            <option value="card" @selected(old('metodo_pago') === 'tarjeta')>
+                            <option value="tarjeta" @selected(old('metodo_pago') === 'tarjeta')>
                                 Tarjeta
                             </option>
                             <option value="otro" @selected(old('metodo_pago') === 'otro')>
@@ -242,13 +242,7 @@
                             maxlength="255"
                         >
 
-                        @foreach ($cotizacion->partidas->where('tipo', 'producto') as $partida)
-                            @php
-                                $seriesDisponibles = $piezasReservadas->where(
-                                    'articulo_catalogo_id',
-                                    $partida->articulo_catalogo_id
-                                );
-                            @endphp
+                        @foreach ($cotizacion->partidas->filter(fn ($partida) => $partida->tipo === 'producto' && $partida->articulo?->requiere_numero_serie) as $partida)
                             <fieldset>
                                 <legend>
                                     {{ $partida->descripcion }} — {{ (int) $partida->cantidad }} piezas
@@ -257,27 +251,20 @@
                                     <label for="serie-{{ $partida->id }}-{{ $indice }}">
                                         Serie {{ $indice + 1 }}
                                     </label>
-                                    <select
+                                    <input
                                         id="serie-{{ $partida->id }}-{{ $indice }}"
                                         name="series[{{ $partida->id }}][]"
+                                        value="{{ old("series.{$partida->id}.{$indice}") }}"
+                                        maxlength="255"
+                                        autocomplete="off"
                                         required
                                     >
-                                        <option value="">Selecciona una serie</option>
-                                        @foreach ($seriesDisponibles as $pieza)
-                                            <option
-                                                value="{{ $pieza->id }}"
-                                                @selected(old("series.{$partida->id}.{$indice}") == $pieza->id)
-                                            >
-                                                {{ $pieza->numero_serie }}
-                                            </option>
-                                        @endforeach
-                                    </select>
                                 @endfor
                             </fieldset>
                         @endforeach
 
                         <p>
-                            Cada serie debe seleccionarse una sola vez. Los servicios y conceptos libres no requieren serie.
+                            Cada número de serie debe ser único. Los productos marcados como no serializables, los servicios y los conceptos libres no requieren serie.
                         </p>
                         <button type="submit">
                             Registrar venta

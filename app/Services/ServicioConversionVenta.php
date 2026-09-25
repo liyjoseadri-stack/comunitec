@@ -29,20 +29,12 @@ class ServicioConversionVenta
         ): Venta {
             $cotizacion = Cotizacion::whereKey($cotizacion->id)
                 ->lockForUpdate()
-                ->with('cliente', 'partidas')
+                ->with('cliente', 'partidas.articulo')
                 ->firstOrFail();
 
             $this->validarCotizacion($cotizacion);
 
-            $piezasReservadas = PiezaInventario::where('cotizacion_id', $cotizacion->id)
-                ->where('estado', 'reservada')
-                ->lockForUpdate()
-                ->get();
-            $seleccion = $this->validarSeries(
-                $cotizacion,
-                $piezasReservadas,
-                $series
-            );
+            $seleccion = $this->validarSeries($cotizacion, $series);
 
             $venta = Venta::create([
                 'folio' => 'VEN-'.now()->format('Ymd').'-'.Str::ulid(),
@@ -79,13 +71,33 @@ class ServicioConversionVenta
                     'subtotal' => $partidaCotizada->subtotal,
                 ]);
 
-                if ($partidaCotizada->tipo === 'producto') {
-                    PiezaInventario::whereIn('id', $seleccion[$partidaCotizada->id])
-                        ->update([
+                foreach ($seleccion[$partidaCotizada->id] ?? [] as $numeroSerie) {
+                    $piezaAnterior = PiezaInventario::whereRaw(
+                        'LOWER(numero_serie) = ?',
+                        [mb_strtolower($numeroSerie)]
+                    )
+                        ->where('articulo_catalogo_id', $partidaCotizada->articulo_catalogo_id)
+                        ->where('cotizacion_id', $cotizacion->id)
+                        ->where('estado', 'reservada')
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($piezaAnterior !== null) {
+                        $piezaAnterior->update([
                             'estado' => 'entregada',
                             'cotizacion_id' => null,
                             'partida_venta_id' => $partidaVendida->id,
                         ]);
+
+                        continue;
+                    }
+
+                    $partidaVendida->piezas()->create([
+                        'articulo_catalogo_id' => $partidaCotizada->articulo_catalogo_id,
+                        'numero_serie' => $numeroSerie,
+                        'estado' => 'entregada',
+                        'cotizacion_id' => null,
+                    ]);
                 }
             }
 
@@ -118,48 +130,61 @@ class ServicioConversionVenta
 
     private function validarSeries(
         Cotizacion $cotizacion,
-        $piezasReservadas,
         array $series
     ): array {
         $seleccion = [];
-        $piezasUsadas = [];
+        $normalizadas = [];
+        $partidasSerializables = $cotizacion->partidas->filter(
+            fn (PartidaCotizacion $partida): bool => $partida->tipo === 'producto'
+                && (bool) $partida->articulo?->requiere_numero_serie
+        );
 
-        foreach ($cotizacion->partidas->where('tipo', 'producto') as $partida) {
-            $identificadores = array_map(
-                'intval',
+        foreach (array_keys($series) as $partidaId) {
+            if (! $partidasSerializables->contains('id', (int) $partidaId)) {
+                throw ValidationException::withMessages([
+                    "series.{$partidaId}" => 'Esta partida no requiere números de serie.',
+                ]);
+            }
+        }
+
+        foreach ($partidasSerializables as $partida) {
+            $numeros = array_map(
+                fn ($numero): string => trim((string) $numero),
                 $series[$partida->id] ?? []
             );
             $cantidad = (int) $partida->cantidad;
 
-            if (count($identificadores) !== $cantidad) {
+            if (count($numeros) !== $cantidad) {
                 $this->fallarSeries(
                     $partida,
-                    "Selecciona exactamente {$cantidad} series."
+                    "Captura exactamente {$cantidad} números de serie."
                 );
             }
 
-            foreach ($identificadores as $identificador) {
-                if (in_array($identificador, $piezasUsadas, true)) {
-                    $this->fallarSeries($partida, 'Una serie no puede asignarse más de una vez.');
+            foreach ($numeros as $numero) {
+                if ($numero === '') {
+                    $this->fallarSeries($partida, 'Los números de serie no pueden estar vacíos.');
                 }
 
-                $pieza = $piezasReservadas->firstWhere('id', $identificador);
-                if ($pieza === null || $pieza->articulo_catalogo_id !== $partida->articulo_catalogo_id) {
-                    $this->fallarSeries(
-                        $partida,
-                        'Todas las series deben estar reservadas para esta cotización y corresponder al producto.'
-                    );
+                $clave = mb_strtolower($numero);
+                if (isset($normalizadas[$clave])) {
+                    $this->fallarSeries($partida, 'Un número de serie no puede asignarse más de una vez.');
                 }
-                $piezasUsadas[] = $identificador;
+                $normalizadas[$clave] = true;
+
+                $existente = PiezaInventario::whereRaw('LOWER(numero_serie) = ?', [$clave])
+                    ->lockForUpdate()
+                    ->first();
+                $esReservaAnterior = $existente !== null
+                    && $existente->cotizacion_id === $cotizacion->id
+                    && $existente->articulo_catalogo_id === $partida->articulo_catalogo_id
+                    && $existente->estado === 'reservada';
+                if ($existente !== null && ! $esReservaAnterior) {
+                    $this->fallarSeries($partida, "El número de serie {$numero} ya está registrado.");
+                }
             }
 
-            $seleccion[$partida->id] = $identificadores;
-        }
-
-        if (count($piezasUsadas) !== $piezasReservadas->count()) {
-            throw ValidationException::withMessages([
-                'series' => 'Las series seleccionadas no coinciden con todas las piezas reservadas.',
-            ]);
+            $seleccion[$partida->id] = $numeros;
         }
 
         return $seleccion;

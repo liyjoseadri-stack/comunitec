@@ -7,7 +7,6 @@ use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\EnvioCotizacion;
-use App\Models\PiezaInventario;
 use App\Services\ServicioInventarioCotizacion;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -48,10 +47,6 @@ class ControladorCotizaciones extends Controller
 
                 ];
             })->filter(fn ($faltante) => $faltante['solicitado'] > $faltante['disponible']);
-        $piezasReservadas = PiezaInventario::where('cotizacion_id', $cotizacion->id)
-            ->where('estado', 'reservada')
-            ->orderBy('numero_serie')
-            ->get();
 
         return view('cotizaciones.detalle', [
             'cotizacion' => $cotizacion,
@@ -63,7 +58,6 @@ class ControladorCotizaciones extends Controller
                 ->orderBy('nombre')
                 ->get(),
             'faltantes' => $faltantes,
-            'piezasReservadas' => $piezasReservadas,
         ]);
     }
 

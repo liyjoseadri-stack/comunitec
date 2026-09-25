@@ -153,7 +153,7 @@ class VentasTest extends TestCase
         $respuesta = $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/venta", [
             'metodo_pago' => Venta::METODO_TRANSFERENCIA,
             'series' => [
-                $partidaProducto->id => $piezas->pluck('id')->all(),
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
             ],
         ]);
 
@@ -196,7 +196,7 @@ class VentasTest extends TestCase
         $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/venta", [
             'metodo_pago' => Venta::METODO_TRANSFERENCIA,
             'series' => [
-                $partidaProducto->id => $piezas->pluck('id')->all(),
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
             ],
         ])->assertRedirect();
 
@@ -233,7 +233,7 @@ class VentasTest extends TestCase
         $datos = [
             'metodo_pago' => Venta::METODO_EFECTIVO,
             'series' => [
-                $partidaProducto->id => $piezas->pluck('id')->all(),
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
             ],
         ];
 
@@ -261,7 +261,7 @@ class VentasTest extends TestCase
             'metodo_pago' => Venta::METODO_OTRO,
             'detalle_metodo_pago' => 'Crédito autorizado por dirección',
             'series' => [
-                $partidaProducto->id => $piezas->pluck('id')->all(),
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
             ],
         ])->assertRedirect();
 
@@ -301,7 +301,7 @@ class VentasTest extends TestCase
                 Venta::METODO_EFECTIVO,
                 null,
                 [
-                    $partidaProducto->id => $piezas->pluck('id')->all(),
+                    $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
                 ]
             );
             $this->fail('La conversión debía interrumpirse por la falla simulada.');
@@ -337,7 +337,7 @@ class VentasTest extends TestCase
             'metodo_pago' => Venta::METODO_TARJETA,
             'series' => [
                 $partidaProducto->id => [
-                    $piezas->first()->id,
+                    $piezas->first()->numero_serie,
                 ],
             ],
         ])->assertRedirect()->assertSessionHasErrors("series.{$partidaProducto->id}");
@@ -365,8 +365,8 @@ class VentasTest extends TestCase
             'metodo_pago' => Venta::METODO_EFECTIVO,
             'series' => [
                 $partidaProducto->id => [
-                    $piezas->first()->id,
-                    $piezaDisponible->id,
+                    $piezas->first()->numero_serie,
+                    $piezaDisponible->numero_serie,
                 ],
             ],
         ])->assertRedirect()->assertSessionHasErrors("series.{$partidaProducto->id}");
@@ -410,7 +410,7 @@ class VentasTest extends TestCase
         $this->assertSame(0, Venta::count());
     }
 
-    public function test_una_aceptada_muestra_metodo_de_pago_y_series_reservadas(): void
+    public function test_una_aceptada_muestra_metodo_de_pago_y_campos_para_capturar_series(): void
     {
         [
             'usuario' => $usuario,
@@ -428,12 +428,12 @@ class VentasTest extends TestCase
             ->assertSee('Transferencia')
             ->assertSee('Tarjeta')
             ->assertSee('Otro');
-        foreach ($piezas as $pieza) {
-            $respuesta->assertSee($pieza->numero_serie);
-        }
-        $respuesta->assertSee(
-            'name="series['.$partidaProducto->id.'][]"',
-            false
+        $this->assertSame(
+            $piezas->count(),
+            substr_count(
+                $respuesta->getContent(),
+                'name="series['.$partidaProducto->id.'][]"'
+            )
         );
     }
 
@@ -448,7 +448,7 @@ class VentasTest extends TestCase
         $this->actingAs($usuarioComercial)->post("/cotizaciones/{$cotizacion->id}/venta", [
             'metodo_pago' => Venta::METODO_TRANSFERENCIA,
             'series' => [
-                $partidaProducto->id => $piezas->pluck('id')->all(),
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
             ],
         ])->assertRedirect();
         $venta = Venta::sole();
@@ -482,7 +482,7 @@ class VentasTest extends TestCase
         $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/venta", [
             'metodo_pago' => Venta::METODO_EFECTIVO,
             'series' => [
-                $partidaProducto->id => $piezas->pluck('id')->all(),
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
             ],
         ])->assertRedirect();
 
@@ -518,7 +518,7 @@ class VentasTest extends TestCase
         $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/venta", [
             'metodo_pago' => Venta::METODO_TRANSFERENCIA,
             'series' => [
-                $partidaProducto->id => $piezas->pluck('id')->all(),
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
             ],
         ])->assertRedirect();
         $venta = Venta::sole();
@@ -552,6 +552,7 @@ class VentasTest extends TestCase
             'unidad' => 'pieza',
             'precio' => 1000,
             'existencias' => 3,
+            'requiere_numero_serie' => true,
         ]);
         $servicio = ArticuloCatalogo::create([
             'tipo' => 'servicio',

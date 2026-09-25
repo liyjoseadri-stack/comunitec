@@ -57,8 +57,9 @@ class ControladorVentas extends Controller
                 'array',
             ],
             'series.*.*' => [
-                'integer',
-                'distinct',
+                'nullable',
+                'string',
+                'max:255',
             ],
         ]);
 
