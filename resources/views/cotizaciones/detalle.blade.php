@@ -1,17 +1,9 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>
-            {{ $cotizacion->folio }} | Comunitec
-        </title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
-        <main class="pagina-administrativa detalle-cotizacion">
+@extends('layouts.aplicacion')
+
+@section('titulo', $cotizacion->folio)
+@section('clase_pagina', 'detalle-cotizacion')
+
+@section('contenido')
             <h1>
                 Cotización {{ $cotizacion->folio }}
             </h1>
@@ -450,6 +442,5 @@
                     Total: ${{ $cotizacion->total }}
                 </strong>
             </p>
-        </main>
-    </body>
-</html>
+
+@endsection

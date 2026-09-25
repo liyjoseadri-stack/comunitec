@@ -1,16 +1,8 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ $venta->folio }} | Comunitec</title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
+@extends('layouts.aplicacion')
 
-        <main class="pagina-administrativa">
+@section('titulo', $venta->folio)
+
+@section('contenido')
             <header class="encabezado-pagina">
                 <div>
                     <h1>Venta {{ $venta->folio }}</h1>
@@ -115,6 +107,5 @@
                     </tr>
                 </table>
             </section>
-        </main>
-    </body>
-</html>
+
+@endsection

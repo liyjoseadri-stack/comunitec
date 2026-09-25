@@ -30,7 +30,7 @@
             height="917"
         >
     </a>
-    <ul>
+    <ul class="navegacion-principal__enlaces">
         @foreach ($enlaces as $enlace)
             <li>
                 <a

@@ -1,17 +1,8 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>
-            Usuarios | Comunitec
-        </title>
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-    </head>
-    <body class="bg-slate-100 text-slate-900">
-        @include('componentes.navegacion')
-        <main class="mx-auto max-w-5xl p-6">
+@extends('layouts.aplicacion')
+
+@section('titulo', 'Usuarios')
+
+@section('contenido')
             <h1 class="text-2xl font-semibold">
                 Administración de usuarios
             </h1>
@@ -113,6 +104,5 @@
                     </tbody>
                 </table>
             </div>
-        </main>
-    </body>
-</html>
+
+@endsection

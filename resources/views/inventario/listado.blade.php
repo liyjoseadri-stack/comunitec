@@ -1,15 +1,8 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Inventario | Comunitec</title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
-        <main class="pagina-administrativa">
+@extends('layouts.aplicacion')
+
+@section('titulo', 'Inventario')
+
+@section('contenido')
             <h1>
                 Inventario
             </h1>
@@ -107,6 +100,5 @@
                     </table>
                 </div>
             </section>
-        </main>
-    </body>
-</html>
+
+@endsection

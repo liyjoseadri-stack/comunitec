@@ -1,16 +1,8 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Catálogo | Comunitec</title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
+@extends('layouts.aplicacion')
 
-        <main class="pagina-administrativa">
+@section('titulo', 'Catálogo')
+
+@section('contenido')
             <header class="encabezado-pagina">
                 <div>
                     <h1>Catálogo</h1>
@@ -178,6 +170,5 @@
                     </table>
                 </div>
             </section>
-        </main>
-    </body>
-</html>
+
+@endsection

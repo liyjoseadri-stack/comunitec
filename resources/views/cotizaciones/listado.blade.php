@@ -1,15 +1,8 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Cotizaciones | Comunitec</title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
-        <main class="pagina-administrativa">
+@extends('layouts.aplicacion')
+
+@section('titulo', 'Cotizaciones')
+
+@section('contenido')
             <h1>
                 Cotizaciones
             </h1>
@@ -79,6 +72,5 @@
                     @endforelse
                 </ul>
             </section>
-        </main>
-    </body>
-</html>
+
+@endsection

@@ -1,16 +1,8 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Panel | Comunitec</title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
+@extends('layouts.aplicacion')
 
-        <main class="pagina-administrativa">
+@section('titulo', 'Panel')
+
+@section('contenido')
             <header class="encabezado-pagina">
                 <div>
                     <h1>Panel principal</h1>
@@ -125,6 +117,5 @@
                     </ul>
                 @endif
             </section>
-        </main>
-    </body>
-</html>
+
+@endsection

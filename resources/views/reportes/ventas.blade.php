@@ -1,16 +1,8 @@
-<!doctype html>
-<html lang="es">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Reporte de ventas | Comunitec</title>
-        <link rel="stylesheet" href="{{ asset('css/navegacion.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
-    </head>
-    <body>
-        @include('componentes.navegacion')
+@extends('layouts.aplicacion')
 
-        <main class="pagina-administrativa">
+@section('titulo', 'Reporte de ventas')
+
+@section('contenido')
             <header class="encabezado-pagina">
                 <div>
                     <h1>Reporte de ventas</h1>
@@ -127,6 +119,5 @@
                 </div>
                 @include('componentes.paginacion', ['paginador' => $ventas])
             </section>
-        </main>
-    </body>
-</html>
+
+@endsection
