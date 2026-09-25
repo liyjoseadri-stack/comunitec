@@ -41,6 +41,11 @@ class PartidaVenta extends Model
         return $this->belongsTo(PartidaCotizacion::class, 'partida_cotizacion_id');
     }
 
+    public function articulo()
+    {
+        return $this->belongsTo(ArticuloCatalogo::class, 'articulo_catalogo_id');
+    }
+
     public function piezas()
     {
         return $this->hasMany(PiezaInventario::class, 'partida_venta_id');

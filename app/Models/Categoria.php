@@ -15,4 +15,16 @@ class Categoria extends Model
         'nombre',
         'activo',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'activo' => 'boolean',
+        ];
+    }
+
+    public function articulos()
+    {
+        return $this->hasMany(ArticuloCatalogo::class, 'categoria_id');
+    }
 }
