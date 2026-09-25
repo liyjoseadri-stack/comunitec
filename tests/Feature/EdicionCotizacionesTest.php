@@ -34,11 +34,7 @@ class EdicionCotizacionesTest extends TestCase
         $this->assertSame('pendiente', $cotizacion->fresh()->estado);
         $this->assertNull($cotizacion->fresh()->aceptada_en);
         $this->assertSame('950.00', $cotizacion->fresh()->total);
-        $this->assertDatabaseHas('piezas_inventario', [
-            'id' => $pieza->id,
-            'estado' => 'disponible',
-            'cotizacion_id' => null,
-        ]);
+        $this->assertSame(1, $partida->articulo->fresh()->existencias);
         $this->assertDatabaseHas('partidas_cotizacion', [
             'id' => $partida->id,
             'descripcion' => 'Monitor actualizado',
@@ -89,7 +85,7 @@ class EdicionCotizacionesTest extends TestCase
         $this->assertSame('pendiente', $cotizacion->fresh()->estado);
         $this->assertSame('Compras', $cotizacion->fresh()->area_solicitante);
         $this->assertNull($cotizacion->fresh()->aceptada_en);
-        $this->assertSame('disponible', $pieza->fresh()->estado);
+        $this->assertSame(1, $partida->articulo->fresh()->existencias);
     }
 
     public function test_descuento_fuera_del_rango_conserva_las_reservas(): void
@@ -275,12 +271,12 @@ class EdicionCotizacionesTest extends TestCase
     {
         [$cotizacion, , $pieza] = $this->preparar('pendiente');
         Cotizacion::whereKey($cotizacion->id)->update(['estado' => 'aceptada']);
+        $pieza->articulo()->decrement('existencias');
 
         app(ControladorCotizaciones::class)->cancelar($cotizacion);
 
         $this->assertSame('cancelada', $cotizacion->fresh()->estado);
-        $this->assertSame('disponible', $pieza->fresh()->estado);
-        $this->assertNull($pieza->fresh()->cotizacion_id);
+        $this->assertSame(1, $pieza->articulo->fresh()->existencias);
     }
 
     public function test_rechazar_no_sobrescribe_una_aceptacion_reciente(): void
@@ -377,7 +373,7 @@ class EdicionCotizacionesTest extends TestCase
             'codigo' => 'MON-EDITAR',
             'unidad' => 'pieza',
             'precio' => 500,
-            'existencias' => 1,
+            'existencias' => $estado === 'aceptada' ? 0 : 1,
         ]);
         $cotizacion = Cotizacion::create([
             'folio' => 'COT-EDITAR',

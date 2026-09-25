@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ArticuloCatalogo;
 use App\Models\Cotizacion;
 use App\Models\PartidaCotizacion;
-use App\Models\PiezaInventario;
+use App\Services\ServicioInventarioCotizacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -112,18 +112,10 @@ class ControladorPartidas extends Controller
                 'pendiente',
                 'aceptada',
             ], true), 422, 'Esta cotización ya no admite cambios.');
-            $operacion();
             if ($actual->estado === 'aceptada') {
-                PiezaInventario::where('cotizacion_id', $actual->id)->where('estado', 'reservada')->update([
-                    'estado' => 'disponible',
-                    'cotizacion_id' => null,
-                ]);
-                $actual->fill([
-                    'estado' => 'pendiente',
-                    'aceptada_en' => null,
-                    'vence_en' => now()->addDays(15),
-                ]);
+                app(ServicioInventarioCotizacion::class)->liberarParaEdicion($actual);
             }
+            $operacion();
             $actual->total = round($actual->partidas()->sum('subtotal') * (1 - $actual->porcentaje_descuento / 100), 2);
             $actual->save();
         });

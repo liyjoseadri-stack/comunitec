@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\ArticuloCatalogo;
 use App\Models\Cotizacion;
-use App\Models\PiezaInventario;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -24,23 +24,21 @@ class ServicioInventarioCotizacion
                     'cotizacion' => 'La vigencia de la cotización terminó; no puede aceptarse.',
                 ]);
             }
-            foreach ($cotizacion->partidas()->where('tipo', 'producto')->get() as $partida) {
-                $piezas = PiezaInventario::where('articulo_catalogo_id', $partida->articulo_catalogo_id)
-                    ->where('estado', 'disponible')
-                    ->lockForUpdate()
-                    ->limit((int) $partida->cantidad)
-                    ->get();
+            $cantidades = $this->cantidadesReservadas($cotizacion);
+            $articulos = ArticuloCatalogo::whereKey($cantidades->keys())
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
 
-                if ($piezas->count() < (int) $partida->cantidad) {
+            foreach ($cantidades as $articuloId => $cantidad) {
+                $articulo = $articulos->get($articuloId);
+                if ($articulo === null || $articulo->existencias < $cantidad) {
                     throw new RuntimeException('Existencias insuficientes.');
                 }
+            }
 
-                foreach ($piezas as $pieza) {
-                    $pieza->update([
-                        'estado' => 'reservada',
-                        'cotizacion_id' => $cotizacion->id,
-                    ]);
-                }
+            foreach ($cantidades as $articuloId => $cantidad) {
+                $articulos->get($articuloId)->decrement('existencias', $cantidad);
             }
 
             $cotizacion->update([
@@ -53,7 +51,20 @@ class ServicioInventarioCotizacion
 
     public function liberar(Cotizacion $cotizacion, bool $soloSiVencida = false): bool
     {
-        return DB::transaction(function () use ($cotizacion, $soloSiVencida): bool {
+        return $this->liberarConEstado($cotizacion, 'cancelada', $soloSiVencida);
+    }
+
+    public function liberarParaEdicion(Cotizacion $cotizacion): bool
+    {
+        return $this->liberarConEstado($cotizacion, 'pendiente');
+    }
+
+    private function liberarConEstado(
+        Cotizacion $cotizacion,
+        string $estadoDestino,
+        bool $soloSiVencida = false
+    ): bool {
+        return DB::transaction(function () use ($cotizacion, $estadoDestino, $soloSiVencida): bool {
             $cotizacion = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
             if ($cotizacion->estado !== 'aceptada') {
                 return false;
@@ -62,18 +73,33 @@ class ServicioInventarioCotizacion
                 return false;
             }
 
-            PiezaInventario::where('cotizacion_id', $cotizacion->id)
-                ->where('estado', 'reservada')
-                ->update([
-                    'estado' => 'disponible',
-                    'cotizacion_id' => null,
-                ]);
+            $cantidades = $this->cantidadesReservadas($cotizacion);
+            $articulos = ArticuloCatalogo::whereKey($cantidades->keys())
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($cantidades as $articuloId => $cantidad) {
+                $articulos->get($articuloId)?->increment('existencias', $cantidad);
+            }
 
             $cotizacion->update([
-                'estado' => 'cancelada',
+                'estado' => $estadoDestino,
+                'aceptada_en' => $estadoDestino === 'pendiente' ? null : $cotizacion->aceptada_en,
+                'vence_en' => $estadoDestino === 'pendiente' ? now()->addDays(15) : $cotizacion->vence_en,
             ]);
 
             return true;
         });
+    }
+
+    private function cantidadesReservadas(Cotizacion $cotizacion)
+    {
+        return $cotizacion->partidas()
+            ->where('tipo', 'producto')
+            ->selectRaw('articulo_catalogo_id, SUM(cantidad) AS cantidad')
+            ->groupBy('articulo_catalogo_id')
+            ->pluck('cantidad', 'articulo_catalogo_id')
+            ->map(fn ($cantidad): int => (int) $cantidad);
     }
 }

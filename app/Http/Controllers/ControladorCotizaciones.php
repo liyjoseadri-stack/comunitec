@@ -34,9 +34,8 @@ class ControladorCotizaciones extends Controller
     {
         $cotizacion->load('cliente', 'partidas', 'enviosCorreo.usuario', 'venta');
         $productos = $cotizacion->partidas->where('tipo', 'producto')->groupBy('articulo_catalogo_id');
-        $disponibles = PiezaInventario::whereIn('articulo_catalogo_id', $productos->keys())
-            ->where('estado', 'disponible')->selectRaw('articulo_catalogo_id, COUNT(*) AS cantidad')
-            ->groupBy('articulo_catalogo_id')->pluck('cantidad', 'articulo_catalogo_id');
+        $disponibles = ArticuloCatalogo::whereIn('id', $productos->keys())
+            ->pluck('existencias', 'id');
         $faltantes = $productos
             ->map(function ($partidas, $articulo) use ($disponibles): array {
                 return [
@@ -257,15 +256,7 @@ class ControladorCotizaciones extends Controller
             }
 
             if ($cotizacion->estado === 'aceptada') {
-                PiezaInventario::where('cotizacion_id', $cotizacion->id)->where('estado', 'reservada')->update([
-                    'estado' => 'disponible',
-                    'cotizacion_id' => null,
-                ]);
-                $cotizacion->fill([
-                    'estado' => 'pendiente',
-                    'aceptada_en' => null,
-                    'vence_en' => now()->addDays(15),
-                ]);
+                app(ServicioInventarioCotizacion::class)->liberarParaEdicion($cotizacion);
             }
             $cotizacion->total = round($cotizacion->partidas()->sum('subtotal') * (1 - $cotizacion->porcentaje_descuento / 100), 2);
             $cotizacion->save();

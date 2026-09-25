@@ -6,7 +6,6 @@ use App\Mail\CorreoCotizacion;
 use App\Models\ArticuloCatalogo;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
-use App\Models\PiezaInventario;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -296,10 +295,6 @@ class CotizacionesTest extends TestCase
             'precio' => 500,
             'existencias' => 2,
         ]);
-        $pieza = PiezaInventario::create([
-            'articulo_catalogo_id' => $articulo->id,
-            'numero_serie' => 'CAM-001',
-        ]);
         $cotizacion = Cotizacion::create([
             'folio' => 'COT-RESERVA-1',
             'cliente_id' => $cliente->id,
@@ -319,11 +314,7 @@ class CotizacionesTest extends TestCase
         $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/aceptar")->assertRedirect();
 
         $this->assertSame('aceptada', $cotizacion->fresh()->estado);
-        $this->assertDatabaseHas('piezas_inventario', [
-            'id' => $pieza->id,
-            'estado' => 'reservada',
-            'cotizacion_id' => $cotizacion->id,
-        ]);
+        $this->assertSame(1, $articulo->fresh()->existencias);
     }
 
     public function test_la_aceptacion_se_bloquea_con_alerta_si_faltan_piezas(): void
@@ -391,7 +382,7 @@ class CotizacionesTest extends TestCase
             'codigo' => 'MON-01',
             'unidad' => 'pieza',
             'precio' => 500,
-            'existencias' => 1,
+            'existencias' => 0,
         ]);
         $cotizacion = Cotizacion::create([
             'folio' => 'COT-LIBERAR-1',
@@ -400,21 +391,19 @@ class CotizacionesTest extends TestCase
             'estado' => 'aceptada',
             'total' => 500,
         ]);
-        $pieza = PiezaInventario::create([
+        $cotizacion->partidas()->create([
             'articulo_catalogo_id' => $articulo->id,
-            'numero_serie' => 'MON-001',
-            'estado' => 'reservada',
-            'cotizacion_id' => $cotizacion->id,
+            'tipo' => 'producto',
+            'descripcion' => 'Monitor',
+            'cantidad' => 1,
+            'precio_unitario' => 500,
+            'subtotal' => 500,
         ]);
 
         $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/cancelar")->assertRedirect();
 
         $this->assertSame('cancelada', $cotizacion->fresh()->estado);
-        $this->assertDatabaseHas('piezas_inventario', [
-            'id' => $pieza->id,
-            'estado' => 'disponible',
-            'cotizacion_id' => null,
-        ]);
+        $this->assertSame(1, $articulo->fresh()->existencias);
     }
 
     public function test_el_comando_cancela_aceptadas_vencidas_y_libera_piezas(): void
@@ -435,7 +424,7 @@ class CotizacionesTest extends TestCase
             'codigo' => 'TEC-01',
             'unidad' => 'pieza',
             'precio' => 300,
-            'existencias' => 1,
+            'existencias' => 0,
         ]);
         $cotizacion = Cotizacion::create([
             'folio' => 'COT-VENCER-1',
@@ -445,21 +434,19 @@ class CotizacionesTest extends TestCase
             'vence_en' => now()->subMinute(),
             'total' => 300,
         ]);
-        $pieza = PiezaInventario::create([
+        $cotizacion->partidas()->create([
             'articulo_catalogo_id' => $articulo->id,
-            'numero_serie' => 'TEC-001',
-            'estado' => 'reservada',
-            'cotizacion_id' => $cotizacion->id,
+            'tipo' => 'producto',
+            'descripcion' => 'Teclado',
+            'cantidad' => 1,
+            'precio_unitario' => 300,
+            'subtotal' => 300,
         ]);
 
         $this->artisan('cotizaciones:vencer')->assertExitCode(0);
 
         $this->assertSame('cancelada', $cotizacion->fresh()->estado);
-        $this->assertDatabaseHas('piezas_inventario', [
-            'id' => $pieza->id,
-            'estado' => 'disponible',
-            'cotizacion_id' => null,
-        ]);
+        $this->assertSame(1, $articulo->fresh()->existencias);
     }
 
     public function test_el_borrador_advierte_faltantes_sin_bloquear_su_creacion(): void
