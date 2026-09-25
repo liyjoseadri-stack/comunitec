@@ -13,17 +13,17 @@ class CatalogoTest extends TestCase
 
     public function test_el_catalogo_muestra_un_formulario_etiquetado_y_conserva_los_datos_anteriores(): void
     {
-        $user = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
 
-        $response = $this->actingAs($user)
+        $response = $this->actingAs($usuario)
             ->withSession([
                 '_old_input' => [
-                    'type' => 'service',
-                    'name' => 'Instalación de red',
-                    'code' => 'SER-001',
-                    'price' => '1250.00',
+                    'tipo' => 'servicio',
+                    'nombre' => 'Instalación de red',
+                    'codigo' => 'SER-001',
+                    'precio' => '1250.00',
                 ],
             ])
             ->get('/catalogo');
@@ -36,103 +36,103 @@ class CatalogoTest extends TestCase
             ->assertSee('value="Instalación de red"', false)
             ->assertSee('value="SER-001"', false)
             ->assertSee('value="1250.00"', false)
-            ->assertSee('<option value="service" selected>', false);
+            ->assertSee('<option value="servicio" selected>', false);
     }
 
     public function test_el_comercial_puede_crear_un_producto(): void
     {
-        $user = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
-        $this->actingAs($user)->post('/catalogo', [
-            'type' => 'product',
-            'name' => 'Laptop',
-            'code' => 'LAP-001',
-            'brand' => 'Dell',
+        $this->actingAs($usuario)->post('/catalogo', [
+            'tipo' => 'producto',
+            'nombre' => 'Laptop',
+            'codigo' => 'LAP-001',
+            'marca' => 'Dell',
             'model' => 'Latitude',
-            'unit' => 'pieza',
-            'price' => '12000.00',
-            'stock' => 3,
+            'unidad' => 'pieza',
+            'precio' => '12000.00',
+            'existencias' => 3,
         ])->assertRedirect('/catalogo');
-        $this->assertDatabaseHas('catalog_items', [
-            'code' => 'LAP-001',
-            'type' => 'product',
+        $this->assertDatabaseHas('articulos_catalogo', [
+            'codigo' => 'LAP-001',
+            'tipo' => 'producto',
         ]);
     }
 
     public function test_un_servicio_puede_crearse_sin_existencias(): void
     {
         $usuario = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
 
         $this->actingAs($usuario)->post('/catalogo', [
-            'type' => 'service',
-            'name' => 'Instalación de red',
-            'code' => 'SER-001',
-            'unit' => 'servicio',
-            'price' => '1250.00',
-            'stock' => '',
+            'tipo' => 'servicio',
+            'nombre' => 'Instalación de red',
+            'codigo' => 'SER-001',
+            'unidad' => 'servicio',
+            'precio' => '1250.00',
+            'existencias' => '',
         ])->assertRedirect('/catalogo')
             ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('catalog_items', [
-            'code' => 'SER-001',
-            'type' => 'service',
-            'stock' => 0,
+        $this->assertDatabaseHas('articulos_catalogo', [
+            'codigo' => 'SER-001',
+            'tipo' => 'servicio',
+            'existencias' => 0,
         ]);
     }
 
     public function test_un_producto_sigue_requiriendo_existencias_enteras(): void
     {
         $usuario = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
 
         $this->actingAs($usuario)->post('/catalogo', [
-            'type' => 'product',
-            'name' => 'Laptop',
-            'code' => 'LAP-SIN-STOCK',
-            'unit' => 'pieza',
-            'price' => '12000.00',
-            'stock' => '',
-        ])->assertSessionHasErrors('stock');
+            'tipo' => 'producto',
+            'nombre' => 'Laptop',
+            'codigo' => 'LAP-SIN-STOCK',
+            'unidad' => 'pieza',
+            'precio' => '12000.00',
+            'existencias' => '',
+        ])->assertSessionHasErrors('existencias');
 
-        $this->assertDatabaseMissing('catalog_items', [
-            'code' => 'LAP-SIN-STOCK',
+        $this->assertDatabaseMissing('articulos_catalogo', [
+            'codigo' => 'LAP-SIN-STOCK',
         ]);
     }
 
     public function test_el_comercial_puede_desactivar_y_reactivar_un_articulo(): void
     {
         $usuario = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
         $articulo = ArticuloCatalogo::create([
-            'type' => 'service',
-            'name' => 'Instalación de red',
-            'code' => 'SER-ESTADO',
-            'unit' => 'servicio',
-            'price' => 1250,
-            'stock' => 0,
-            'active' => true,
+            'tipo' => 'servicio',
+            'nombre' => 'Instalación de red',
+            'codigo' => 'SER-ESTADO',
+            'unidad' => 'servicio',
+            'precio' => 1250,
+            'existencias' => 0,
+            'activo' => true,
         ]);
 
         $this->actingAs($usuario)
             ->patch("/catalogo/{$articulo->id}/estado")
             ->assertRedirect('/catalogo');
 
-        $this->assertDatabaseHas('catalog_items', [
+        $this->assertDatabaseHas('articulos_catalogo', [
             'id' => $articulo->id,
-            'active' => false,
+            'activo' => false,
         ]);
 
         $this->patch("/catalogo/{$articulo->id}/estado")
             ->assertRedirect('/catalogo');
 
-        $this->assertDatabaseHas('catalog_items', [
+        $this->assertDatabaseHas('articulos_catalogo', [
             'id' => $articulo->id,
-            'active' => true,
+            'activo' => true,
         ]);
     }
 }

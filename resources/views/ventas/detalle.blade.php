@@ -14,7 +14,7 @@
             <header class="encabezado-pagina">
                 <div>
                     <h1>Venta {{ $venta->folio }}</h1>
-                    <p>Registrada el {{ $venta->sold_at->format('d/m/Y H:i') }}.</p>
+                    <p>Registrada el {{ $venta->vendida_en->format('d/m/Y H:i') }}.</p>
                 </div>
                 <span class="insignia-tipo">Venta cerrada</span>
             </header>
@@ -32,20 +32,20 @@
                     </div>
                     <div>
                         <dt>RFC</dt>
-                        <dd>{{ $venta->customer_rfc }}</dd>
+                        <dd>{{ $venta->rfc_cliente }}</dd>
                     </div>
                     <div>
                         <dt>Correo</dt>
-                        <dd>{{ $venta->customer_email }}</dd>
+                        <dd>{{ $venta->correo_cliente }}</dd>
                     </div>
                     <div>
                         <dt>Teléfono</dt>
-                        <dd>{{ $venta->customer_phone }}</dd>
+                        <dd>{{ $venta->telefono_cliente }}</dd>
                     </div>
                     <div>
                         <dt>Dirección</dt>
                         <dd>
-                            {{ $venta->customer_address }}, C.P. {{ $venta->customer_postal_code }}
+                            {{ $venta->direccion_cliente }}, C.P. {{ $venta->codigo_postal_cliente }}
                         </dd>
                     </div>
                     <div>
@@ -62,7 +62,7 @@
                     </div>
                     <div>
                         <dt>Correo del responsable</dt>
-                        <dd>{{ $venta->responsible_email }}</dd>
+                        <dd>{{ $venta->correo_responsable }}</dd>
                     </div>
                     <div>
                         <dt>Método de pago</dt>
@@ -87,12 +87,12 @@
                         <tbody>
                             @foreach ($venta->partidas as $partida)
                                 <tr>
-                                    <td>{{ $partida->description }}</td>
-                                    <td>{{ number_format((float) $partida->quantity, 2) }}</td>
-                                    <td>${{ number_format((float) $partida->unit_price, 2) }}</td>
+                                    <td>{{ $partida->descripcion }}</td>
+                                    <td>{{ number_format((float) $partida->cantidad, 2) }}</td>
+                                    <td>${{ number_format((float) $partida->precio_unitario, 2) }}</td>
                                     <td>${{ number_format((float) $partida->subtotal, 2) }}</td>
                                     <td>
-                                        {{ $partida->piezas->pluck('serial_number')->join(', ') ?: 'No aplica' }}
+                                        {{ $partida->piezas->pluck('numero_serie')->join(', ') ?: 'No aplica' }}
                                     </td>
                                 </tr>
                             @endforeach
@@ -107,7 +107,7 @@
                     </tr>
                     <tr>
                         <th>Descuento global</th>
-                        <td>{{ number_format((float) $venta->discount_percent, 2) }}%</td>
+                        <td>{{ number_format((float) $venta->porcentaje_descuento, 2) }}%</td>
                     </tr>
                     <tr>
                         <th>Total</th>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
 use Database\Factories\UsuarioFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,17 +11,17 @@ use Illuminate\Notifications\Notifiable;
 
 class Usuario extends Authenticatable
 {
-    protected $table = 'users';
+    protected $table = 'usuarios';
 
     /** @use HasFactory<UsuarioFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, UsaMarcasTiempoEnEspanol;
 
     protected static function newFactory()
     {
         return UsuarioFactory::new();
     }
 
-    public const ROL_ADMINISTRADOR = 'admin';
+    public const ROL_ADMINISTRADOR = 'administrador';
 
     public const ROL_COMERCIAL = 'comercial';
 
@@ -33,31 +34,31 @@ class Usuario extends Authenticatable
      */
     protected $fillable = [
 
-        'name',
+        'nombre',
 
-        'email',
+        'correo',
 
-        'role',
+        'rol',
 
-        'active',
+        'activo',
 
-        'password',
+        'contrasena',
 
     ];
 
     public function esAdministrador(): bool
     {
-        return $this->role === self::ROL_ADMINISTRADOR;
+        return $this->rol === self::ROL_ADMINISTRADOR;
     }
 
     public function esComercial(): bool
     {
-        return $this->role === self::ROL_COMERCIAL;
+        return $this->rol === self::ROL_COMERCIAL;
     }
 
     public function esConsulta(): bool
     {
-        return $this->role === self::ROL_CONSULTA;
+        return $this->rol === self::ROL_CONSULTA;
     }
 
     /**
@@ -67,9 +68,9 @@ class Usuario extends Authenticatable
      */
     protected $hidden = [
 
-        'password',
+        'contrasena',
 
-        'remember_token',
+        'token_recuerdo',
 
     ];
 
@@ -82,12 +83,22 @@ class Usuario extends Authenticatable
     {
         return [
 
-            'email_verified_at' => 'datetime',
+            'correo_verificado_en' => 'datetime',
 
-            'active' => 'boolean',
+            'activo' => 'boolean',
 
-            'password' => 'hashed',
+            'contrasena' => 'hashed',
 
         ];
+    }
+
+    public function getAuthPasswordName(): string
+    {
+        return 'contrasena';
+    }
+
+    public function getRememberTokenName(): string
+    {
+        return 'token_recuerdo';
     }
 }

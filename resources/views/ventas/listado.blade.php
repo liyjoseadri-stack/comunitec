@@ -43,7 +43,7 @@
                                             {{ $venta->folio }}
                                         </a>
                                     </td>
-                                    <td>{{ $venta->sold_at->format('d/m/Y H:i') }}</td>
+                                    <td>{{ $venta->vendida_en->format('d/m/Y H:i') }}</td>
                                     <td>{{ $venta->nombreClienteMostrado() }}</td>
                                     <td>
                                         <a href="{{ route('cotizaciones.detalle', $venta->cotizacion) }}">

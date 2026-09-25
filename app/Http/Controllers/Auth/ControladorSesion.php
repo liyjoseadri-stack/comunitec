@@ -20,16 +20,16 @@ class ControladorSesion extends Controller
         return view('autenticacion.ingresar');
     }
 
-    public function guardar(Request $request): RedirectResponse
+    public function guardar(Request $solicitud): RedirectResponse
     {
-        $credentials = $request->validate([
+        $credenciales = $solicitud->validate([
 
-            'email' => [
+            'correo' => [
                 'required',
                 'email',
             ],
 
-            'password' => [
+            'contrasena' => [
                 'required',
                 'string',
             ],
@@ -37,26 +37,27 @@ class ControladorSesion extends Controller
         ]);
 
         if (! Auth::attempt([
-            ...$credentials,
-            'active' => true,
-        ], $request->boolean('remember'))) {
+            'correo' => $credenciales['correo'],
+            'activo' => true,
+            'password' => $credenciales['contrasena'],
+        ], $solicitud->boolean('recordar'))) {
             throw ValidationException::withMessages([
-                'email' => 'Las credenciales no son correctas.',
+                'correo' => 'Las credenciales no son correctas.',
 
             ]);
         }
 
-        $request->session()->regenerate();
+        $solicitud->session()->regenerate();
 
         return redirect()->intended(route('panel', absolute: false));
     }
 
-    public function eliminar(Request $request): RedirectResponse
+    public function eliminar(Request $solicitud): RedirectResponse
     {
         Auth::logout();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $solicitud->session()->invalidate();
+        $solicitud->session()->regenerateToken();
 
         return redirect()->route('login');
     }

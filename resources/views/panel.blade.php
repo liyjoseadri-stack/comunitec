@@ -14,7 +14,7 @@
             <header class="encabezado-pagina">
                 <div>
                     <h1>Panel principal</h1>
-                    <p>Bienvenido, {{ auth()->user()->name }}.</p>
+                    <p>Bienvenido, {{ auth()->user()->nombre }}.</p>
                 </div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
@@ -48,12 +48,12 @@
                     <strong>{{ $totalCotizaciones }}</strong>
                 </a>
                 @foreach ([
-                    'draft' => 'Borradores',
-                    'pending' => 'Pendientes',
-                    'accepted' => 'Aceptadas',
-                    'rejected' => 'Rechazadas',
-                    'cancelled' => 'Canceladas',
-                    'expired' => 'Vencidas',
+                    'borrador' => 'Borradores',
+                    'pendiente' => 'Pendientes',
+                    'aceptada' => 'Aceptadas',
+                    'rechazada' => 'Rechazadas',
+                    'cancelada' => 'Canceladas',
+                    'vencida' => 'Vencidas',
                 ] as $estado => $etiqueta)
                     <a class="tarjeta-indicador" href="{{ route('reportes.cotizaciones', [
                         'desde' => $periodo->inicio->format('Y-m-d'),
@@ -90,7 +90,7 @@
                                 <a href="{{ route('cotizaciones.detalle', $cotizacion) }}">
                                     {{ $cotizacion->folio }}
                                 </a>
-                                <span>{{ $cotizacion->customer->name }} · {{ $cotizacion->etiquetaEstado() }}</span>
+                                <span>{{ $cotizacion->cliente->nombre }} · {{ $cotizacion->etiquetaEstado() }}</span>
                             </li>
                         @empty
                             <li>No hay cotizaciones en este mes.</li>
@@ -115,12 +115,12 @@
 
             <section class="bloque-administrativo" aria-labelledby="titulo-alertas-inventario">
                 <h2 id="titulo-alertas-inventario">Alertas de inventario</h2>
-                @if ($lowStock->isEmpty())
+                @if ($productosStockBajo->isEmpty())
                     <p>No hay productos con stock bajo.</p>
                 @else
                     <ul class="lista-alertas">
-                        @foreach ($lowStock as $item)
-                            <li>{{ $item->name }}: {{ $item->available_units_count }} piezas disponibles.</li>
+                        @foreach ($productosStockBajo as $articulo)
+                            <li>{{ $articulo->nombre }}: {{ $articulo->cantidad_piezas_disponibles }} piezas disponibles.</li>
                         @endforeach
                     </ul>
                 @endif

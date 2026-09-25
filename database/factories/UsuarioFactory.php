@@ -28,15 +28,15 @@ class UsuarioFactory extends Factory
     {
         return [
 
-            'name' => fake()->name(),
+            'nombre' => fake()->name(),
 
-            'email' => fake()->unique()->safeEmail(),
+            'correo' => fake()->unique()->safeEmail(),
 
-            'email_verified_at' => now(),
+            'correo_verificado_en' => now(),
 
-            'password' => static::$password ??= Hash::make('password'),
+            'contrasena' => static::$password ??= Hash::make('contrasena'),
 
-            'remember_token' => Str::random(10),
+            'token_recuerdo' => Str::random(10),
 
         ];
     }
@@ -48,7 +48,7 @@ class UsuarioFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
 
-            'email_verified_at' => null,
+            'correo_verificado_en' => null,
 
         ]);
     }

@@ -24,13 +24,13 @@ class EnvioCotizacionesTest extends TestCase
         $this->assertCount(1, $mensaje->getAttachments());
         $this->assertSame('application', $mensaje->getAttachments()[0]->getMediaType());
         $this->assertSame('pdf', $mensaje->getAttachments()[0]->getMediaSubtype());
-        $this->assertSame('pending', $cotizacion->fresh()->status);
-        $this->assertTrue($cotizacion->fresh()->sent_at->equalTo(now()));
-        $this->assertTrue($cotizacion->fresh()->expires_at->equalTo(now()->addDays(15)));
-        $this->assertDatabaseHas('quote_email_deliveries', [
-            'quote_id' => $cotizacion->id,
-            'recipient' => 'cliente@example.test',
-            'result' => 'accepted',
+        $this->assertSame('pendiente', $cotizacion->fresh()->estado);
+        $this->assertTrue($cotizacion->fresh()->enviada_en->equalTo(now()));
+        $this->assertTrue($cotizacion->fresh()->vence_en->equalTo(now()->addDays(15)));
+        $this->assertDatabaseHas('envios_correo_cotizacion', [
+            'cotizacion_id' => $cotizacion->id,
+            'destinatario' => 'cliente@example.test',
+            'resultado' => 'aceptada',
         ]);
         $this->get("/cotizaciones/{$cotizacion->id}")
             ->assertOk()
@@ -45,13 +45,13 @@ class EnvioCotizacionesTest extends TestCase
         Mail::shouldReceive('to')->once()->andReturnSelf();
         Mail::shouldReceive('send')->once()->andThrow(new TransportException('Fallo simulado del servidor de correo'));
         $this->post("/cotizaciones/{$cotizacion->id}/enviar")->assertRedirect()->assertSessionHas('error');
-        $this->assertSame('draft', $cotizacion->fresh()->status);
-        $this->assertNull($cotizacion->fresh()->sent_at);
-        $this->assertNull($cotizacion->fresh()->expires_at);
-        $this->assertDatabaseHas('quote_email_deliveries', [
-            'quote_id' => $cotizacion->id,
-            'recipient' => 'cliente@example.test',
-            'result' => 'failed',
+        $this->assertSame('borrador', $cotizacion->fresh()->estado);
+        $this->assertNull($cotizacion->fresh()->enviada_en);
+        $this->assertNull($cotizacion->fresh()->vence_en);
+        $this->assertDatabaseHas('envios_correo_cotizacion', [
+            'cotizacion_id' => $cotizacion->id,
+            'destinatario' => 'cliente@example.test',
+            'resultado' => 'fallido',
         ]);
     }
 
@@ -59,13 +59,13 @@ class EnvioCotizacionesTest extends TestCase
     {
         $cotizacion = $this->preparar();
         $cotizacion->update([
-            'status' => 'pending',
-            'sent_at' => now()->subDays(3),
-            'expires_at' => now()->addDays(12),
+            'estado' => 'pendiente',
+            'enviada_en' => now()->subDays(3),
+            'vence_en' => now()->addDays(12),
         ]);
-        $vencimiento = $cotizacion->fresh()->expires_at;
+        $vencimiento = $cotizacion->fresh()->vence_en;
         $this->post("/cotizaciones/{$cotizacion->id}/correo")->assertRedirect();
-        $this->assertTrue($cotizacion->fresh()->expires_at->equalTo($vencimiento));
+        $this->assertTrue($cotizacion->fresh()->vence_en->equalTo($vencimiento));
     }
 
     public function test_el_modo_de_registro_no_simula_un_envio_real(): void
@@ -75,47 +75,47 @@ class EnvioCotizacionesTest extends TestCase
         ]);
         $cotizacion = $this->preparar();
         $this->post("/cotizaciones/{$cotizacion->id}/enviar")->assertRedirect()->assertSessionHas('error');
-        $this->assertSame('draft', $cotizacion->fresh()->status);
-        $this->assertNull($cotizacion->fresh()->sent_at);
+        $this->assertSame('borrador', $cotizacion->fresh()->estado);
+        $this->assertNull($cotizacion->fresh()->enviada_en);
     }
 
     public function test_un_fallo_al_reenviar_conserva_la_vigencia_original(): void
     {
         $cotizacion = $this->preparar();
         $cotizacion->update([
-            'status' => 'pending',
-            'sent_at' => now()->subDays(3),
-            'expires_at' => now()->addDays(12),
+            'estado' => 'pendiente',
+            'enviada_en' => now()->subDays(3),
+            'vence_en' => now()->addDays(12),
         ]);
-        $vencimiento = $cotizacion->fresh()->expires_at;
+        $vencimiento = $cotizacion->fresh()->vence_en;
         Mail::shouldReceive('to')->once()->andReturnSelf();
         Mail::shouldReceive('send')->once()->andThrow(new TransportException('Fallo simulado'));
         $this->post("/cotizaciones/{$cotizacion->id}/correo")->assertRedirect()->assertSessionHas('error');
-        $this->assertSame('pending', $cotizacion->fresh()->status);
-        $this->assertTrue($cotizacion->fresh()->expires_at->equalTo($vencimiento));
+        $this->assertSame('pendiente', $cotizacion->fresh()->estado);
+        $this->assertTrue($cotizacion->fresh()->vence_en->equalTo($vencimiento));
     }
 
     private function preparar(): Cotizacion
     {
         $usuario = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
         $this->actingAs($usuario);
         $cliente = Cliente::create([
-            'type' => 'fisica',
-            'name' => 'Cliente de prueba',
+            'tipo' => 'fisica',
+            'nombre' => 'Cliente de prueba',
             'rfc' => 'CLI010101AA1',
-            'email' => 'cliente@example.test',
-            'phone' => '9610000000',
-            'address' => 'Domicilio de prueba',
-            'postal_code' => '29000',
+            'correo' => 'cliente@example.test',
+            'telefono' => '9610000000',
+            'direccion' => 'Domicilio de prueba',
+            'codigo_postal' => '29000',
         ]);
 
         return Cotizacion::create([
             'folio' => 'COT-ENVIO',
-            'customer_id' => $cliente->id,
-            'user_id' => $usuario->id,
-            'status' => 'draft',
+            'cliente_id' => $cliente->id,
+            'usuario_id' => $usuario->id,
+            'estado' => 'borrador',
             'total' => 0,
         ]);
     }

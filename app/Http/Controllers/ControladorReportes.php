@@ -29,12 +29,12 @@ class ControladorReportes extends Controller
             'cliente' => [
                 'nullable',
                 'integer',
-                'exists:customers,id',
+                'exists:clientes,id',
             ],
             'responsable' => [
                 'nullable',
                 'integer',
-                'exists:users,id',
+                'exists:usuarios,id',
             ],
             'estado' => [
                 'nullable',
@@ -45,31 +45,31 @@ class ControladorReportes extends Controller
         [$inicio, $finExclusivo] = $this->limites($filtros);
 
         $consulta = Cotizacion::query()
-            ->where('created_at', '>=', $inicio)
-            ->where('created_at', '<', $finExclusivo)
-            ->when($filtros['cliente'] ?? null, fn ($query, $cliente) => $query->where(
-                'customer_id',
+            ->where('creado_en', '>=', $inicio)
+            ->where('creado_en', '<', $finExclusivo)
+            ->when($filtros['cliente'] ?? null, fn ($consulta, $cliente) => $consulta->where(
+                'cliente_id',
                 $cliente
             ))
-            ->when($filtros['responsable'] ?? null, fn ($query, $responsable) => $query->where(
-                'user_id',
+            ->when($filtros['responsable'] ?? null, fn ($consulta, $responsable) => $consulta->where(
+                'usuario_id',
                 $responsable
             ))
-            ->when($filtros['estado'] ?? null, fn ($query, $estado) => $query->where(
-                'status',
+            ->when($filtros['estado'] ?? null, fn ($consulta, $estado) => $consulta->where(
+                'estado',
                 $estado
             ));
 
         return view('reportes.cotizaciones', [
             'cotizaciones' => (clone $consulta)
-                ->with('customer', 'responsable')
-                ->latest('created_at')
+                ->with('cliente', 'responsable')
+                ->latest('creado_en')
                 ->paginate(20)
                 ->withQueryString(),
             'cantidadResultados' => (clone $consulta)->count(),
             'totalImporte' => (float) (clone $consulta)->sum('total'),
-            'clientes' => Cliente::orderBy('name')->get(),
-            'responsables' => Usuario::orderBy('name')->get(),
+            'clientes' => Cliente::orderBy('nombre')->get(),
+            'responsables' => Usuario::orderBy('nombre')->get(),
             'filtros' => $filtros,
         ]);
     }
@@ -89,12 +89,12 @@ class ControladorReportes extends Controller
             'cliente' => [
                 'nullable',
                 'integer',
-                'exists:customers,id',
+                'exists:clientes,id',
             ],
             'responsable' => [
                 'nullable',
                 'integer',
-                'exists:users,id',
+                'exists:usuarios,id',
             ],
             'metodo_pago' => [
                 'nullable',
@@ -105,31 +105,31 @@ class ControladorReportes extends Controller
         [$inicio, $finExclusivo] = $this->limites($filtros);
 
         $consulta = Venta::query()
-            ->where('sold_at', '>=', $inicio)
-            ->where('sold_at', '<', $finExclusivo)
-            ->when($filtros['cliente'] ?? null, fn ($query, $cliente) => $query->where(
-                'customer_id',
+            ->where('vendida_en', '>=', $inicio)
+            ->where('vendida_en', '<', $finExclusivo)
+            ->when($filtros['cliente'] ?? null, fn ($consulta, $cliente) => $consulta->where(
+                'cliente_id',
                 $cliente
             ))
-            ->when($filtros['responsable'] ?? null, fn ($query, $responsable) => $query->where(
-                'user_id',
+            ->when($filtros['responsable'] ?? null, fn ($consulta, $responsable) => $consulta->where(
+                'usuario_id',
                 $responsable
             ))
-            ->when($filtros['metodo_pago'] ?? null, fn ($query, $metodo) => $query->where(
-                'payment_method',
+            ->when($filtros['metodo_pago'] ?? null, fn ($consulta, $metodo) => $consulta->where(
+                'metodo_pago',
                 $metodo
             ));
 
         return view('reportes.ventas', [
             'ventas' => (clone $consulta)
                 ->with('cotizacion', 'cliente', 'responsable')
-                ->latest('sold_at')
+                ->latest('vendida_en')
                 ->paginate(20)
                 ->withQueryString(),
             'cantidadResultados' => (clone $consulta)->count(),
             'totalImporte' => (float) (clone $consulta)->sum('total'),
-            'clientes' => Cliente::orderBy('name')->get(),
-            'responsables' => Usuario::orderBy('name')->get(),
+            'clientes' => Cliente::orderBy('nombre')->get(),
+            'responsables' => Usuario::orderBy('nombre')->get(),
             'filtros' => $filtros,
         ]);
     }

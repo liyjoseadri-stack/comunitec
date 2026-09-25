@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
 use Illuminate\Database\Eloquent\Model;
 
 class Categoria extends Model
 {
-    protected $table = 'categories';
+    use UsaMarcasTiempoEnEspanol;
+
+    protected $table = 'categorias';
 
     protected $fillable = [
-        'name',
-        'active',
+        'nombre',
+        'activo',
     ];
 }

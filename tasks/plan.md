@@ -175,3 +175,55 @@ Los importes se guardarán como decimales de precisión monetaria; las líneas c
 - Detalle final de cada reporte y sus exportaciones.
 
 Estas decisiones se resolverán antes de la entrega a la que afecten. No se inventarán datos corporativos ni credenciales.
+
+## Entrega 8: traducción estructural completa al español
+
+### Objetivo
+
+Eliminar los identificadores en inglés creados por la aplicación y dejar una estructura coherente en español en código, rutas, formularios, pruebas y base de datos. El usuario autorizó vaciar la base, por lo que se conserva el comportamiento de la Entrega 7 y se reconstruye el esquema sin migrar registros anteriores.
+
+No se traducirán palabras reservadas de PHP, SQL, HTML y HTTP, contratos públicos de Laravel ni código de `vendor` y `node_modules`. La infraestructura interna que Laravel exige con nombres fijos se documentará como excepción técnica. Esto no será una capa de traducción: los nombres persistidos y las referencias del código cambiarán realmente.
+
+### Convenciones aprobadas para la migración
+
+| Nombre anterior | Nombre definitivo |
+| --- | --- |
+| `users` | `usuarios` |
+| `customers` | `clientes` |
+| `categories` | `categorias` |
+| `catalog_items` | `articulos_catalogo` |
+| `inventory_units` | `piezas_inventario` |
+| `quotes` | `cotizaciones` |
+| `quote_lines` | `partidas_cotizacion` |
+| `quote_email_deliveries` | `envios_correo_cotizacion` |
+| `sales` | `ventas` |
+| `sale_lines` | `partidas_venta` |
+
+Las columnas propias usarán nombres como `nombre`, `correo`, `contrasena`, `rol`, `activo`, `cliente_id`, `usuario_id`, `cotizacion_id`, `articulo_catalogo_id`, `estado`, `tipo`, `descripcion`, `cantidad`, `precio_unitario`, `porcentaje_descuento`, `creado_en` y `actualizado_en`. Los estados y tipos persistidos también cambiarán: `producto`, `servicio`, `otro`; `borrador`, `pendiente`, `aceptada`, `rechazada`, `cancelada`, `vencida`; y `disponible`, `reservada`, `entregada`.
+
+### Estrategia de seguridad de datos
+
+1. Crear una rama de trabajo y un respaldo lógico antes de modificar el esquema.
+2. Añadir pruebas que describan el esquema y los valores definitivos en español.
+3. Sustituir el historial de desarrollo por una migración consolidada, porque el usuario autorizó una base vacía.
+4. Hacer que toda instalación nueva nazca directamente en español.
+5. Cambiar modelos, relaciones, controladores, servicios, comandos, correo, vistas y pruebas por bloques pequeños.
+6. Probar una instalación limpia en MySQL y crear el primer administrador mediante variables locales no versionadas.
+
+### Orden de implementación
+
+1. **Usuarios y autenticación:** tabla, columnas, modelo, validación, sesiones y permisos.
+2. **Clientes y catálogo:** clientes, categorías, artículos y piezas de inventario.
+3. **Cotizaciones:** encabezado, partidas, estados, correo, PDF y reservas.
+4. **Ventas y reportes:** copias históricas, partidas, series, filtros, panel y reportes.
+5. **Limpieza del código:** nombres de variables enviados a vistas, parámetros de rutas, comandos heredados y referencias en documentación.
+6. **Cierre:** búsqueda automática de identificadores anteriores, migración limpia, actualización sobre copia de datos, reversión, suite completa y revisión visual.
+
+### Criterios de aceptación
+
+- Una base nueva contiene nombres en español para todas las tablas y columnas propias de Comunitec.
+- La base autorizada se reconstruye limpia y permite crear el administrador sin guardar contraseñas en Git.
+- Los valores de tipos y estados almacenados quedan en español, sin adaptadores permanentes para los valores anteriores.
+- No quedan referencias funcionales a nombres anteriores dentro de `app`, `database`, `resources`, `routes` y `tests`, salvo excepciones técnicas documentadas.
+- La migración consolidada se puede revertir y ejecutar nuevamente en una base de prueba.
+- El flujo completo, las pruebas, Blade, formato y compilación siguen aprobados.

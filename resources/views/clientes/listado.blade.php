@@ -17,7 +17,7 @@
             </h1>
             <form class="mt-5 grid gap-3 bg-white p-5" method="POST" action="{{ route('clientes.guardar') }}">
                 @csrf
-                <select name="type">
+                <select name="tipo">
                     <option value="moral">
                         Persona moral
                     </option>
@@ -25,20 +25,20 @@
                         Persona física
                     </option>
                 </select>
-                <input name="name" placeholder="Nombre o razón social" required>
+                <input name="nombre" placeholder="Nombre o razón social" required>
                 <input name="rfc" placeholder="RFC" required>
-                <input name="email" type="email" placeholder="Correo" required>
-                <input name="phone" placeholder="Teléfono" required>
-                <input name="address" placeholder="Dirección" required>
-                <input name="postal_code" placeholder="Código postal" required>
+                <input name="correo" type="email" placeholder="Correo" required>
+                <input name="telefono" placeholder="Teléfono" required>
+                <input name="direccion" placeholder="Dirección" required>
+                <input name="codigo_postal" placeholder="Código postal" required>
                 <button type="submit">
                     Guardar cliente
                 </button>
             </form>
             <ul class="mt-5">
-                @foreach($customers as $customer)
+                @foreach($clientes as $cliente)
                     <li>
-                        {{ $customer->name }} — {{ $customer->rfc }}
+                        {{ $cliente->nombre }} — {{ $cliente->rfc }}
                     </li>
                 @endforeach
             </ul>

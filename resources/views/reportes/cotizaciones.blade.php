@@ -45,7 +45,7 @@
                             <option value="">Todos</option>
                             @foreach ($clientes as $cliente)
                                 <option value="{{ $cliente->id }}" @selected(($filtros['cliente'] ?? null) == $cliente->id)>
-                                    {{ $cliente->name }}
+                                    {{ $cliente->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -56,7 +56,7 @@
                             <option value="">Todos</option>
                             @foreach ($responsables as $responsable)
                                 <option value="{{ $responsable->id }}" @selected(($filtros['responsable'] ?? null) == $responsable->id)>
-                                    {{ $responsable->name }}
+                                    {{ $responsable->nombre }}
                                 </option>
                             @endforeach
                         </select>
@@ -66,12 +66,12 @@
                         <select id="estado" name="estado">
                             <option value="">Todos</option>
                             @foreach ([
-                                'draft' => 'Borrador',
-                                'pending' => 'Pendiente',
-                                'accepted' => 'Aceptada',
-                                'rejected' => 'Rechazada',
-                                'cancelled' => 'Cancelada',
-                                'expired' => 'Vencida',
+                                'borrador' => 'Borrador',
+                                'pendiente' => 'Pendiente',
+                                'aceptada' => 'Aceptada',
+                                'rechazada' => 'Rechazada',
+                                'cancelada' => 'Cancelada',
+                                'vencida' => 'Vencida',
                             ] as $valor => $etiqueta)
                                 <option value="{{ $valor }}" @selected(($filtros['estado'] ?? null) === $valor)>
                                     {{ $etiqueta }}
@@ -104,14 +104,14 @@
                         <tbody>
                             @forelse ($cotizaciones as $cotizacion)
                                 <tr>
-                                    <td>{{ $cotizacion->created_at->format('d/m/Y') }}</td>
+                                    <td>{{ $cotizacion->creado_en->format('d/m/Y') }}</td>
                                     <td>
                                         <a href="{{ route('cotizaciones.detalle', $cotizacion) }}">
                                             {{ $cotizacion->folio }}
                                         </a>
                                     </td>
-                                    <td>{{ $cotizacion->customer->name }}</td>
-                                    <td>{{ $cotizacion->responsable->name }}</td>
+                                    <td>{{ $cotizacion->cliente->nombre }}</td>
+                                    <td>{{ $cotizacion->responsable->nombre }}</td>
                                     <td>{{ $cotizacion->etiquetaEstado() }}</td>
                                     <td>${{ number_format((float) $cotizacion->total, 2) }}</td>
                                 </tr>

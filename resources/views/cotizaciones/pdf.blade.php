@@ -139,9 +139,9 @@
     </head>
     <body>
         @php
-            $subtotal = (float) $quote->lines->sum('subtotal');
-            $descuento = $subtotal - (float) $quote->total;
-            $fechaDocumento = $quote->sent_at ?? $quote->created_at;
+            $subtotal = (float) $cotizacion->partidas->sum('subtotal');
+            $descuento = $subtotal - (float) $cotizacion->total;
+            $fechaDocumento = $cotizacion->enviada_en ?? $cotizacion->creado_en;
         @endphp
 
         <table class="encabezado">
@@ -152,7 +152,7 @@
                 </td>
                 <td class="folio">
                     <h2>Cotización</h2>
-                    <strong>{{ $quote->folio }}</strong>
+                    <strong>{{ $cotizacion->folio }}</strong>
                     <br>
                     {{ $fechaDocumento?->format('d/m/Y') }}
                 </td>
@@ -164,27 +164,27 @@
                 <td>
                     <strong>Cliente</strong>
                     <br>
-                    {{ $quote->customer->name }}
+                    {{ $cotizacion->cliente->nombre }}
                     <br>
-                    RFC: {{ $quote->customer->rfc }}
+                    RFC: {{ $cotizacion->cliente->rfc }}
                     <br>
-                    {{ $quote->customer->address }}, C.P. {{ $quote->customer->postal_code }}
+                    {{ $cotizacion->cliente->direccion }}, C.P. {{ $cotizacion->cliente->codigo_postal }}
                     <br>
-                    {{ $quote->customer->email }} · {{ $quote->customer->phone }}
+                    {{ $cotizacion->cliente->correo }} · {{ $cotizacion->cliente->telefono }}
                 </td>
                 <td>
                     <strong>Datos de la cotización</strong>
                     <br>
-                    Estado: {{ $quote->etiquetaEstado() }}
+                    Estado: {{ $cotizacion->etiquetaEstado() }}
                     <br>
-                    Responsable: {{ $quote->responsable?->name ?? 'Sin asignar' }}
-                    @if ($quote->area_requesting)
+                    Responsable: {{ $cotizacion->responsable?->nombre ?? 'Sin asignar' }}
+                    @if ($cotizacion->area_solicitante)
                         <br>
-                        Área solicitante: {{ $quote->area_requesting }}
+                        Área solicitante: {{ $cotizacion->area_solicitante }}
                     @endif
-                    @if ($quote->expires_at)
+                    @if ($cotizacion->vence_en)
                         <br>
-                        Vigencia hasta: {{ $quote->expires_at->format('d/m/Y') }}
+                        Vigencia hasta: {{ $cotizacion->vence_en->format('d/m/Y') }}
                     @endif
                 </td>
             </tr>
@@ -200,12 +200,12 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse ($quote->lines as $line)
+                @forelse ($cotizacion->partidas as $partida)
                     <tr>
-                        <td>{{ $line->description }}</td>
-                        <td class="numero">{{ number_format((float) $line->quantity, 2) }}</td>
-                        <td class="numero">${{ number_format((float) $line->unit_price, 2) }}</td>
-                        <td class="numero">${{ number_format((float) $line->subtotal, 2) }}</td>
+                        <td>{{ $partida->descripcion }}</td>
+                        <td class="numero">{{ number_format((float) $partida->cantidad, 2) }}</td>
+                        <td class="numero">${{ number_format((float) $partida->precio_unitario, 2) }}</td>
+                        <td class="numero">${{ number_format((float) $partida->subtotal, 2) }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -221,12 +221,12 @@
                 <td>${{ number_format($subtotal, 2) }}</td>
             </tr>
             <tr>
-                <th>Descuento ({{ number_format((float) $quote->discount_percent, 2) }}%)</th>
+                <th>Descuento ({{ number_format((float) $cotizacion->porcentaje_descuento, 2) }}%)</th>
                 <td>-${{ number_format($descuento, 2) }}</td>
             </tr>
             <tr class="total">
                 <th>Total</th>
-                <td>${{ number_format((float) $quote->total, 2) }}</td>
+                <td>${{ number_format((float) $cotizacion->total, 2) }}</td>
             </tr>
         </table>
 

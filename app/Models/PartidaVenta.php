@@ -2,44 +2,47 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
 use Illuminate\Database\Eloquent\Model;
 
 class PartidaVenta extends Model
 {
-    protected $table = 'sale_lines';
+    use UsaMarcasTiempoEnEspanol;
+
+    protected $table = 'partidas_venta';
 
     protected $fillable = [
-        'sale_id',
-        'quote_line_id',
-        'catalog_item_id',
-        'type',
-        'description',
-        'quantity',
-        'unit_price',
+        'venta_id',
+        'partida_cotizacion_id',
+        'articulo_catalogo_id',
+        'tipo',
+        'descripcion',
+        'cantidad',
+        'precio_unitario',
         'subtotal',
     ];
 
     protected function casts(): array
     {
         return [
-            'quantity' => 'decimal:2',
-            'unit_price' => 'decimal:2',
+            'cantidad' => 'decimal:2',
+            'precio_unitario' => 'decimal:2',
             'subtotal' => 'decimal:2',
         ];
     }
 
     public function venta()
     {
-        return $this->belongsTo(Venta::class, 'sale_id');
+        return $this->belongsTo(Venta::class, 'venta_id');
     }
 
     public function partidaCotizada()
     {
-        return $this->belongsTo(PartidaCotizacion::class, 'quote_line_id');
+        return $this->belongsTo(PartidaCotizacion::class, 'partida_cotizacion_id');
     }
 
     public function piezas()
     {
-        return $this->hasMany(PiezaInventario::class, 'sale_line_id');
+        return $this->hasMany(PiezaInventario::class, 'partida_venta_id');
     }
 }

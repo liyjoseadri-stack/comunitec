@@ -11,12 +11,12 @@ class VerificarRolUsuario
     /**
      * @param  list<string>  $roles
      */
-    public function handle(Request $request, Closure $next, string ...$roles): Response
+    public function handle(Request $solicitud, Closure $siguiente, string ...$roles): Response
     {
-        if (! $request->user() || ! in_array($request->user()->role, $roles, true)) {
+        if (! $solicitud->user() || ! in_array($solicitud->user()->rol, $roles, true)) {
             abort(403);
         }
 
-        return $next($request);
+        return $siguiente($solicitud);
     }
 }

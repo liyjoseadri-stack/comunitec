@@ -12,12 +12,12 @@ class RolesUsuarioTest extends TestCase
 
     public function test_el_administrador_tiene_el_rol_correcto(): void
     {
-        $user = Usuario::factory()->create([
-            'role' => Usuario::ROL_ADMINISTRADOR,
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_ADMINISTRADOR,
         ]);
 
-        $this->assertTrue($user->esAdministrador());
-        $this->assertFalse($user->esComercial());
-        $this->assertFalse($user->esConsulta());
+        $this->assertTrue($usuario->esAdministrador());
+        $this->assertFalse($usuario->esComercial());
+        $this->assertFalse($usuario->esConsulta());
     }
 }

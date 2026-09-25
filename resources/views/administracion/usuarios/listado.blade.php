@@ -15,28 +15,28 @@
             <h1 class="text-2xl font-semibold">
                 Administración de usuarios
             </h1>
-            @if (session('status'))
+            @if (session('estado'))
                 <p class="mt-2 text-sm text-green-700">
-                    {{ session('status') }}
+                    {{ session('estado') }}
                 </p>
             @endif
             <form class="mt-6 grid gap-3 rounded bg-white p-5 shadow-sm" method="POST" action="{{ route('administracion.usuarios.guardar') }}">
                 @csrf
-                <input class="rounded border-slate-300" name="name" placeholder="Nombre" required>
-                <input class="rounded border-slate-300" name="email" type="email" placeholder="Correo" required>
-                <select class="rounded border-slate-300" name="role" required>
+                <input class="rounded border-slate-300" name="nombre" placeholder="Nombre" required>
+                <input class="rounded border-slate-300" name="correo" type="email" placeholder="Correo" required>
+                <select class="rounded border-slate-300" name="rol" required>
                     <option value="comercial">
                         Comercial
                     </option>
                     <option value="consulta">
                         Consulta
                     </option>
-                    <option value="admin">
+                    <option value="administrador">
                         Administrador
                     </option>
                 </select>
-                <input class="rounded border-slate-300" name="password" type="password" placeholder="Contraseña" required>
-                <input class="rounded border-slate-300" name="password_confirmation" type="password" placeholder="Confirmar contraseña" required>
+                <input class="rounded border-slate-300" name="contrasena" type="password" placeholder="Contraseña" required>
+                <input class="rounded border-slate-300" name="contrasena_confirmation" type="password" placeholder="Confirmar contraseña" required>
                 <button class="rounded bg-slate-900 px-4 py-2 text-white" type="submit">
                     Crear usuario
                 </button>
@@ -62,47 +62,46 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($users as $user)
+                        @foreach ($usuarios as $usuario)
                             <tr class="border-t">
                                 <td class="p-3">
-                                    {{ $user->name }}
+                                    {{ $usuario->nombre }}
                                 </td>
                                 <td>
-                                    {{ $user->email }}
+                                    {{ $usuario->correo }}
                                 </td>
                                 <td>
-                                    {{ $user->role }}
+                                    {{ $usuario->rol }}
                                 </td>
                                 <td>
-                                    {{ $user->active ? 'Activo' : 'Inactivo' }}
+                                    {{ $usuario->activo ? 'Activo' : 'Inactivo' }}
                                 </td>
                                 <td>
-                                    <form method="POST" action="{{ route('administracion.usuarios.estado', $user) }}">
+                                    <form method="POST" action="{{ route('administracion.usuarios.estado', $usuario) }}">
                                         @csrf
                                         @method('PATCH')
-                                        <input name="active" type="hidden" value="{{ $user->active ? 0 : 1 }}">
+                                        <input name="activo" type="hidden" value="{{ $usuario->activo ? 0 : 1 }}">
                                         <button class="underline" type="submit">
-                                            {{ $user->active ? 'Desactivar' : 'Activar' }}
+                                            {{ $usuario->activo ? 'Desactivar' : 'Activar' }}
                                         </button>
                                     </form>
                                     <details class="mt-2">
                                         <summary class="cursor-pointer underline">
                                             Editar
                                         </summary>
-                                        <form class="mt-2 grid gap-2" method="POST" action="{{ route('administracion.usuarios.actualizar', $user) }}">
+                                        <form class="mt-2 grid gap-2" method="POST" action="{{ route('administracion.usuarios.actualizar', $usuario) }}">
                                             @csrf
                                             @method('PUT')
-                                            <input class="rounded border-slate-300" name="name" value="{{ $user->name }}" required>
-                                            <input class="rounded border-slate-300" name="email" type="email" value="{{ $user->email }}" required>
-                                            <select class="rounded border-slate-300" name="role">
-                                                @foreach (['admin' => 'Administrador', 'comercial' => 'Comercial', 'consulta' => 'Consulta'] as $value => $label)
-                                                    <option value="{{ $value }}" @selected($user->
-                                                        role === $value)>{{ $label }}
+                                            <input class="rounded border-slate-300" name="nombre" value="{{ $usuario->nombre }}" required>
+                                            <input class="rounded border-slate-300" name="correo" type="email" value="{{ $usuario->correo }}" required>
+                                            <select class="rounded border-slate-300" name="rol">
+                                                @foreach (['administrador' => 'Administrador', 'comercial' => 'Comercial', 'consulta' => 'Consulta'] as $valor => $etiqueta)
+                                                    <option value="{{ $valor }}" @selected($usuario->rol === $valor)>{{ $etiqueta }}
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <input class="rounded border-slate-300" name="password" type="password" placeholder="Nueva contraseña (opcional)">
-                                            <input class="rounded border-slate-300" name="password_confirmation" type="password" placeholder="Confirmar nueva contraseña">
+                                            <input class="rounded border-slate-300" name="contrasena" type="password" placeholder="Nueva contraseña (opcional)">
+                                            <input class="rounded border-slate-300" name="contrasena_confirmation" type="password" placeholder="Confirmar nueva contraseña">
                                             <button class="rounded bg-slate-900 px-3 py-2 text-white" type="submit">
                                                 Guardar cambios
                                             </button>

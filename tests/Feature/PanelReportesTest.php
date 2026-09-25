@@ -18,19 +18,19 @@ class PanelReportesTest extends TestCase
     public function test_el_panel_cuenta_estados_y_ventas_dentro_del_mes_seleccionado(): void
     {
         $usuario = Usuario::factory()->create([
-            'role' => Usuario::ROL_ADMINISTRADOR,
+            'rol' => Usuario::ROL_ADMINISTRADOR,
         ]);
         $cliente = $this->crearCliente();
         $estados = [
-            'draft',
-            'pending',
-            'accepted',
-            'rejected',
-            'cancelled',
-            'expired',
+            'borrador',
+            'pendiente',
+            'aceptada',
+            'rechazada',
+            'cancelada',
+            'vencida',
         ];
 
-        $this->crearCotizacion($cliente, $usuario, 'draft', '2026-07-31 23:59:59');
+        $this->crearCotizacion($cliente, $usuario, 'borrador', '2026-07-31 23:59:59');
         $cotizacionesDelMes = collect($estados)->map(
             fn (string $estado, int $indice) => $this->crearCotizacion(
                 $cliente,
@@ -39,16 +39,16 @@ class PanelReportesTest extends TestCase
                 '2026-08-'.str_pad((string) ($indice + 1), 2, '0', STR_PAD_LEFT).' 10:00:00'
             )
         );
-        $this->crearCotizacion($cliente, $usuario, 'pending', '2026-09-01 00:00:00');
+        $this->crearCotizacion($cliente, $usuario, 'pendiente', '2026-09-01 00:00:00');
 
         $cotizacionExterna = $this->crearCotizacion(
             $cliente,
             $usuario,
-            'accepted',
+            'aceptada',
             '2026-07-15 10:00:00'
         );
         $this->crearVenta(
-            $cotizacionesDelMes->firstWhere('status', 'accepted'),
+            $cotizacionesDelMes->firstWhere('estado', 'aceptada'),
             $usuario,
             1000,
             '2026-08-01 00:00:00'
@@ -62,7 +62,7 @@ class PanelReportesTest extends TestCase
         $cotizacionSeptiembre = $this->crearCotizacion(
             $cliente,
             $usuario,
-            'accepted',
+            'aceptada',
             '2026-09-01 00:00:01'
         );
         $this->crearVenta(
@@ -77,7 +77,7 @@ class PanelReportesTest extends TestCase
         $respuesta->assertOk()
             ->assertViewHas('totalCotizaciones', 6)
             ->assertViewHas('resumenCotizaciones', function (array $resumen): bool {
-                foreach (['draft', 'pending', 'accepted', 'rejected', 'cancelled', 'expired'] as $estado) {
+                foreach (['borrador', 'pendiente', 'aceptada', 'rechazada', 'cancelada', 'vencida'] as $estado) {
                     if (($resumen[$estado] ?? null) !== 1) {
                         return false;
                     }
@@ -101,41 +101,41 @@ class PanelReportesTest extends TestCase
     public function test_el_reporte_de_cotizaciones_aplica_filtros_combinados(): void
     {
         $responsable = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
         $otroResponsable = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
         $cliente = $this->crearCliente('A');
         $otroCliente = $this->crearCliente('B');
         $objetivo = $this->crearCotizacion(
             $cliente,
             $responsable,
-            'pending',
+            'pendiente',
             '2026-08-15 12:00:00'
         );
         $fueraPorCliente = $this->crearCotizacion(
             $otroCliente,
             $responsable,
-            'pending',
+            'pendiente',
             '2026-08-16 12:00:00'
         );
         $fueraPorResponsable = $this->crearCotizacion(
             $cliente,
             $otroResponsable,
-            'pending',
+            'pendiente',
             '2026-08-17 12:00:00'
         );
         $fueraPorEstado = $this->crearCotizacion(
             $cliente,
             $responsable,
-            'rejected',
+            'rechazada',
             '2026-08-18 12:00:00'
         );
         $fueraPorFecha = $this->crearCotizacion(
             $cliente,
             $responsable,
-            'pending',
+            'pendiente',
             '2026-09-01 00:00:00'
         );
 
@@ -144,7 +144,7 @@ class PanelReportesTest extends TestCase
             'hasta' => '2026-08-31',
             'cliente' => $cliente->id,
             'responsable' => $responsable->id,
-            'estado' => 'pending',
+            'estado' => 'pendiente',
         ]));
 
         $respuesta->assertOk()
@@ -160,10 +160,10 @@ class PanelReportesTest extends TestCase
     public function test_el_reporte_de_ventas_filtra_y_totaliza_antes_de_paginar(): void
     {
         $responsable = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
         $otroResponsable = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
         $cliente = $this->crearCliente('C');
         $otroCliente = $this->crearCliente('D');
@@ -173,25 +173,25 @@ class PanelReportesTest extends TestCase
             $cotizacion = $this->crearCotizacion(
                 $cliente,
                 $responsable,
-                'accepted',
+                'aceptada',
                 $fecha
             );
             $this->crearVenta($cotizacion, $responsable, 100, $fecha);
         }
         $ventaOtroCliente = $this->crearVenta(
-            $this->crearCotizacion($otroCliente, $responsable, 'accepted', '2026-08-22 12:00:00'),
+            $this->crearCotizacion($otroCliente, $responsable, 'aceptada', '2026-08-22 12:00:00'),
             $responsable,
             500,
             '2026-08-22 12:00:00'
         );
         $ventaOtroResponsable = $this->crearVenta(
-            $this->crearCotizacion($cliente, $otroResponsable, 'accepted', '2026-08-23 12:00:00'),
+            $this->crearCotizacion($cliente, $otroResponsable, 'aceptada', '2026-08-23 12:00:00'),
             $otroResponsable,
             600,
             '2026-08-23 12:00:00'
         );
         $ventaOtroMetodo = $this->crearVenta(
-            $this->crearCotizacion($cliente, $responsable, 'accepted', '2026-08-24 12:00:00'),
+            $this->crearCotizacion($cliente, $responsable, 'aceptada', '2026-08-24 12:00:00'),
             $responsable,
             700,
             '2026-08-24 12:00:00',
@@ -237,7 +237,7 @@ class PanelReportesTest extends TestCase
     {
         Carbon::setTestNow('2026-09-24 12:00:00');
         $usuario = Usuario::factory()->create([
-            'role' => Usuario::ROL_CONSULTA,
+            'rol' => Usuario::ROL_CONSULTA,
         ]);
 
         $respuesta = $this->actingAs($usuario)->get('/panel');
@@ -267,7 +267,7 @@ class PanelReportesTest extends TestCase
     public function test_los_reportes_validan_intervalos_identificadores_y_metodos(): void
     {
         $usuario = Usuario::factory()->create([
-            'role' => Usuario::ROL_CONSULTA,
+            'rol' => Usuario::ROL_CONSULTA,
         ]);
         $this->actingAs($usuario);
 
@@ -289,7 +289,7 @@ class PanelReportesTest extends TestCase
     {
         Carbon::setTestNow('2026-09-24 12:00:00');
         $consulta = Usuario::factory()->create([
-            'role' => Usuario::ROL_CONSULTA,
+            'rol' => Usuario::ROL_CONSULTA,
         ]);
 
         $this->actingAs($consulta)->get('/reportes/cotizaciones')
@@ -310,7 +310,7 @@ class PanelReportesTest extends TestCase
     {
         Carbon::setTestNow('2026-09-24 12:00:00');
         $consulta = Usuario::factory()->create([
-            'role' => Usuario::ROL_CONSULTA,
+            'rol' => Usuario::ROL_CONSULTA,
         ]);
 
         $this->actingAs($consulta)->get('/reportes/cotizaciones?desde=&hasta=')
@@ -326,14 +326,14 @@ class PanelReportesTest extends TestCase
     public function test_el_reporte_recupera_nombres_de_una_venta_heredada_sin_copias(): void
     {
         $responsable = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
-            'name' => 'Responsable heredado',
+            'rol' => Usuario::ROL_COMERCIAL,
+            'nombre' => 'Responsable heredado',
         ]);
         $cliente = $this->crearCliente('E');
         $cotizacion = $this->crearCotizacion(
             $cliente,
             $responsable,
-            'accepted',
+            'aceptada',
             '2026-09-10 12:00:00'
         );
         $venta = $this->crearVenta(
@@ -343,8 +343,8 @@ class PanelReportesTest extends TestCase
             '2026-09-10 12:00:00'
         );
         $venta->update([
-            'customer_name' => '',
-            'responsible_name' => '',
+            'nombre_cliente' => '',
+            'nombre_responsable' => '',
         ]);
 
         $this->actingAs($responsable)->get('/reportes/ventas?desde=2026-09-01&hasta=2026-09-30')
@@ -356,13 +356,13 @@ class PanelReportesTest extends TestCase
     private function crearCliente(string $sufijo = ''): Cliente
     {
         return Cliente::create([
-            'type' => 'moral',
-            'name' => 'Cliente de reportes '.$sufijo,
+            'tipo' => 'moral',
+            'nombre' => 'Cliente de reportes '.$sufijo,
             'rfc' => 'CRE010101A'.($sufijo ?: '1'),
-            'email' => 'reportes'.strtolower($sufijo).'@example.test',
-            'phone' => '9610000000',
-            'address' => 'Domicilio de reportes',
-            'postal_code' => '29000',
+            'correo' => 'reportes'.strtolower($sufijo).'@example.test',
+            'telefono' => '9610000000',
+            'direccion' => 'Domicilio de reportes',
+            'codigo_postal' => '29000',
         ]);
     }
 
@@ -374,15 +374,15 @@ class PanelReportesTest extends TestCase
     ): Cotizacion {
         $cotizacion = Cotizacion::create([
             'folio' => 'COT-REPORTE-'.Str::ulid(),
-            'customer_id' => $cliente->id,
-            'user_id' => $usuario->id,
-            'status' => $estado,
-            'discount_percent' => 0,
+            'cliente_id' => $cliente->id,
+            'usuario_id' => $usuario->id,
+            'estado' => $estado,
+            'porcentaje_descuento' => 0,
             'total' => 1000,
         ]);
         $cotizacion->forceFill([
-            'created_at' => $fecha,
-            'updated_at' => $fecha,
+            'creado_en' => $fecha,
+            'actualizado_en' => $fecha,
         ])->save();
 
         return $cotizacion;
@@ -397,22 +397,22 @@ class PanelReportesTest extends TestCase
     ): Venta {
         return Venta::create([
             'folio' => 'VEN-REPORTE-'.str_replace([' ', ':', '-'], '', $fecha),
-            'quote_id' => $cotizacion->id,
-            'customer_id' => $cotizacion->customer_id,
-            'customer_type' => 'moral',
-            'customer_name' => 'Cliente histórico',
-            'customer_rfc' => 'CRE010101AA1',
-            'customer_email' => 'historico@example.test',
-            'customer_phone' => '9610000000',
-            'customer_address' => 'Domicilio histórico',
-            'customer_postal_code' => '29000',
-            'user_id' => $usuario->id,
-            'responsible_name' => $usuario->name,
-            'responsible_email' => $usuario->email,
-            'sold_at' => $fecha,
-            'payment_method' => $metodoPago,
+            'cotizacion_id' => $cotizacion->id,
+            'cliente_id' => $cotizacion->cliente_id,
+            'tipo_cliente' => 'moral',
+            'nombre_cliente' => 'Cliente histórico',
+            'rfc_cliente' => 'CRE010101AA1',
+            'correo_cliente' => 'historico@example.test',
+            'telefono_cliente' => '9610000000',
+            'direccion_cliente' => 'Domicilio histórico',
+            'codigo_postal_cliente' => '29000',
+            'usuario_id' => $usuario->id,
+            'nombre_responsable' => $usuario->nombre,
+            'correo_responsable' => $usuario->correo,
+            'vendida_en' => $fecha,
+            'metodo_pago' => $metodoPago,
             'subtotal' => $total,
-            'discount_percent' => 0,
+            'porcentaje_descuento' => 0,
             'total' => $total,
         ]);
     }

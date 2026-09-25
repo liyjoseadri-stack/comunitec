@@ -13,25 +13,25 @@ class InventarioTest extends TestCase
 
     public function test_el_comercial_puede_registrar_una_pieza_con_serie(): void
     {
-        $user = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
-        $item = ArticuloCatalogo::create([
-            'type' => 'product',
-            'name' => 'Equipo',
-            'code' => 'EQ-01',
-            'unit' => 'pieza',
-            'price' => 100,
-            'stock' => 0,
+        $articulo = ArticuloCatalogo::create([
+            'tipo' => 'producto',
+            'nombre' => 'Equipo',
+            'codigo' => 'EQ-01',
+            'unidad' => 'pieza',
+            'precio' => 100,
+            'existencias' => 0,
         ]);
-        $this->actingAs($user)->post('/inventario/series', [
-            'catalog_item_id' => $item->id,
-            'serial_number' => 'SN-001',
+        $this->actingAs($usuario)->post('/inventario/series', [
+            'articulo_catalogo_id' => $articulo->id,
+            'numero_serie' => 'SN-001',
         ])->assertRedirect();
-        $this->assertDatabaseHas('inventory_units', [
-            'catalog_item_id' => $item->id,
-            'serial_number' => 'SN-001',
-            'status' => 'available',
+        $this->assertDatabaseHas('piezas_inventario', [
+            'articulo_catalogo_id' => $articulo->id,
+            'numero_serie' => 'SN-001',
+            'estado' => 'disponible',
         ]);
     }
 }

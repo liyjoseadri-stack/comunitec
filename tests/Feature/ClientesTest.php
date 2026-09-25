@@ -13,57 +13,57 @@ class ClientesTest extends TestCase
 
     public function test_el_comercial_puede_crear_una_persona_moral(): void
     {
-        $user = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
 
-        $this->actingAs($user)->post('/clientes', [
+        $this->actingAs($usuario)->post('/clientes', [
 
-            'type' => 'moral',
-            'name' => 'Comunitec SA de CV',
+            'tipo' => 'moral',
+            'nombre' => 'Comunitec SA de CV',
             'rfc' => 'COM010101AB1',
 
-            'email' => 'contacto@example.com',
-            'phone' => '9610000000',
+            'correo' => 'contacto@example.com',
+            'telefono' => '9610000000',
 
-            'address' => 'Av. Central 1',
-            'postal_code' => '29000',
+            'direccion' => 'Av. Central 1',
+            'codigo_postal' => '29000',
 
         ])->assertRedirect('/clientes');
 
-        $this->assertDatabaseHas('customers', [
+        $this->assertDatabaseHas('clientes', [
             'rfc' => 'COM010101AB1',
-            'type' => 'moral',
+            'tipo' => 'moral',
         ]);
     }
 
     public function test_el_comercial_puede_actualizar_un_cliente(): void
     {
-        $user = Usuario::factory()->create([
-            'role' => Usuario::ROL_COMERCIAL,
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_COMERCIAL,
         ]);
-        $customer = Cliente::create([
-            'type' => 'fisica',
-            'name' => 'Ana',
+        $cliente = Cliente::create([
+            'tipo' => 'fisica',
+            'nombre' => 'Ana',
             'rfc' => 'AAAA010101AA1',
-            'email' => 'ana@example.com',
-            'phone' => '1',
-            'address' => 'Uno',
-            'postal_code' => '29000',
+            'correo' => 'ana@example.com',
+            'telefono' => '1',
+            'direccion' => 'Uno',
+            'codigo_postal' => '29000',
         ]);
-        $this->actingAs($user)->put("/clientes/{$customer->id}", [
-            'type' => 'fisica',
-            'name' => 'Ana García',
+        $this->actingAs($usuario)->put("/clientes/{$cliente->id}", [
+            'tipo' => 'fisica',
+            'nombre' => 'Ana García',
             'rfc' => 'AAAA010101AA1',
-            'email' => 'ana@example.com',
-            'phone' => '2',
-            'address' => 'Dos',
-            'postal_code' => '29001',
+            'correo' => 'ana@example.com',
+            'telefono' => '2',
+            'direccion' => 'Dos',
+            'codigo_postal' => '29001',
         ])->assertRedirect('/clientes');
-        $this->assertDatabaseHas('customers', [
-            'id' => $customer->id,
-            'name' => 'Ana García',
-            'phone' => '2',
+        $this->assertDatabaseHas('clientes', [
+            'id' => $cliente->id,
+            'nombre' => 'Ana García',
+            'telefono' => '2',
         ]);
     }
 }

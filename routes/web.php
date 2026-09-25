@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\ControladorUsuarios;
+use App\Http\Controllers\Administracion\ControladorUsuarios;
 use App\Http\Controllers\Auth\ControladorSesion;
 use App\Http\Controllers\ControladorCatalogo;
 use App\Http\Controllers\ControladorClientes;
@@ -36,16 +36,16 @@ Route::middleware('auth')->group(function () {
         ControladorSesion::class,
         'eliminar',
     ])->name('logout');
-    Route::middleware('role:admin,comercial,consulta')->group(function () {
+    Route::middleware('rol:administrador,comercial,consulta')->group(function () {
         Route::get('/cotizaciones', [
             ControladorCotizaciones::class,
             'listar',
         ])->name('cotizaciones.listado');
-        Route::get('/cotizaciones/{quote}', [
+        Route::get('/cotizaciones/{cotizacion}', [
             ControladorCotizaciones::class,
             'mostrar',
         ])->name('cotizaciones.detalle');
-        Route::get('/cotizaciones/{quote}/pdf', [
+        Route::get('/cotizaciones/{cotizacion}/pdf', [
             ControladorCotizaciones::class,
             'pdf',
         ])->name('cotizaciones.pdf');
@@ -67,32 +67,32 @@ Route::middleware('auth')->group(function () {
         ])->name('reportes.ventas');
     });
 
-    Route::middleware('role:admin,comercial')->group(function () {
-        Route::put('/cotizaciones/{quote}', [
+    Route::middleware('rol:administrador,comercial')->group(function () {
+        Route::put('/cotizaciones/{cotizacion}', [
             ControladorCotizaciones::class,
             'actualizar',
         ])->name('cotizaciones.actualizar');
-        Route::post('/cotizaciones/{quote}/enviar', [
+        Route::post('/cotizaciones/{cotizacion}/enviar', [
             ControladorCotizaciones::class,
             'enviar',
         ])->name('cotizaciones.enviar');
-        Route::post('/cotizaciones/{quote}/correo', [
+        Route::post('/cotizaciones/{cotizacion}/correo', [
             ControladorCotizaciones::class,
             'enviarCorreo',
         ])->name('cotizaciones.correo');
-        Route::post('/cotizaciones/{quote}/rechazar', [
+        Route::post('/cotizaciones/{cotizacion}/rechazar', [
             ControladorCotizaciones::class,
             'rechazar',
         ])->name('cotizaciones.rechazar');
-        Route::post('/cotizaciones/{quote}/cancelar', [
+        Route::post('/cotizaciones/{cotizacion}/cancelar', [
             ControladorCotizaciones::class,
             'cancelar',
         ])->name('cotizaciones.cancelar');
-        Route::post('/cotizaciones/{quote}/aceptar', [
+        Route::post('/cotizaciones/{cotizacion}/aceptar', [
             ControladorCotizaciones::class,
             'aceptar',
         ])->name('cotizaciones.aceptar');
-        Route::post('/cotizaciones/{quote}/venta', [
+        Route::post('/cotizaciones/{cotizacion}/venta', [
             ControladorVentas::class,
             'guardar',
         ])->name('ventas.guardar');
@@ -100,15 +100,15 @@ Route::middleware('auth')->group(function () {
             ControladorCotizaciones::class,
             'guardar',
         ])->name('cotizaciones.guardar');
-        Route::post('/cotizaciones/{quote}/partidas', [
+        Route::post('/cotizaciones/{cotizacion}/partidas', [
             ControladorPartidas::class,
             'guardar',
         ])->name('cotizaciones.partidas.guardar');
-        Route::delete('/cotizaciones/{quote}/partidas/{line}', [
+        Route::delete('/cotizaciones/{cotizacion}/partidas/{partida}', [
             ControladorPartidas::class,
             'eliminar',
         ])->name('cotizaciones.partidas.eliminar');
-        Route::put('/cotizaciones/{quote}/partidas/{line}', [
+        Route::put('/cotizaciones/{cotizacion}/partidas/{partida}', [
             ControladorPartidas::class,
             'actualizar',
         ])->name('cotizaciones.partidas.actualizar');
@@ -132,7 +132,7 @@ Route::middleware('auth')->group(function () {
             ControladorCatalogo::class,
             'guardar',
         ])->name('catalogo.guardar');
-        Route::patch('/catalogo/{item}/estado', [
+        Route::patch('/catalogo/{articulo}/estado', [
             ControladorCatalogo::class,
             'actualizarEstado',
         ])->name('catalogo.estado');
@@ -144,13 +144,13 @@ Route::middleware('auth')->group(function () {
             ControladorClientes::class,
             'guardar',
         ])->name('clientes.guardar');
-        Route::put('/clientes/{customer}', [
+        Route::put('/clientes/{cliente}', [
             ControladorClientes::class,
             'actualizar',
         ])->name('clientes.actualizar');
     });
 
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware('rol:administrador')->group(function () {
         Route::get('/administracion/usuarios', [
             ControladorUsuarios::class,
             'listar',
@@ -159,11 +159,11 @@ Route::middleware('auth')->group(function () {
             ControladorUsuarios::class,
             'guardar',
         ])->name('administracion.usuarios.guardar');
-        Route::put('/administracion/usuarios/{user}', [
+        Route::put('/administracion/usuarios/{usuario}', [
             ControladorUsuarios::class,
             'actualizar',
         ])->name('administracion.usuarios.actualizar');
-        Route::patch('/administracion/usuarios/{user}/estado', [
+        Route::patch('/administracion/usuarios/{usuario}/estado', [
             ControladorUsuarios::class,
             'actualizarEstado',
         ])->name('administracion.usuarios.estado');

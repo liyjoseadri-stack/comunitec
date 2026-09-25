@@ -12,22 +12,21 @@ class ControladorInventario extends Controller
     public function listar()
     {
         return view('inventario.listado', [
-            'categories' => Categoria::all(),
-            'products' => ArticuloCatalogo::where('type',
-                'product')->get(),
-            'units' => PiezaInventario::with(
-                'item',
+            'categorias' => Categoria::all(),
+            'productos' => ArticuloCatalogo::where('tipo', 'producto')->get(),
+            'piezas' => PiezaInventario::with(
+                'articulo',
                 'partidaVenta.venta.cliente'
-            )->latest()->get(),
+            )->latest('creado_en')->get(),
         ]);
     }
 
     public function guardarCategoria(Request $r)
     {
         Categoria::create($r->validate([
-            'name' => [
+            'nombre' => [
                 'required',
-                'unique:categories,name',
+                'unique:categorias,nombre',
             ],
         ]));
 
@@ -37,13 +36,13 @@ class ControladorInventario extends Controller
     public function registrarPieza(Request $r)
     {
         PiezaInventario::create($r->validate([
-            'catalog_item_id' => [
+            'articulo_catalogo_id' => [
                 'required',
-                'exists:catalog_items,id',
+                'exists:articulos_catalogo,id',
             ],
-            'serial_number' => [
+            'numero_serie' => [
                 'required',
-                'unique:inventory_units,serial_number',
+                'unique:piezas_inventario,numero_serie',
             ],
         ]));
 

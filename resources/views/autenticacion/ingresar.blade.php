@@ -19,21 +19,21 @@
                 </p>
                 <form class="mt-6 space-y-4" method="POST" action="{{ route('login.store') }}">
                     @csrf
-                    <label class="block text-sm font-medium" for="email">
+                    <label class="block text-sm font-medium" for="correo">
                         Correo
                     </label>
-                    <input class="w-full rounded border-slate-300" id="email" name="email" type="email" value="{{ old('email') }}" required autofocus>
-                    @error('email')
+                    <input class="w-full rounded border-slate-300" id="correo" name="correo" type="email" value="{{ old('correo') }}" required autofocus>
+                    @error('correo')
                         <p class="text-sm text-red-700">
                             {{ $message }}
                         </p>
                     @enderror
-                    <label class="block text-sm font-medium" for="password">
+                    <label class="block text-sm font-medium" for="contrasena">
                         Contraseña
                     </label>
-                    <input class="w-full rounded border-slate-300" id="password" name="password" type="password" required>
-                    <label class="flex items-center gap-2 text-sm" for="remember">
-                        <input id="remember" name="remember" type="checkbox" value="1">
+                    <input class="w-full rounded border-slate-300" id="contrasena" name="contrasena" type="password" required>
+                    <label class="flex items-center gap-2 text-sm" for="recordar">
+                        <input id="recordar" name="recordar" type="checkbox" value="1">
                         Recordarme
                     </label>
                     <button class="w-full rounded bg-slate-900 px-4 py-2 font-medium text-white" type="submit">

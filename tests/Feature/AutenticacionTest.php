@@ -18,42 +18,42 @@ class AutenticacionTest extends TestCase
 
     public function test_el_usuario_activo_puede_ingresar_y_ver_el_panel(): void
     {
-        $user = Usuario::factory()->create([
+        $usuario = Usuario::factory()->create([
 
-            'password' => Hash::make('secret-password'),
+            'contrasena' => Hash::make('secret-password'),
 
         ]);
 
         $this->post('/iniciar-sesion', [
 
-            'email' => $user->email,
+            'correo' => $usuario->correo,
 
-            'password' => 'secret-password',
+            'contrasena' => 'secret-password',
 
         ])->assertRedirect('/panel');
 
-        $this->assertAuthenticatedAs($user);
+        $this->assertAuthenticatedAs($usuario);
         $this->get('/panel')->assertOk()->assertSee('Panel principal');
     }
 
     public function test_el_usuario_inactivo_no_puede_ingresar(): void
     {
-        $user = Usuario::factory()->create([
+        $usuario = Usuario::factory()->create([
 
-            'active' => false,
+            'activo' => false,
 
-            'password' => Hash::make('secret-password'),
+            'contrasena' => Hash::make('secret-password'),
 
         ]);
 
         $this->from('/iniciar-sesion')->post('/iniciar-sesion', [
 
-            'email' => $user->email,
+            'correo' => $usuario->correo,
 
-            'password' => 'secret-password',
+            'contrasena' => 'secret-password',
 
         ])->assertRedirect('/iniciar-sesion')
-            ->assertSessionHasErrors('email');
+            ->assertSessionHasErrors('correo');
 
         $this->assertGuest();
     }

@@ -2,45 +2,48 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
 use Illuminate\Database\Eloquent\Model;
 
 class EnvioCotizacion extends Model
 {
-    public const RESULTADO_ACEPTADO = 'accepted';
+    use UsaMarcasTiempoEnEspanol;
 
-    public const RESULTADO_FALLIDO = 'failed';
+    public const RESULTADO_ACEPTADO = 'aceptada';
 
-    protected $table = 'quote_email_deliveries';
+    public const RESULTADO_FALLIDO = 'fallido';
+
+    protected $table = 'envios_correo_cotizacion';
 
     protected $fillable = [
-        'quote_id',
-        'user_id',
-        'recipient',
-        'result',
-        'message',
-        'attempted_at',
+        'cotizacion_id',
+        'usuario_id',
+        'destinatario',
+        'resultado',
+        'mensaje',
+        'intentado_en',
     ];
 
     protected function casts(): array
     {
         return [
-            'attempted_at' => 'datetime',
+            'intentado_en' => 'datetime',
         ];
     }
 
     public function cotizacion()
     {
-        return $this->belongsTo(Cotizacion::class, 'quote_id');
+        return $this->belongsTo(Cotizacion::class, 'cotizacion_id');
     }
 
     public function usuario()
     {
-        return $this->belongsTo(Usuario::class, 'user_id');
+        return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 
     public function etiquetaResultado(): string
     {
-        return match ($this->result) {
+        return match ($this->resultado) {
             self::RESULTADO_ACEPTADO => 'Aceptado por el servicio de correo',
             self::RESULTADO_FALLIDO => 'Fallido',
             default => 'Sin definir',

@@ -15,11 +15,11 @@ class CorreoCotizacion extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Cotizacion $quote) {}
+    public function __construct(public Cotizacion $cotizacion) {}
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: "Cotización {$this->quote->folio} | COMUN&TEC");
+        return new Envelope(subject: "Cotización {$this->cotizacion->folio} | COMUN&TEC");
     }
 
     public function content(): Content
@@ -34,10 +34,10 @@ class CorreoCotizacion extends Mailable
             Attachment::fromData(
                 fn (): string => Pdf::loadView('cotizaciones.pdf',
                     [
-                        'quote' => $this->quote,
+                        'cotizacion' => $this->cotizacion,
                     ])->output(),
 
-                "{$this->quote->folio}.pdf"
+                "{$this->cotizacion->folio}.pdf"
             )->withMime('application/pdf'),
 
         ];

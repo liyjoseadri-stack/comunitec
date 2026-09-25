@@ -24,30 +24,30 @@ class ControladorPanel extends Controller
         $periodo = PeriodoReporte::desdeMes($datos['mes'] ?? null);
 
         $consultaCotizaciones = Cotizacion::query()
-            ->where('created_at', '>=', $periodo->inicio)
-            ->where('created_at', '<', $periodo->finExclusivo);
+            ->where('creado_en', '>=', $periodo->inicio)
+            ->where('creado_en', '<', $periodo->finExclusivo);
         $conteos = (clone $consultaCotizaciones)
-            ->selectRaw('status, COUNT(*) AS cantidad')
-            ->groupBy('status')
-            ->pluck('cantidad', 'status');
+            ->selectRaw('estado, COUNT(*) AS cantidad')
+            ->groupBy('estado')
+            ->pluck('cantidad', 'estado');
         $resumenCotizaciones = collect([
-            'draft',
-            'pending',
-            'accepted',
-            'rejected',
-            'cancelled',
-            'expired',
+            'borrador',
+            'pendiente',
+            'aceptada',
+            'rechazada',
+            'cancelada',
+            'vencida',
         ])->mapWithKeys(fn (string $estado): array => [
             $estado => (int) ($conteos[$estado] ?? 0),
         ])->all();
         $totalCotizaciones = array_sum($resumenCotizaciones);
         $porcentajeAceptacion = $totalCotizaciones === 0
             ? 0.0
-            : round($resumenCotizaciones['accepted'] * 100 / $totalCotizaciones, 1);
+            : round($resumenCotizaciones['aceptada'] * 100 / $totalCotizaciones, 1);
 
         $consultaVentas = Venta::query()
-            ->where('sold_at', '>=', $periodo->inicio)
-            ->where('sold_at', '<', $periodo->finExclusivo);
+            ->where('vendida_en', '>=', $periodo->inicio)
+            ->where('vendida_en', '<', $periodo->finExclusivo);
 
         return view('panel', [
             'periodo' => $periodo,
@@ -57,28 +57,28 @@ class ControladorPanel extends Controller
             'cantidadVentas' => (clone $consultaVentas)->count(),
             'totalVentas' => (float) (clone $consultaVentas)->sum('total'),
             'cotizacionesRecientes' => (clone $consultaCotizaciones)
-                ->with('customer')
-                ->latest('created_at')
+                ->with('cliente')
+                ->latest('creado_en')
                 ->limit(5)
                 ->get(),
             'ventasRecientes' => (clone $consultaVentas)
                 ->with('cliente')
-                ->latest('sold_at')
+                ->latest('vendida_en')
                 ->limit(5)
                 ->get(),
-            'lowStock' => $this->productosConStockBajo(),
+            'productosStockBajo' => $this->productosConStockBajo(),
         ]);
     }
 
     private function productosConStockBajo()
     {
-        return ArticuloCatalogo::where('type', 'product')->withCount([
-            'inventoryUnits as available_units_count' => fn ($query) => $query->where(
-                'status',
-                'available'
+        return ArticuloCatalogo::where('tipo', 'producto')->withCount([
+            'piezasInventario as cantidad_piezas_disponibles' => fn ($consulta) => $consulta->where(
+                'estado',
+                'disponible'
             ),
         ])->get()
-            ->filter(fn ($articulo) => $articulo->available_units_count <= 5)
-            ->sortBy('available_units_count');
+            ->filter(fn ($articulo) => $articulo->cantidad_piezas_disponibles <= 5)
+            ->sortBy('cantidad_piezas_disponibles');
     }
 }

@@ -1,17 +1,17 @@
 <p>
-    Hola, {{ $quote->customer->name }}.
+    Hola, {{ $cotizacion->cliente->nombre }}.
 </p>
 <p>
     Adjuntamos la cotización
     <strong>
-        {{ $quote->folio }}
+        {{ $cotizacion->folio }}
     </strong>
     para su revisión.
 </p>
 <p>
     El importe total es de
     <strong>
-        ${{ $quote->total }}
+        ${{ $cotizacion->total }}
     </strong>
     , IVA incluido.
 </p>

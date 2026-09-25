@@ -3,26 +3,33 @@
 namespace Database\Seeders;
 
 use App\Models\Usuario;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Carga datos iniciales en la base de datos.
      */
     public function run(): void
     {
-        // Usuario::factory(10)->create();
+        $correo = env('USUARIO_ADMIN_CORREO');
+        $contrasena = env('USUARIO_ADMIN_CONTRASENA');
 
-        Usuario::factory()->create([
+        if (! $correo || ! $contrasena) {
+            $this->command?->warn('No se creó el administrador: configura USUARIO_ADMIN_CORREO y USUARIO_ADMIN_CONTRASENA.');
 
-            'name' => 'Test Usuario',
+            return;
+        }
 
-            'email' => 'test@example.com',
-
-        ]);
+        Usuario::query()->updateOrCreate(
+            ['correo' => $correo],
+            [
+                'nombre' => env('USUARIO_ADMIN_NOMBRE', 'Administrador Comunitec'),
+                'contrasena' => Hash::make($contrasena),
+                'rol' => Usuario::ROL_ADMINISTRADOR,
+                'activo' => true,
+            ]
+        );
     }
 }
