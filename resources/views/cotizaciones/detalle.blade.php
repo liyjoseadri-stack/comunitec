@@ -4,9 +4,15 @@
 @section('clase_pagina', 'detalle-cotizacion')
 
 @section('contenido')
-            <h1>
-                Cotización {{ $cotizacion->folio }}
-            </h1>
+            <x-encabezado-pagina
+                :titulo="'Cotización '.$cotizacion->folio"
+                :descripcion="'Cliente: '.$cotizacion->cliente->nombre"
+            >
+                <x-slot:acciones>
+                    <x-insignia-estado :estado="$cotizacion->estado" :etiqueta="$cotizacion->etiquetaEstado()" />
+                    <x-boton variante="contorno" :href="route('cotizaciones.pdf', $cotizacion)">Generar PDF</x-boton>
+                </x-slot:acciones>
+            </x-encabezado-pagina>
             @if ($errors->any())
                 <ul role="alert">
                     @foreach ($errors->all() as $error)
@@ -26,31 +32,43 @@
                     {{ session('error') }}
                 </p>
             @endif
-            <p>
-                Cliente:
-                <strong>
-                    {{ $cotizacion->cliente->nombre }}
-                </strong>
-            </p>
-            <p>
-                Estado:
-                <strong>
-                    {{ $cotizacion->etiquetaEstado() }}{{ $cotizacion->venta ? ' · Convertida en venta' : '' }}
-                </strong>
-            </p>
-            @if ($cotizacion->venta)
-                <p>
-                    Venta relacionada:
-                    <a href="{{ route('ventas.detalle', $cotizacion->venta) }}">
-                        {{ $cotizacion->venta->folio }}
-                    </a>
-                </p>
-            @endif
-            @if ($cotizacion->area_solicitante)
-                <p>
-                    Área solicitante: {{ $cotizacion->area_solicitante }}
-                </p>
-            @endif
+            <section class="bloque-administrativo" aria-labelledby="titulo-resumen-cotizacion">
+                <h2 id="titulo-resumen-cotizacion">Resumen de la cotización</h2>
+                <dl class="datos-operacion">
+                    <div>
+                        <dt>Cliente</dt>
+                        <dd>{{ $cotizacion->cliente->nombre }}</dd>
+                    </div>
+                    <div>
+                        <dt>Estado</dt>
+                        <dd>
+                            <x-insignia-estado :estado="$cotizacion->estado" :etiqueta="$cotizacion->etiquetaEstado()" />
+                            @if ($cotizacion->venta)
+                                <span class="detalle-tabla">Convertida en venta</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>Área solicitante</dt>
+                        <dd>{{ $cotizacion->area_solicitante ?: 'No especificada' }}</dd>
+                    </div>
+                    <div>
+                        <dt>Descuento global</dt>
+                        <dd>{{ number_format((float) $cotizacion->porcentaje_descuento, 2) }}%</dd>
+                    </div>
+                    @if ($cotizacion->venta)
+                        <div>
+                            <dt>Venta relacionada</dt>
+                            <dd>
+                                <x-boton variante="contorno" :href="route('ventas.detalle', $cotizacion->venta)" compacto>
+                                    Ver venta
+                                </x-boton>
+                                <small class="detalle-tabla">{{ $cotizacion->venta->folio }}</small>
+                            </dd>
+                        </div>
+                    @endif
+                </dl>
+            </section>
             @if (in_array($cotizacion->estado, ['borrador', 'pendiente'], true) && $faltantes->isNotEmpty())
                 <section role="alert">
                     <h2>
@@ -68,9 +86,6 @@
                     </p>
                 </section>
             @endif
-            <p>
-                Descuento global: {{ $cotizacion->porcentaje_descuento }}%
-            </p>
             @if ($puedeEditar && in_array($cotizacion->estado, ['borrador', 'pendiente', 'aceptada'], true))
                 <details>
                     <summary>
@@ -105,11 +120,6 @@
                     </form>
                 </details>
             @endif
-            <p>
-                <a href="{{ route('cotizaciones.pdf', $cotizacion) }}">
-                    Descargar PDF
-                </a>
-            </p>
             @if ($cotizacion->enviosCorreo->isNotEmpty())
                 <section class="bloque-administrativo" aria-labelledby="titulo-historial-correo">
                     <h2 id="titulo-historial-correo">
@@ -164,45 +174,35 @@
                     </div>
                 </section>
             @endif
+            <div class="grupo-acciones acciones-cotizacion">
             @if ($puedeEditar && $cotizacion->estado === 'borrador')
                 <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.enviar', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Enviar cotización
-                    </button>
+                    <x-boton tipo="submit">Enviar cotización</x-boton>
                 </form>
                 <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.cancelar', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Cancelar cotización
-                    </button>
+                    <x-boton variante="peligro" tipo="submit">Cancelar cotización</x-boton>
                 </form>
             @elseif ($puedeEditar && $cotizacion->estado === 'pendiente')
                 <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.correo', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Enviar por correo al cliente
-                    </button>
+                    <x-boton tipo="submit">Enviar por correo</x-boton>
                 </form>
                 <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.aceptar', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Aceptar cotización
-                    </button>
+                    <x-boton variante="exito" tipo="submit">Aceptar cotización</x-boton>
                 </form>
                 <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.rechazar', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Rechazar cotización
-                    </button>
+                    <x-boton variante="peligro" tipo="submit">Rechazar cotización</x-boton>
                 </form>
                 <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.cancelar', $cotizacion) }}">
                     @csrf
-                    <button type="submit">
-                        Cancelar cotización
-                    </button>
+                    <x-boton variante="secundario" tipo="submit">Cancelar cotización</x-boton>
                 </form>
             @endif
+            </div>
             @if ($puedeEditar && $cotizacion->estado === 'aceptada')
                 <p>
                     Guardar un cambio libera las piezas reservadas y devuelve la cotización a Pendiente para una nueva aceptación.

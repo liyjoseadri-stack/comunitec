@@ -98,13 +98,16 @@
                                 <tr>
                                     <td>{{ $cotizacion->creado_en->format('d/m/Y') }}</td>
                                     <td>
-                                        <a href="{{ route('cotizaciones.detalle', $cotizacion) }}">
-                                            {{ $cotizacion->folio }}
-                                        </a>
+                                        <x-boton variante="contorno" :href="route('cotizaciones.detalle', $cotizacion)" compacto>
+                                            Ver detalle
+                                        </x-boton>
+                                        <small class="detalle-tabla">{{ $cotizacion->folio }}</small>
                                     </td>
                                     <td>{{ $cotizacion->cliente->nombre }}</td>
                                     <td>{{ $cotizacion->responsable->nombre }}</td>
-                                    <td>{{ $cotizacion->etiquetaEstado() }}</td>
+                                    <td>
+                                        <x-insignia-estado :estado="$cotizacion->estado" :etiqueta="$cotizacion->etiquetaEstado()" />
+                                    </td>
                                     <td>${{ number_format((float) $cotizacion->total, 2) }}</td>
                                 </tr>
                             @empty

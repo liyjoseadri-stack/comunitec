@@ -148,14 +148,16 @@
                                     <td>{{ $articulo->unidad }}</td>
                                     <td>${{ number_format((float) $articulo->precio, 2) }}</td>
                                     <td>{{ $articulo->tipo === 'producto' ? $articulo->existencias : 'No aplica' }}</td>
-                                    <td>{{ $articulo->activo ? 'Activo' : 'Inactivo' }}</td>
+                                    <td>
+                                        <x-insignia-estado :estado="$articulo->activo ? 'activo' : 'inactivo'" />
+                                    </td>
                                     <td>
                                         <form method="POST" action="{{ route('catalogo.estado', $articulo) }}">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit">
+                                            <x-boton :variante="$articulo->activo ? 'peligro' : 'exito'" tipo="submit" compacto>
                                                 {{ $articulo->activo ? 'Desactivar' : 'Reactivar' }}
-                                            </button>
+                                            </x-boton>
                                         </form>
                                     </td>
                                 </tr>

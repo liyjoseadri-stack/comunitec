@@ -25,16 +25,13 @@
                                 <th scope="col">Cotización</th>
                                 <th scope="col">Método de pago</th>
                                 <th scope="col">Total</th>
+                                <th scope="col">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($ventas as $venta)
                                 <tr>
-                                    <td>
-                                        <a href="{{ route('ventas.detalle', $venta) }}">
-                                            {{ $venta->folio }}
-                                        </a>
-                                    </td>
+                                    <td><strong>{{ $venta->folio }}</strong></td>
                                     <td>{{ $venta->vendida_en->format('d/m/Y H:i') }}</td>
                                     <td>{{ $venta->nombreClienteMostrado() }}</td>
                                     <td>
@@ -44,10 +41,15 @@
                                     </td>
                                     <td>{{ $venta->etiquetaMetodoPago() }}</td>
                                     <td>${{ number_format((float) $venta->total, 2) }}</td>
+                                    <td>
+                                        <x-boton variante="contorno" :href="route('ventas.detalle', $venta)" compacto>
+                                            Ver detalle
+                                        </x-boton>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td class="estado-vacio" colspan="6">
+                                    <td class="estado-vacio" colspan="7">
                                         Aún no hay ventas registradas. Primero debe aceptarse y convertirse una cotización.
                                     </td>
                                 </tr>

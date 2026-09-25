@@ -97,7 +97,10 @@
                                 <tr>
                                     <td>{{ $venta->vendida_en->format('d/m/Y') }}</td>
                                     <td>
-                                        <a href="{{ route('ventas.detalle', $venta) }}">{{ $venta->folio }}</a>
+                                        <x-boton variante="contorno" :href="route('ventas.detalle', $venta)" compacto>
+                                            Ver detalle
+                                        </x-boton>
+                                        <small class="detalle-tabla">{{ $venta->folio }}</small>
                                     </td>
                                     <td>
                                         <a href="{{ route('cotizaciones.detalle', $venta->cotizacion) }}">

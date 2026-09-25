@@ -43,9 +43,10 @@
                     <div>
                         <dt>Cotización de origen</dt>
                         <dd>
-                            <a href="{{ route('cotizaciones.detalle', $venta->cotizacion) }}">
-                                {{ $venta->cotizacion->folio }}
-                            </a>
+                            <x-boton variante="contorno" :href="route('cotizaciones.detalle', $venta->cotizacion)" compacto>
+                                Ver cotización
+                            </x-boton>
+                            <small class="detalle-tabla">{{ $venta->cotizacion->folio }}</small>
                         </dd>
                     </div>
                     <div>

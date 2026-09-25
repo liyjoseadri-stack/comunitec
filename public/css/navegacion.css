@@ -10,7 +10,7 @@
     color: #183034;
     background: rgb(255 255 255 / 96%);
     border-bottom: 1px solid #d8e1e5;
-    box-shadow: 0 5px 22px rgb(20 52 58 / 7%);
+    box-shadow: 0 4px 12px rgb(20 52 58 / 7%);
     backdrop-filter: blur(12px);
 }
 .navegacion-principal__marca { display: inline-flex; flex: 0 0 auto; align-items: center; min-height: 44px; padding: 0.2rem; border-radius: 0.625rem; }
@@ -37,36 +37,16 @@
 }
 .navegacion-principal li a:hover { color: #07595b; background: #edfafa; }
 .navegacion-principal li a[aria-current="page"] { color: #fff; background: #0f6f70; }
-.navegacion-principal__usuario { display: flex; flex: 0 0 auto; align-items: center; gap: 0.65rem; padding-left: 0.75rem; border-left: 1px solid #d8e1e5; }
-.navegacion-principal__identidad { display: grid; line-height: 1.2; text-align: right; }
-.navegacion-principal__identidad strong { max-width: 11rem; overflow: hidden; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
-.navegacion-principal__identidad span { color: #65777c; font-size: 0.73rem; }
-.navegacion-principal__salir { margin: 0; }
-.navegacion-principal__salir button {
-    min-height: 38px;
-    padding: 0.45rem 0.7rem;
-    color: #07595b;
-    font: inherit;
-    font-size: 0.82rem;
-    font-weight: 750;
-    background: #fff;
-    border: 1px solid #aab9bf;
-    border-radius: 0.625rem;
-    cursor: pointer;
-}
-.navegacion-principal__salir button:hover { background: #edfafa; border-color: #138081; }
 .navegacion-principal a:focus-visible, .navegacion-principal button:focus-visible { outline: 3px solid rgb(19 128 129 / 35%); outline-offset: 2px; }
 
 @media (max-width: 64rem) {
     .navegacion-principal { flex-wrap: wrap; padding-inline: 1rem; }
     .navegacion-principal__enlaces { order: 3; width: 100%; }
-    .navegacion-principal__usuario { margin-left: auto; }
 }
 
 @media (max-width: 40rem) {
     .navegacion-principal { position: static; gap: 0.65rem; }
     .navegacion-principal__marca img { width: 7.25rem; height: 2.7rem; }
-    .navegacion-principal__identidad { display: none; }
     .navegacion-principal__enlaces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .navegacion-principal li a { justify-content: center; width: 100%; text-align: center; }
 }

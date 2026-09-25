@@ -11,6 +11,16 @@ class AutenticacionTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_el_inicio_de_sesion_usa_la_identidad_visual_corporativa(): void
+    {
+        $this->get('/iniciar-sesion')
+            ->assertOk()
+            ->assertSee('class="acceso"', false)
+            ->assertSee('logo-comunitec-transparente.png', false)
+            ->assertSee('for="correo"', false)
+            ->assertSee('for="contrasena"', false);
+    }
+
     public function test_el_invitado_es_redirigido_al_inicio_de_sesion(): void
     {
         $this->get('/panel')->assertRedirect('/iniciar-sesion');

@@ -3,9 +3,7 @@
 @section('titulo', 'Inventario')
 
 @section('contenido')
-            <h1>
-                Inventario
-            </h1>
+            <x-encabezado-pagina titulo="Inventario" descripcion="Controla las piezas disponibles, reservadas y entregadas." />
             @if ($errors->any())
                 <ul role="alert">
                     @foreach ($errors->all() as $error)
@@ -77,14 +75,18 @@
                                         {{ $u->numero_serie }}
                                     </td>
                                     <td>
-                                        {{ $u->estado === 'disponible' ? 'Disponible' : ($u->estado === 'reservada' ? 'Reservada' : 'Entregada') }}
+                                        <x-insignia-estado
+                                            :estado="$u->estado"
+                                            :etiqueta="$u->estado === 'disponible' ? 'Disponible' : ($u->estado === 'reservada' ? 'Reservada' : 'Entregada')"
+                                        />
                                     </td>
                                     <td>
                                         @if ($u->partidaVenta?->venta)
-                                            <a href="{{ route('ventas.detalle', $u->partidaVenta->venta) }}">
-                                                {{ $u->partidaVenta->venta->folio }}
-                                            </a>
+                                            <x-boton variante="contorno" :href="route('ventas.detalle', $u->partidaVenta->venta)" compacto>
+                                                Ver venta
+                                            </x-boton>
                                             <br>
+                                            <small class="detalle-tabla">{{ $u->partidaVenta->venta->folio }}</small>
                                             {{ $u->partidaVenta->venta->nombreClienteMostrado() }}
                                         @else
                                             No aplica
