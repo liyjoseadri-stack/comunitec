@@ -349,8 +349,130 @@ class PanelReportesTest extends TestCase
 
         $this->actingAs($responsable)->get('/reportes/ventas?desde=2026-09-01&hasta=2026-09-30')
             ->assertOk()
-            ->assertSee('<td>Cliente de reportes E</td>', false)
-            ->assertSee('<td>Responsable heredado</td>', false);
+            ->assertSee('<td data-etiqueta="Cliente">Cliente de reportes E</td>', false)
+            ->assertSee('<td data-etiqueta="Responsable">Responsable heredado</td>', false);
+    }
+
+    public function test_los_reportes_usan_solamente_la_navegacion_lateral(): void
+    {
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_ADMINISTRADOR,
+        ]);
+
+        foreach (['/reportes', '/reportes/cotizaciones', '/reportes/ventas'] as $ruta) {
+            $this->actingAs($usuario)
+                ->get($ruta)
+                ->assertOk()
+                ->assertDontSee('aria-label="Tipos de reporte"', false);
+        }
+    }
+
+    public function test_el_resumen_mensual_explica_sus_grupos_sin_depender_del_color(): void
+    {
+        Carbon::setTestNow('2026-09-24 12:00:00');
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_CONSULTA,
+        ]);
+
+        $this->actingAs($usuario)
+            ->get('/reportes')
+            ->assertOk()
+            ->assertSee('aria-describedby="descripcion-cotizaciones"', false)
+            ->assertSee('id="descripcion-cotizaciones"', false)
+            ->assertSee('Desglose por estado de las cotizaciones registradas en el periodo.')
+            ->assertSee('aria-describedby="descripcion-ventas"', false)
+            ->assertSee('id="descripcion-ventas"', false)
+            ->assertSee('Aceptación, operaciones cerradas e importe acumulado del periodo.')
+            ->assertSee('aria-describedby="descripcion-actividad"', false)
+            ->assertSee('id="descripcion-actividad"', false)
+            ->assertSee('Los movimientos más recientes del mes seleccionado.')
+            ->assertSee('Borradores')
+            ->assertSee('Pendientes')
+            ->assertSee('Aceptadas')
+            ->assertSee('Rechazadas')
+            ->assertSee('Canceladas')
+            ->assertSee('Vencidas')
+            ->assertSee('Convertidas en venta')
+            ->assertDontSee('aria-label="Tipos de reporte"', false);
+    }
+
+    public function test_los_reportes_comparten_filtros_accesibles_y_permiten_limpiarlos_con_resultados(): void
+    {
+        Carbon::setTestNow('2026-09-24 12:00:00');
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_ADMINISTRADOR,
+        ]);
+        $cliente = $this->crearCliente('F');
+        $cotizacion = $this->crearCotizacion(
+            $cliente,
+            $usuario,
+            'aceptada',
+            '2026-09-10 12:00:00'
+        );
+        $this->crearVenta($cotizacion, $usuario, 1000, '2026-09-10 12:00:00');
+
+        foreach ([
+            '/reportes/cotizaciones' => route('reportes.cotizaciones'),
+            '/reportes/ventas' => route('reportes.ventas'),
+        ] as $ruta => $rutaLimpia) {
+            $this->actingAs($usuario)
+                ->get($ruta)
+                ->assertOk()
+                ->assertSee('role="search"', false)
+                ->assertSee('Aplicar filtros')
+                ->assertSee('href="'.$rutaLimpia.'"', false)
+                ->assertSee('Limpiar filtros');
+        }
+    }
+
+    public function test_los_reportes_presentan_resultados_adaptables_con_totales_y_acciones_separadas(): void
+    {
+        Carbon::setTestNow('2026-09-24 12:00:00');
+        $usuario = Usuario::factory()->create([
+            'rol' => Usuario::ROL_CONSULTA,
+        ]);
+        $cliente = $this->crearCliente('G');
+        $cotizacion = $this->crearCotizacion(
+            $cliente,
+            $usuario,
+            Cotizacion::ESTADO_ACEPTADA,
+            '2026-09-10 12:00:00'
+        );
+        $venta = $this->crearVenta($cotizacion, $usuario, 1000, '2026-09-10 12:00:00');
+
+        foreach ([
+            '/reportes/cotizaciones?desde=2026-09-01&hasta=2026-09-30' => [
+                'etiqueta' => 'Total cotizado',
+                'folio' => $cotizacion->folio,
+                'columnas' => ['Fecha', 'Folio', 'Cliente', 'Responsable', 'Estado', 'Total', 'Acciones'],
+            ],
+            '/reportes/ventas?desde=2026-09-01&hasta=2026-09-30' => [
+                'etiqueta' => 'Total vendido',
+                'folio' => $venta->folio,
+                'columnas' => ['Fecha', 'Folio', 'Cotización', 'Cliente', 'Responsable', 'Método de pago', 'Total', 'Acciones'],
+            ],
+        ] as $ruta => $esperado) {
+            $respuesta = $this->actingAs($usuario)->get($ruta)->assertOk();
+            $dom = new \DOMDocument;
+            @$dom->loadHTML('<?xml encoding="UTF-8">'.$respuesta->getContent());
+            $xpath = new \DOMXPath($dom);
+            $tabla = $xpath->query('//table[contains(concat(" ", normalize-space(@class), " "), " tabla-adaptable ")]')->item(0);
+
+            $this->assertNotNull($tabla, $ruta);
+            $this->assertSame(1, $xpath->query('//span[contains(@class, "contador-registros") and contains(., "1 resultado")]')->length, $ruta);
+            $respuesta->assertSee($esperado['etiqueta'].': $1,000.00')->assertSee($esperado['folio']);
+
+            $cabeceras = $xpath->query('./thead/tr/th', $tabla);
+            $this->assertSame($esperado['columnas'], array_map(
+                static fn (\DOMNode $nodo): string => trim($nodo->textContent),
+                iterator_to_array($cabeceras)
+            ), $ruta);
+
+            $fila = $xpath->query('./tbody/tr[not(td[@colspan])]', $tabla)->item(0);
+            foreach ($xpath->query('./td | ./th', $fila) as $indice => $celda) {
+                $this->assertSame($esperado['columnas'][$indice], $celda->getAttribute('data-etiqueta'), $ruta);
+            }
+        }
     }
 
     private function crearCliente(string $sufijo = ''): Cliente

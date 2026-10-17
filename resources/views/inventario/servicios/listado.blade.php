@@ -3,19 +3,10 @@
 @section('titulo', 'Servicios')
 
 @section('contenido')
-    @include('componentes.errores-validacion')
-    @if (session('success'))
-        <p class="mensaje-exito">{{ session('success') }}</p>
-    @endif
-
-    <section id="nuevo-servicio" class="bloque-administrativo">
-        <h2>Registrar servicio</h2>
-        <form class="formulario-administrativo formulario-catalogo" method="POST" action="{{ route('inventario.servicios.guardar') }}">
-            @csrf
-            @include('inventario.servicios.campos', ['servicio' => null])
-            <x-boton tipo="submit">Guardar servicio</x-boton>
-        </form>
-    </section>
+    <div class="grupo-acciones acciones-pagina">
+        <span class="contador-registros">{{ $servicios->total() }} {{ $servicios->total() === 1 ? 'servicio' : 'servicios' }}</span>
+        <x-boton :href="route('inventario.servicios.crear')">Registrar servicio</x-boton>
+    </div>
 
     <section class="bloque-administrativo">
         <h2>Servicios registrados</h2>
@@ -42,34 +33,64 @@
                 </select>
             </div>
             <x-boton tipo="submit" variante="secundario">Filtrar</x-boton>
+            @if (request()->filled('buscar') || request()->filled('categoria') || request()->filled('estado'))
+                <x-boton variante="contorno" :href="route('inventario.servicios.listado')">Limpiar</x-boton>
+            @endif
         </form>
-        <div class="contenedor-tabla" tabindex="0">
-            <table class="tabla-registros">
-                <thead><tr><th>Código</th><th>Servicio</th><th>Categoría</th><th>Unidad</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <x-tabla-responsive etiqueta="Servicios registrados" adaptable>
+            <table class="tabla-registros tabla-adaptable">
+                <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Servicio</th>
+                        <th scope="col">Categoría</th>
+                        <th scope="col">Unidad</th>
+                        <th scope="col">Precio</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Acciones</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @forelse ($servicios as $servicio)
                         <tr>
-                            <td>{{ $servicio->codigo }}</td>
-                            <td><strong>{{ $servicio->nombre }}</strong></td>
-                            <td>{{ $servicio->categoria?->nombre }}</td>
-                            <td>{{ $servicio->unidad }}</td>
-                            <td>${{ number_format((float) $servicio->precio, 2) }}</td>
-                            <td><x-insignia-estado :estado="$servicio->activo ? 'activo' : 'inactivo'" /></td>
-                            <td class="acciones-tabla">
-                                <x-boton compacto variante="contorno" :href="route('inventario.servicios.detalle', $servicio)">Ver/Editar</x-boton>
-                                <form method="POST" action="{{ route('inventario.servicios.estado', $servicio) }}">
-                                    @csrf
-                                    @method('PATCH')
-                                    <x-boton compacto tipo="submit" :variante="$servicio->activo ? 'peligro' : 'exito'">{{ $servicio->activo ? 'Desactivar' : 'Activar' }}</x-boton>
-                                </form>
+                            <td data-etiqueta="Código">{{ $servicio->codigo }}</td>
+                            <th scope="row" data-etiqueta="Servicio"><strong>{{ $servicio->nombre }}</strong></th>
+                            <td data-etiqueta="Categoría">{{ $servicio->categoria?->nombre }}</td>
+                            <td data-etiqueta="Unidad">{{ $servicio->unidad }}</td>
+                            <td data-etiqueta="Precio">${{ number_format((float) $servicio->precio, 2) }}</td>
+                            <td data-etiqueta="Estado"><x-insignia-estado :estado="$servicio->activo ? 'activo' : 'inactivo'" /></td>
+                            <td data-etiqueta="Acciones" class="acciones-tabla">
+                                <x-grupo-acciones-fila>
+                                    <x-boton compacto variante="contorno" :href="route('inventario.servicios.detalle', $servicio)">Ver</x-boton>
+                                    <x-boton compacto variante="secundario" :href="route('inventario.servicios.editar', $servicio)">Editar</x-boton>
+                                    <form method="POST" action="{{ route('inventario.servicios.estado', $servicio) }}"
+                                        @if ($servicio->activo)
+                                            data-confirmar data-confirmar-titulo="Desactivar servicio"
+                                            data-confirmar-mensaje="{{ $servicio->nombre }} dejará de estar disponible para agregar a nuevas cotizaciones. Las partidas existentes conservarán sus datos históricos."
+                                            data-confirmar-etiqueta="Desactivar"
+                                        @endif
+                                    >
+                                        @csrf
+                                        @method('PATCH')
+                                        <x-boton compacto tipo="submit" :variante="$servicio->activo ? 'peligro' : 'exito'">{{ $servicio->activo ? 'Desactivar' : 'Activar' }}</x-boton>
+                                    </form>
+                                </x-grupo-acciones-fila>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="estado-vacio">No hay servicios con estos filtros.</td></tr>
+                        <tr>
+                            <td colspan="7" class="tabla-estado-vacio">
+                                <x-estado-vacio mensaje="No hay servicios con estos filtros.">
+                                    <x-slot:acciones>
+                                        <x-boton variante="contorno" :href="route('inventario.servicios.crear')">Registrar servicio</x-boton>
+                                    </x-slot:acciones>
+                                </x-estado-vacio>
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
-        </div>
+        </x-tabla-responsive>
         @include('componentes.paginacion', ['paginador' => $servicios])
     </section>
 @endsection

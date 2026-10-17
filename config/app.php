@@ -69,6 +69,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Scheduler Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Business schedules use the local timezone while persisted dates remain
+    | in UTC. This may be overridden for another deployment location.
+    |
+    */
+
+    'schedule_timezone' => env('SCHEDULE_TIMEZONE', 'America/Mexico_City'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

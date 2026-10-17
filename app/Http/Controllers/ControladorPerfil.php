@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -41,7 +42,9 @@ class ControladorPerfil extends Controller
             'contrasena_actual.current_password' => 'La contraseña actual no es correcta.',
         ]);
 
-        $solicitud->user()->update([
+        $usuario = $solicitud->user();
+        $usuario->setRememberToken(Str::random(60));
+        $usuario->update([
             'contrasena' => $datos['contrasena'],
         ]);
 

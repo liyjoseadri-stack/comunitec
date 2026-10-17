@@ -101,4 +101,9 @@ class Usuario extends Authenticatable
     {
         return 'token_recuerdo';
     }
+
+    public function movimientosExistencias()
+    {
+        return $this->hasMany(MovimientoExistencias::class, 'usuario_id');
+    }
 }

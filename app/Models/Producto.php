@@ -58,4 +58,9 @@ class Producto extends Model
     {
         return $this->hasMany(PartidaVenta::class, 'producto_id');
     }
+
+    public function movimientosExistencias()
+    {
+        return $this->hasMany(MovimientoExistencias::class, 'producto_id');
+    }
 }

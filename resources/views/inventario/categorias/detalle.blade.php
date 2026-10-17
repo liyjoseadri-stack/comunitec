@@ -3,56 +3,91 @@
 @section('titulo', $categoria->nombre)
 
 @section('contenido')
-    <x-encabezado-pagina :titulo="$categoria->nombre" descripcion="Detalle y artículos asociados a la categoría.">
+    <x-encabezado-pagina :titulo="$categoria->nombre">
         <x-slot:acciones>
-            <x-boton variante="contorno" :href="route('inventario.categorias.listado')">Regresar</x-boton>
+            <x-boton variante="contorno" :href="route('inventario.categorias.listado')">Regresar al listado</x-boton>
+            <x-boton :href="route('inventario.categorias.editar', $categoria)">Editar categoría</x-boton>
         </x-slot:acciones>
     </x-encabezado-pagina>
 
-    @include('componentes.errores-validacion')
-    @if (session('success'))<p class="mensaje-exito" role="status">{{ session('success') }}</p>@endif
 
-    <section class="bloque-administrativo">
-        <h2>Editar categoría</h2>
-        <form class="formulario-administrativo formulario-filtros" method="POST" action="{{ route('inventario.categorias.actualizar', $categoria) }}">
-            @csrf @method('PUT')
-            <div class="campo-formulario">
-                <label for="nombre">Nombre</label>
-                <input id="nombre" name="nombre" value="{{ old('nombre', $categoria->nombre) }}" required maxlength="255">
-            </div>
-            <x-boton tipo="submit">Guardar cambios</x-boton>
-        </form>
+    <section class="bloque-administrativo" aria-labelledby="titulo-informacion-categoria">
+        <div class="encabezado-seccion">
+            <h2 id="titulo-informacion-categoria">Información de la categoría</h2>
+            <x-insignia-estado :estado="$categoria->activo ? 'activa' : 'inactiva'" />
+        </div>
+        <dl class="cuadricula-detalle">
+            <div><dt>Nombre</dt><dd>{{ $categoria->nombre }}</dd></div>
+            <div><dt>Productos relacionados</dt><dd>{{ $categoria->productos->count() }}</dd></div>
+            <div><dt>Servicios relacionados</dt><dd>{{ $categoria->servicios->count() }}</dd></div>
+        </dl>
     </section>
 
     <section class="bloque-administrativo">
         <h2>Productos</h2>
-        <div class="contenedor-tabla" tabindex="0">
-            <table class="tabla-registros">
-                <thead><tr><th>SKU</th><th>Nombre</th><th>Estado</th></tr></thead>
+        <x-tabla-responsive etiqueta="Productos de la categoría" adaptable>
+            <table class="tabla-registros tabla-adaptable">
+                <thead>
+                    <tr>
+                        <th scope="col">SKU</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Estado</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @forelse ($categoria->productos as $producto)
-                        <tr><td>{{ $producto->codigo }}</td><td>{{ $producto->nombre }}</td><td>{{ $producto->activo ? 'Activo' : 'Inactivo' }}</td></tr>
+                        <tr>
+                            <td data-etiqueta="SKU">{{ $producto->codigo }}</td>
+                            <th scope="row" data-etiqueta="Nombre">{{ $producto->nombre }}</th>
+                            <td data-etiqueta="Estado"><x-insignia-estado :estado="$producto->activo ? 'activo' : 'inactivo'" /></td>
+                        </tr>
                     @empty
-                        <tr><td colspan="3" class="estado-vacio">Esta categoría todavía no tiene productos.</td></tr>
+                        <tr>
+                            <td colspan="3" class="tabla-estado-vacio">
+                                <x-estado-vacio mensaje="Esta categoría todavía no tiene productos.">
+                                    <x-slot:acciones>
+                                        <x-boton variante="contorno" :href="route('inventario.productos.crear')">Registrar producto</x-boton>
+                                    </x-slot:acciones>
+                                </x-estado-vacio>
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
-        </div>
+        </x-tabla-responsive>
     </section>
 
     <section class="bloque-administrativo">
         <h2>Servicios</h2>
-        <div class="contenedor-tabla" tabindex="0">
-            <table class="tabla-registros">
-                <thead><tr><th>Código</th><th>Nombre</th><th>Estado</th></tr></thead>
+        <x-tabla-responsive etiqueta="Servicios de la categoría" adaptable>
+            <table class="tabla-registros tabla-adaptable">
+                <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Estado</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @forelse ($categoria->servicios as $servicio)
-                        <tr><td>{{ $servicio->codigo }}</td><td>{{ $servicio->nombre }}</td><td>{{ $servicio->activo ? 'Activo' : 'Inactivo' }}</td></tr>
+                        <tr>
+                            <td data-etiqueta="Código">{{ $servicio->codigo }}</td>
+                            <th scope="row" data-etiqueta="Nombre">{{ $servicio->nombre }}</th>
+                            <td data-etiqueta="Estado"><x-insignia-estado :estado="$servicio->activo ? 'activo' : 'inactivo'" /></td>
+                        </tr>
                     @empty
-                        <tr><td colspan="3" class="estado-vacio">Esta categoría todavía no tiene servicios.</td></tr>
+                        <tr>
+                            <td colspan="3" class="tabla-estado-vacio">
+                                <x-estado-vacio mensaje="Esta categoría todavía no tiene servicios.">
+                                    <x-slot:acciones>
+                                        <x-boton variante="contorno" :href="route('inventario.servicios.crear')">Registrar servicio</x-boton>
+                                    </x-slot:acciones>
+                                </x-estado-vacio>
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
-        </div>
+        </x-tabla-responsive>
     </section>
 @endsection

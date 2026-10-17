@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Categoria;
 use App\Models\Producto;
+use App\Models\Servicio;
 use App\Models\Usuario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -27,6 +28,67 @@ class ProductosInventarioTest extends TestCase
 
         $this->assertDatabaseHas('productos', [
             'codigo' => 'RAM-16', 'existencias' => 5, 'requiere_numero_serie' => true,
+        ]);
+    }
+
+    public function test_productos_tienen_pantallas_separadas_para_listar_crear_consultar_y_editar(): void
+    {
+        $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_COMERCIAL]);
+        $categoria = Categoria::create(['nombre' => 'Componentes']);
+        $producto = $this->producto($categoria, 'Memoria RAM', 'RAM-16', true);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.productos.listado'))
+            ->assertOk()
+            ->assertSee(route('inventario.productos.crear'), false)
+            ->assertDontSee('action="'.route('inventario.productos.guardar').'"', false);
+
+        $this->get(route('inventario.productos.crear'))
+            ->assertOk()
+            ->assertSee('Registrar producto')
+            ->assertSee('action="'.route('inventario.productos.guardar').'"', false);
+
+        $this->get(route('inventario.productos.detalle', $producto))
+            ->assertOk()
+            ->assertSee('Información del producto')
+            ->assertSee(route('inventario.productos.editar', $producto), false)
+            ->assertDontSee('action="'.route('inventario.productos.actualizar', $producto).'"', false);
+
+        $this->get(route('inventario.productos.editar', $producto))
+            ->assertOk()
+            ->assertSee('Editar producto')
+            ->assertSee('action="'.route('inventario.productos.actualizar', $producto).'"', false);
+    }
+
+    public function test_consulta_y_edicion_conservan_categoria_inactiva_e_historial_de_series(): void
+    {
+        $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_COMERCIAL]);
+        $categoria = Categoria::create(['nombre' => 'Componentes heredados', 'activo' => false]);
+        $producto = $this->producto($categoria, 'Memoria DDR3', 'RAM-DDR3', true);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.productos.detalle', $producto))
+            ->assertOk()
+            ->assertSee('Componentes heredados');
+
+        $this->get(route('inventario.productos.editar', $producto))
+            ->assertOk()
+            ->assertSee('Componentes heredados');
+
+        $this->put(route('inventario.productos.actualizar', $producto), [
+            'nombre' => 'Memoria DDR3 actualizada',
+            'codigo' => 'RAM-DDR3',
+            'categoria_id' => $categoria->id,
+            'unidad' => 'pieza',
+            'precio' => 900,
+            'existencias' => 2,
+            'motivo_existencias' => 'Corrección de existencias del producto heredado.',
+        ])->assertRedirect(route('inventario.productos.detalle', $producto));
+
+        $this->assertDatabaseHas('productos', [
+            'id' => $producto->id,
+            'categoria_id' => $categoria->id,
+            'nombre' => 'Memoria DDR3 actualizada',
         ]);
     }
 
@@ -66,6 +128,7 @@ class ProductosInventarioTest extends TestCase
             'nombre' => 'Laptop empresarial', 'codigo' => 'LAP-01',
             'categoria_id' => $categoria->id, 'unidad' => 'pieza', 'precio' => 15000,
             'existencias' => 4, 'requiere_numero_serie' => '1',
+            'motivo_existencias' => 'Actualización manual durante la edición del producto.',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('productos', ['id' => $producto->id, 'nombre' => 'Laptop empresarial']);
@@ -81,6 +144,24 @@ class ProductosInventarioTest extends TestCase
             ->get(route('inventario.productos.detalle', $producto))
             ->assertOk()
             ->assertSee('Componentes heredados');
+    }
+
+    public function test_detalle_de_servicio_incluye_la_categoria_actual_aunque_este_inactiva(): void
+    {
+        $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_COMERCIAL]);
+        $categoria = Categoria::create(['nombre' => 'Servicios heredados', 'activo' => false]);
+        $servicio = Servicio::create([
+            'categoria_id' => $categoria->id,
+            'nombre' => 'Mantenimiento heredado',
+            'codigo' => 'SER-HEREDADO',
+            'unidad' => 'servicio',
+            'precio' => 1200,
+        ]);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.servicios.detalle', $servicio))
+            ->assertOk()
+            ->assertSee('Servicios heredados');
     }
 
     public function test_no_permite_asignar_categoria_inactiva(): void

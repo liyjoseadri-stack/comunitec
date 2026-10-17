@@ -10,30 +10,23 @@
         @stack('estilos')
     </head>
     <body class="aplicacion">
+        <a class="saltar-contenido" href="#contenido-principal">Saltar al contenido</a>
         <div class="estructura-aplicacion">
             @include('componentes.navegacion-lateral')
             <div class="estructura-aplicacion__principal">
                 @include('componentes.barra-superior')
-                <main class="pagina-administrativa @yield('clase_pagina')" id="contenido-principal">
-                    @if (session('estado'))
-                        <div class="alerta alerta--exito" role="status">
-                            {{ session('estado') }}
-                        </div>
-                    @endif
-
-                    @if (session('error'))
-                        <div class="alerta alerta--peligro" role="alert">
-                            {{ session('error') }}
-                        </div>
-                    @endif
-
+                <main class="pagina-administrativa @yield('clase_pagina')" id="contenido-principal" tabindex="-1">
+                    <x-alerta-flash />
+                    @include('componentes.errores-validacion')
                     @yield('contenido')
                 </main>
             </div>
         </div>
         <button class="fondo-menu" type="button" aria-label="Cerrar menú"></button>
+        <x-dialogo-confirmacion />
 
         <script src="{{ asset('js/navegacion.js') }}" defer></script>
+        @vite('resources/js/app.js')
         @stack('scripts')
     </body>
 </html>

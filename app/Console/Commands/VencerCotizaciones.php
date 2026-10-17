@@ -8,6 +8,8 @@ use Illuminate\Console\Command;
 
 class VencerCotizaciones extends Command
 {
+    private const TAMANO_BLOQUE = 100;
+
     protected $signature = 'cotizaciones:vencer';
 
     protected $aliases = [
@@ -18,10 +20,11 @@ class VencerCotizaciones extends Command
 
     public function handle(): int
     {
-        $pendingCount = Cotizacion::where('estado', 'pendiente')->whereNotNull('vence_en')->where('vence_en', '<=', now())->update([
-            'estado' => 'vencida',
+        $pendingCount = Cotizacion::where('estado', Cotizacion::ESTADO_PENDIENTE)->whereNotNull('vence_en')->where('vence_en', '<=', now())->update([
+            'estado' => Cotizacion::ESTADO_VENCIDA,
         ]);
-        $cotizacionesAceptadas = Cotizacion::where('estado', 'aceptada')
+        $reservasLiberadas = 0;
+        Cotizacion::where('estado', Cotizacion::ESTADO_ACEPTADA)
             ->where(function ($consulta) {
                 $consulta->where('entrega_limite_en', '<=', now())
                     ->orWhere(function ($consulta) {
@@ -29,14 +32,13 @@ class VencerCotizaciones extends Command
                             ->where('vence_en', '<=', now());
                     });
             })
-            ->get();
-
-        $reservasLiberadas = 0;
-        foreach ($cotizacionesAceptadas as $cotizacion) {
-            if (app(ServicioInventarioCotizacion::class)->liberar($cotizacion, soloSiVencida: true)) {
-                $reservasLiberadas++;
-            }
-        }
+            ->chunkById(self::TAMANO_BLOQUE, function ($cotizaciones) use (&$reservasLiberadas): void {
+                foreach ($cotizaciones as $cotizacion) {
+                    if (app(ServicioInventarioCotizacion::class)->liberar($cotizacion, soloSiVencida: true)) {
+                        $reservasLiberadas++;
+                    }
+                }
+            });
 
         $this->info("Cotizaciones vencidas: {$pendingCount}. Reservas liberadas: {$reservasLiberadas}.");
 

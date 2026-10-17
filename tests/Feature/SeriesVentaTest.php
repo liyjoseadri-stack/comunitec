@@ -8,6 +8,7 @@ use App\Models\PiezaInventario;
 use App\Models\Producto;
 use App\Models\Usuario;
 use App\Models\Venta;
+use App\Services\ServicioConversionVenta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -31,6 +32,28 @@ class SeriesVentaTest extends TestCase
         $detalleCotizacion
             ->assertSee(route('ventas.crear', $cotizacion), false)
             ->assertDontSee('name="series[', false);
+    }
+
+    public function test_el_formulario_diferencia_la_informacion_heredada_de_los_datos_por_capturar(): void
+    {
+        [$usuario, $cotizacion, $partidaSerializable] = $this->prepararVenta();
+
+        $respuesta = $this->actingAs($usuario)->get(route('ventas.crear', $cotizacion));
+
+        $respuesta->assertOk()
+            ->assertSeeInOrder([
+                'Datos heredados de la cotización',
+                'Datos que debes capturar',
+                'Método de pago',
+                'Números de serie',
+            ])
+            ->assertSee('Solo puedes registrar la cantidad indicada para cada producto')
+            ->assertSee('Producto 1')
+            ->assertSee('Unidad 1 de 2 · Número de serie')
+            ->assertSee('Unidad 2 de 2 · Número de serie')
+            ->assertSee('Descripción del método de pago')
+            ->assertSee('Solo es obligatoria cuando eliges Otro')
+            ->assertSee('aria-labelledby="producto-serie-'.$partidaSerializable->id.'"', false);
     }
 
     public function test_registra_las_series_escritas_en_la_venta_y_su_producto(): void
@@ -82,12 +105,15 @@ class SeriesVentaTest extends TestCase
 
     public function test_rechaza_una_serie_ya_vendida_y_claves_de_partidas_no_serializables(): void
     {
+        [$responsableAnterior, $cotizacionAnterior, $partidaAnterior] = $this->prepararVenta();
+        app(ServicioConversionVenta::class)->convertir(
+            $cotizacionAnterior,
+            $responsableAnterior,
+            Venta::METODO_EFECTIVO,
+            null,
+            [$partidaAnterior->id => ['SERIE-USADA', 'OTRA-SERIE-ANTERIOR']]
+        );
         [$usuario, $cotizacion, $partidaSerializable, $partidaSinSerie] = $this->prepararVenta();
-        PiezaInventario::create([
-            'producto_id' => $partidaSerializable->producto_id,
-            'numero_serie' => 'SERIE-USADA',
-            'estado' => 'entregada',
-        ]);
 
         $this->actingAs($usuario)->post(route('ventas.guardar', $cotizacion), [
             'metodo_pago' => Venta::METODO_EFECTIVO,
@@ -104,7 +130,8 @@ class SeriesVentaTest extends TestCase
             ],
         ])->assertSessionHasErrors("series.{$partidaSerializable->id}");
 
-        $this->assertSame(0, Venta::count());
+        $this->assertSame(1, Venta::count());
+        $this->assertSame('aceptada', $cotizacion->fresh()->estado);
     }
 
     public function test_permite_vender_productos_no_serializables_sin_capturar_series(): void
@@ -118,6 +145,44 @@ class SeriesVentaTest extends TestCase
 
         $this->assertSame(1, Venta::count());
         $this->assertSame(0, PiezaInventario::count());
+    }
+
+    public function test_el_requisito_historico_de_serie_prevalece_si_el_catalogo_lo_desactiva(): void
+    {
+        [$usuario, $cotizacion, $partida] = $this->prepararVenta();
+        $partida->update(['nombre_concepto' => 'Equipo original', 'requiere_numero_serie' => true]);
+        $partida->articulo->update(['requiere_numero_serie' => false]);
+        $this->actingAs($usuario)->get(route('ventas.crear', $cotizacion))->assertOk()
+            ->assertSee('name="series['.$partida->id.'][]"', false);
+        $this->post(route('ventas.guardar', $cotizacion), ['metodo_pago' => Venta::METODO_EFECTIVO])
+            ->assertSessionHasErrors("series.{$partida->id}");
+        $this->assertDatabaseCount('ventas', 0);
+    }
+
+    public function test_un_producto_historico_sin_serie_no_la_solicita_si_el_catalogo_la_activa(): void
+    {
+        [$usuario, $cotizacion, $partida] = $this->prepararVenta();
+        $partida->update(['nombre_concepto' => 'Equipo sin serie', 'requiere_numero_serie' => false]);
+        $this->actingAs($usuario)->get(route('ventas.crear', $cotizacion))->assertOk()
+            ->assertDontSee('name="series['.$partida->id.'][]"', false);
+        $this->post(route('ventas.guardar', $cotizacion), ['metodo_pago' => Venta::METODO_EFECTIVO])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('ventas', 1);
+        $this->assertDatabaseCount('piezas_inventario', 0);
+    }
+
+    public function test_una_partida_serializable_sin_producto_conserva_el_requisito_y_no_genera_una_venta_incompleta(): void
+    {
+        [$usuario, $cotizacion, $partida] = $this->prepararVenta();
+        $partida->update(['nombre_concepto' => 'Equipo retirado', 'requiere_numero_serie' => true]);
+        $partida->articulo->delete();
+        $this->actingAs($usuario)->get(route('ventas.crear', $cotizacion))->assertOk()
+            ->assertSee('Equipo retirado')->assertSee('name="series['.$partida->id.'][]"', false);
+        $this->post(route('ventas.guardar', $cotizacion), [
+            'metodo_pago' => Venta::METODO_EFECTIVO, 'series' => [$partida->id => ['RET-1', 'RET-2']],
+        ])->assertSessionHasErrors("series.{$partida->id}");
+        $this->assertDatabaseCount('ventas', 0);
+        $this->assertDatabaseCount('piezas_inventario', 0);
     }
 
     private function prepararVenta(): array

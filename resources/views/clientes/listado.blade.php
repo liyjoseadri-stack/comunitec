@@ -3,64 +3,28 @@
 @section('titulo', 'Clientes')
 
 @section('contenido')
-    <x-encabezado-pagina
-        titulo="Clientes"
-        descripcion="Registra y consulta la información fiscal y de contacto de tus clientes."
-    >
+    <x-encabezado-pagina titulo="Clientes">
         <x-slot:acciones>
-            <span class="contador-registros">
-                {{ $clientes->count() }} {{ $clientes->count() === 1 ? 'cliente' : 'clientes' }}
-            </span>
+            <span class="contador-registros">{{ $clientes->total() }} {{ $clientes->total() === 1 ? 'cliente' : 'clientes' }}</span>
+            <x-boton :href="route('clientes.crear')">Registrar cliente</x-boton>
         </x-slot:acciones>
     </x-encabezado-pagina>
 
-    @include('componentes.errores-validacion')
-
-    <section class="bloque-administrativo" aria-labelledby="titulo-nuevo-cliente">
-        <h2 id="titulo-nuevo-cliente">Nuevo cliente</h2>
-        <form class="formulario-administrativo formulario-dos-columnas" method="POST" action="{{ route('clientes.guardar') }}">
-            @csrf
-            <div class="campo-formulario">
-                <label for="tipo-cliente">Tipo de persona</label>
-                <select id="tipo-cliente" name="tipo">
-                    <option value="moral" @selected(old('tipo') === 'moral')>Persona moral</option>
-                    <option value="fisica" @selected(old('tipo') === 'fisica')>Persona física</option>
-                </select>
-            </div>
-            <div class="campo-formulario">
-                <label for="nombre-cliente">Nombre o razón social</label>
-                <input id="nombre-cliente" name="nombre" value="{{ old('nombre') }}" required>
-            </div>
-            <div class="campo-formulario">
-                <label for="rfc-cliente">RFC</label>
-                <input id="rfc-cliente" name="rfc" value="{{ old('rfc') }}" required>
-            </div>
-            <div class="campo-formulario">
-                <label for="correo-cliente">Correo electrónico</label>
-                <input id="correo-cliente" name="correo" type="email" value="{{ old('correo') }}" required>
-            </div>
-            <div class="campo-formulario">
-                <label for="telefono-cliente">Teléfono</label>
-                <input id="telefono-cliente" name="telefono" value="{{ old('telefono') }}" required>
-            </div>
-            <div class="campo-formulario">
-                <label for="codigo-postal-cliente">Código postal</label>
-                <input id="codigo-postal-cliente" name="codigo_postal" value="{{ old('codigo_postal') }}" required>
-            </div>
-            <div class="campo-formulario campo-formulario--ancho">
-                <label for="direccion-cliente">Dirección</label>
-                <input id="direccion-cliente" name="direccion" value="{{ old('direccion') }}" required>
-            </div>
-            <div class="acciones-formulario campo-formulario--ancho">
-                <x-boton tipo="submit">Guardar cliente</x-boton>
-            </div>
-        </form>
-    </section>
-
     <section class="bloque-administrativo" aria-labelledby="titulo-clientes-registrados">
         <h2 id="titulo-clientes-registrados">Clientes registrados</h2>
-        <div class="contenedor-tabla" tabindex="0" aria-label="Clientes registrados">
-            <table class="tabla-registros tabla-catalogo">
+
+        <form class="formulario-filtros" method="GET" action="{{ route('clientes.listado') }}">
+            <x-campo-formulario id="buscar-clientes" nombre="buscar" etiqueta="Buscar clientes" :valor="request('buscar')" placeholder="Nombre, RFC, correo, teléfono o dirección" />
+            <x-grupo-acciones-fila>
+                <x-boton tipo="submit" variante="secundario">Buscar</x-boton>
+                @if (request()->filled('buscar'))
+                    <x-boton variante="contorno" :href="route('clientes.listado')">Limpiar</x-boton>
+                @endif
+            </x-grupo-acciones-fila>
+        </form>
+
+        <x-tabla-responsive etiqueta="Clientes registrados" adaptable :vacia="$clientes->isEmpty()">
+            <table class="tabla-registros tabla-adaptable tabla-catalogo">
                 <thead>
                     <tr>
                         <th scope="col">Nombre</th>
@@ -68,27 +32,47 @@
                         <th scope="col">RFC</th>
                         <th scope="col">Contacto</th>
                         <th scope="col">Dirección</th>
+                        <th scope="col">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($clientes as $cliente)
                         <tr>
-                            <td><strong>{{ $cliente->nombre }}</strong></td>
-                            <td>{{ $cliente->tipo === 'moral' ? 'Persona moral' : 'Persona física' }}</td>
-                            <td>{{ $cliente->rfc }}</td>
-                            <td>
-                                {{ $cliente->correo }}
-                                <small class="detalle-tabla">{{ $cliente->telefono }}</small>
+                            <th scope="row" data-etiqueta="Nombre"><strong>{{ $cliente->nombre }}</strong></th>
+                            <td data-etiqueta="Tipo">{{ $cliente->tipo === 'moral' ? 'Persona moral' : 'Persona física' }}</td>
+                            <td data-etiqueta="RFC">{{ $cliente->rfc }}</td>
+                            <td data-etiqueta="Contacto">
+                                <div class="contacto-tabla">
+                                    <span><strong>Correo</strong> {{ $cliente->correo }}</span>
+                                    <span><strong>Teléfono</strong> {{ $cliente->telefono }}</span>
+                                </div>
                             </td>
-                            <td>{{ $cliente->direccion }} · C.P. {{ $cliente->codigo_postal }}</td>
+                            <td data-etiqueta="Dirección">{{ $cliente->direccion }} · C.P. {{ $cliente->codigo_postal }}</td>
+                            <td data-etiqueta="Acciones" class="acciones-tabla">
+                                <x-grupo-acciones-fila>
+                                    <x-boton compacto variante="contorno" :href="route('clientes.editar', $cliente)">Editar</x-boton>
+                                </x-grupo-acciones-fila>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td class="estado-vacio" colspan="5">Aún no hay clientes registrados.</td>
+                            <td class="tabla-estado-vacio" colspan="6">
+                                <x-estado-vacio :mensaje="request()->filled('buscar') ? 'No hay clientes que coincidan con la búsqueda.' : 'Aún no hay clientes registrados.'">
+                                    <x-slot:acciones>
+                                        @if (request()->filled('buscar'))
+                                            <x-boton variante="contorno" :href="route('clientes.listado')">Limpiar búsqueda</x-boton>
+                                        @else
+                                            <x-boton variante="contorno" :href="route('clientes.crear')">Registrar cliente</x-boton>
+                                        @endif
+                                    </x-slot:acciones>
+                                </x-estado-vacio>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
-        </div>
+        </x-tabla-responsive>
+
+        @include('componentes.paginacion', ['paginador' => $clientes])
     </section>
 @endsection

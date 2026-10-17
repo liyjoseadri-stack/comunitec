@@ -20,7 +20,7 @@ class AutorizacionRolesTest extends TestCase
         ]))
             ->get('/administracion/usuarios')
             ->assertOk()
-            ->assertSee('Administración de usuarios');
+            ->assertSee('Usuarios registrados');
     }
 
     public function test_el_comercial_no_puede_gestionar_usuarios(): void

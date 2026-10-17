@@ -52,7 +52,8 @@ class NavegacionAdministrativaTest extends TestCase
             ->assertOk()
             ->assertSee('Servicio de instalación')
             ->assertDontSee('Equipo físico')
-            ->assertSee('id="nuevo-servicio"', false)
+            ->assertSee(route('inventario.servicios.crear'), false)
+            ->assertDontSee('action="'.route('inventario.servicios.guardar').'"', false)
             ->assertDontSee('Existencias');
     }
 
@@ -85,7 +86,7 @@ class NavegacionAdministrativaTest extends TestCase
             ->assertSee('js/navegacion.js', false)
             ->assertSee('aria-controls="navegacion-lateral"', false)
             ->assertSee('aria-expanded="false"', false)
-            ->assertSee(route('cotizaciones.listado').'#nueva-cotizacion', false)
+            ->assertSee(route('cotizaciones.crear'), false)
             ->assertSee(route('ventas.listado').'#cotizaciones-aceptadas', false);
     }
 
@@ -188,6 +189,7 @@ class NavegacionAdministrativaTest extends TestCase
             'cliente_id' => $cliente->id,
             'usuario_id' => $usuario->id,
             'estado' => $estado,
+            'entrega_limite_en' => $estado === Cotizacion::ESTADO_ACEPTADA ? now()->addDay() : null,
             'total' => 100,
         ]);
     }

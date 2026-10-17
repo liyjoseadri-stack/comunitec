@@ -3,73 +3,100 @@
 @section('titulo', $producto->nombre)
 
 @section('contenido')
-    <x-encabezado-pagina :titulo="$producto->nombre" :descripcion="'SKU '.$producto->codigo">
+    <x-encabezado-pagina :titulo="$producto->nombre">
         <x-slot:acciones>
-            <x-boton variante="contorno" :href="route('inventario.listado')">Regresar</x-boton>
+            <x-boton variante="contorno" :href="route('inventario.productos.listado')">Regresar al listado</x-boton>
+            <x-boton :href="route('inventario.productos.editar', $producto)">Editar producto</x-boton>
         </x-slot:acciones>
     </x-encabezado-pagina>
 
-    @include('componentes.errores-validacion')
+    <section class="bloque-administrativo" aria-labelledby="titulo-informacion-producto">
+        <div class="encabezado-seccion">
+            <h2 id="titulo-informacion-producto">Información del producto</h2>
+            <x-insignia-estado :estado="$producto->activo ? 'activo' : 'inactivo'" />
+        </div>
 
-    @if (session('success'))
-        <p class="mensaje-exito">{{ session('success') }}</p>
-    @endif
-
-    <section class="bloque-administrativo">
-        <h2>Editar artículo</h2>
-        <form class="formulario-administrativo formulario-catalogo" method="POST" action="{{ route('inventario.productos.actualizar', $producto) }}">
-            @csrf
-            @method('PUT')
-
-            <div class="campo-formulario">
-                <label for="categoria_id">Categoría</label>
-                <select id="categoria_id" name="categoria_id" required>
-                    @foreach ($categorias as $categoria)
-                        <option value="{{ $categoria->id }}" @selected(old('categoria_id', $producto->categoria_id) == $categoria->id)>
-                            {{ $categoria->nombre }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            @foreach (['nombre' => 'Nombre', 'codigo' => 'Código/SKU', 'marca' => 'Marca', 'modelo' => 'Modelo', 'unidad' => 'Unidad'] as $campo => $etiqueta)
-                <div class="campo-formulario">
-                    <label for="{{ $campo }}">{{ $etiqueta }}</label>
-                    <input id="{{ $campo }}" name="{{ $campo }}" value="{{ old($campo, $producto->$campo) }}" @required(in_array($campo, ['nombre', 'codigo', 'unidad']))>
-                </div>
-            @endforeach
-
-            <div class="campo-formulario campo-formulario--ancho">
-                <label for="descripcion">Descripción</label>
-                <textarea id="descripcion" name="descripcion">{{ old('descripcion', $producto->descripcion) }}</textarea>
-            </div>
-            <div class="campo-formulario">
-                <label for="precio">Precio</label>
-                <input id="precio" name="precio" type="number" step="0.01" min="0" value="{{ old('precio', $producto->precio) }}" required>
-            </div>
-            <div class="campo-formulario">
-                <label for="existencias">Existencias</label>
-                <input id="existencias" name="existencias" type="number" min="0" value="{{ old('existencias', $producto->existencias) }}" required>
-            </div>
-            <label class="campo-formulario">
-                <span>Números de serie</span>
-                <span>
-                    <input type="checkbox" name="requiere_numero_serie" value="1" @checked(old('requiere_numero_serie', $producto->requiere_numero_serie))>
-                    Requiere serie al vender
-                </span>
-            </label>
-            <x-boton tipo="submit">Guardar cambios</x-boton>
-        </form>
+        <dl class="cuadricula-detalle">
+            <div><dt>Nombre</dt><dd>{{ $producto->nombre }}</dd></div>
+            <div><dt>Código/SKU</dt><dd>{{ $producto->codigo }}</dd></div>
+            <div><dt>Categoría</dt><dd>{{ $producto->categoria?->nombre ?? 'Sin categoría' }}</dd></div>
+            <div><dt>Marca</dt><dd>{{ $producto->marca ?: 'No especificada' }}</dd></div>
+            <div><dt>Modelo</dt><dd>{{ $producto->modelo ?: 'No especificado' }}</dd></div>
+            <div><dt>Unidad</dt><dd>{{ $producto->unidad }}</dd></div>
+            <div><dt>Precio con IVA</dt><dd>${{ number_format((float) $producto->precio, 2) }}</dd></div>
+            <div><dt>Existencias</dt><dd>{{ $producto->existencias }}</dd></div>
+            <div><dt>Números de serie</dt><dd>{{ $producto->requiere_numero_serie ? 'Se capturan al registrar la venta' : 'No requeridos' }}</dd></div>
+            <div class="detalle-ancho"><dt>Descripción</dt><dd>{{ $producto->descripcion ?: 'Sin descripción' }}</dd></div>
+        </dl>
     </section>
 
-    @if ($producto->seriesVendidas->isNotEmpty())
-        <section class="bloque-administrativo">
-            <h2>Series vendidas</h2>
-            <ul>
-                @foreach ($producto->seriesVendidas as $serie)
-                    <li>{{ $serie->numero_serie }}</li>
-                @endforeach
-            </ul>
-        </section>
-    @endif
+    <section class="bloque-administrativo" aria-labelledby="titulo-movimientos-existencias">
+        <h2 id="titulo-movimientos-existencias">Historial de ajustes de existencias</h2>
+        <x-tabla-responsive etiqueta="Ajustes manuales de existencias del producto" adaptable :vacia="$producto->movimientosExistencias->isEmpty()">
+            <table class="tabla-registros tabla-adaptable">
+                <thead>
+                    <tr>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Responsable</th>
+                        <th scope="col">Existencias anteriores</th>
+                        <th scope="col">Existencias nuevas</th>
+                        <th scope="col">Motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($producto->movimientosExistencias as $movimiento)
+                        <tr>
+                            <td data-etiqueta="Fecha">{{ $movimiento->creado_en?->format('d/m/Y H:i') }}</td>
+                            <td data-etiqueta="Responsable">{{ $movimiento->responsable?->nombre ?? 'Usuario no disponible' }}</td>
+                            <td data-etiqueta="Existencias anteriores">{{ $movimiento->existencias_anteriores }}</td>
+                            <td data-etiqueta="Existencias nuevas">{{ $movimiento->existencias_nuevas }}</td>
+                            <td data-etiqueta="Motivo">{{ $movimiento->motivo }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td class="tabla-estado-vacio" colspan="5">
+                                <x-estado-vacio mensaje="Este producto todavía no tiene ajustes manuales de existencias." />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </x-tabla-responsive>
+    </section>
+
+    <section class="bloque-administrativo" aria-labelledby="titulo-series-vendidas-producto">
+        <h2 id="titulo-series-vendidas-producto">Historial de series vendidas</h2>
+        <x-tabla-responsive etiqueta="Series vendidas del producto" adaptable :vacia="$producto->seriesVendidas->isEmpty()">
+            <table class="tabla-registros tabla-adaptable">
+                <thead>
+                    <tr>
+                        <th scope="col">Número de serie</th>
+                        <th scope="col">Venta</th>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($producto->seriesVendidas as $serie)
+                        <tr>
+                            <th scope="row" data-etiqueta="Número de serie">{{ $serie->numero_serie }}</th>
+                            <td data-etiqueta="Venta">{{ $serie->partidaVenta?->venta?->folio ?? 'Sin referencia' }}</td>
+                            <td data-etiqueta="Fecha">{{ $serie->partidaVenta?->venta?->vendida_en?->format('d/m/Y') ?? 'No disponible' }}</td>
+                            <td data-etiqueta="Acción" class="acciones-tabla">
+                                @if ($serie->partidaVenta?->venta)
+                                    <x-boton compacto variante="contorno" :href="route('ventas.detalle', $serie->partidaVenta->venta)">Ver venta</x-boton>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td class="tabla-estado-vacio" colspan="4">
+                                <x-estado-vacio mensaje="Este producto todavía no tiene números de serie asociados a ventas." />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </x-tabla-responsive>
+    </section>
 @endsection

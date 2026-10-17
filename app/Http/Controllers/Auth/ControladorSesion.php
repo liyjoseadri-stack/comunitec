@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -36,16 +38,30 @@ class ControladorSesion extends Controller
 
         ]);
 
+        $claveLimite = $this->claveLimite($solicitud, $credenciales['correo']);
+
+        if (RateLimiter::tooManyAttempts($claveLimite, 5)) {
+            $segundos = RateLimiter::availableIn($claveLimite);
+
+            throw ValidationException::withMessages([
+                'correo' => "Demasiados intentos de inicio de sesión. Intenta de nuevo en {$segundos} segundos.",
+            ]);
+        }
+
         if (! Auth::attempt([
             'correo' => $credenciales['correo'],
             'activo' => true,
             'password' => $credenciales['contrasena'],
         ], $solicitud->boolean('recordar'))) {
+            RateLimiter::hit($claveLimite, 60);
+
             throw ValidationException::withMessages([
                 'correo' => 'Las credenciales no son correctas.',
 
             ]);
         }
+
+        RateLimiter::clear($claveLimite);
 
         $solicitud->session()->regenerate();
 
@@ -60,5 +76,10 @@ class ControladorSesion extends Controller
         $solicitud->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    private function claveLimite(Request $solicitud, string $correo): string
+    {
+        return Str::transliterate(Str::lower(trim($correo))).'|'.$solicitud->ip();
     }
 }

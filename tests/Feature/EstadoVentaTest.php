@@ -16,6 +16,9 @@ class EstadoVentaTest extends TestCase
 
     public function test_el_estado_anterior_se_migra_a_venta(): void
     {
+        // Reconstruir el esquema previo a las restricciones para probar datos heredados.
+        $restricciones = require database_path('migrations/2026_10_14_000002_agregar_restricciones_de_dominio.php');
+        $restricciones->down();
         [$usuario, $cliente] = $this->datosBase();
         $cotizacion = Cotizacion::create([
             'folio' => 'COT-ESTADO-ANTERIOR',
@@ -27,6 +30,7 @@ class EstadoVentaTest extends TestCase
 
         $migracion = require database_path('migrations/2026_09_25_000002_actualizar_estado_venta_cotizaciones.php');
         $migracion->up();
+        $restricciones->up();
 
         $this->assertSame(Cotizacion::ESTADO_VENTA, $cotizacion->fresh()->estado);
         $this->assertSame('Venta', $cotizacion->fresh()->etiquetaEstado());

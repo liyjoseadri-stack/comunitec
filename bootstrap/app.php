@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\AgregarEncabezadosSeguridad;
+use App\Http\Middleware\AsegurarUsuarioActivo;
 use App\Http\Middleware\VerificarRolUsuario;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -12,7 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/estado',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(AgregarEncabezadosSeguridad::class);
+
         $middleware->alias([
+            'usuario.activo' => AsegurarUsuarioActivo::class,
             'rol' => VerificarRolUsuario::class,
         ]);
     })

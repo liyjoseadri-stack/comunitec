@@ -13,6 +13,8 @@ class EnvioCotizacion extends Model
 
     public const RESULTADO_FALLIDO = 'fallido';
 
+    public const RESULTADO_PENDIENTE = 'pendiente';
+
     public const TIPO_COTIZACION = 'cotizacion';
 
     public const TIPO_RECORDATORIO = 'recordatorio';
@@ -24,6 +26,7 @@ class EnvioCotizacion extends Model
         'usuario_id',
         'destinatario',
         'tipo',
+        'clave_idempotencia',
         'resultado',
         'mensaje',
         'intentado_en',
@@ -51,6 +54,7 @@ class EnvioCotizacion extends Model
         return match ($this->resultado) {
             self::RESULTADO_ACEPTADO => 'Aceptado por el servicio de correo',
             self::RESULTADO_FALLIDO => 'Fallido',
+            self::RESULTADO_PENDIENTE => 'Pendiente de verificación',
             default => 'Sin definir',
         };
     }

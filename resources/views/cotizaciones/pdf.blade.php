@@ -92,12 +92,11 @@
         <tbody>
             @forelse ($cotizacion->partidas as $partida)
                 @php
-                    $articulo = $partida->articulo;
                     $caracteristicas = collect([
-                        $articulo?->marca ? 'Marca: '.$articulo->marca : null,
-                        $articulo?->modelo ? 'Modelo: '.$articulo->modelo : null,
-                        $articulo?->codigo ? 'Código: '.$articulo->codigo : null,
-                        $articulo?->unidad ? 'Unidad: '.$articulo->unidad : null,
+                        $partida->marca_concepto ? 'Marca: '.$partida->marca_concepto : null,
+                        $partida->modelo_concepto ? 'Modelo: '.$partida->modelo_concepto : null,
+                        $partida->codigoHistorico() ? 'Código: '.$partida->codigoHistorico() : null,
+                        $partida->unidad_concepto ? 'Unidad: '.$partida->unidad_concepto : null,
                     ])->filter();
                 @endphp
                 <tr>
@@ -106,7 +105,7 @@
                     <td class="caracteristicas">
                         <span class="detalle-secundario">
                             Tipo: {{ ucfirst($partida->tipo) }}
-                            · Concepto: {{ $articulo?->nombre ?? 'Concepto libre' }}
+                            · Concepto: {{ $partida->nombreHistorico() }}
                         </span>
                         @if ($caracteristicas->isNotEmpty())
                             <br>

@@ -14,6 +14,8 @@ return [
 
     'numeric' => 'El campo :attribute debe ser un número.',
 
+    'decimal' => 'El campo :attribute debe tener :decimal decimales.',
+
     'integer' => 'El campo :attribute debe ser un número entero.',
 
     'boolean' => 'El campo :attribute debe ser verdadero o falso.',

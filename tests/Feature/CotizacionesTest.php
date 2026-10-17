@@ -15,7 +15,7 @@ class CotizacionesTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_el_comercial_crea_un_borrador_agrega_una_partida_y_envia_la_cotizacion(): void
+    public function test_el_comercial_crea_un_borrador_completo_y_envia_la_cotizacion(): void
     {
         $usuario = Usuario::factory()->create([
             'rol' => Usuario::ROL_COMERCIAL,
@@ -38,24 +38,27 @@ class CotizacionesTest extends TestCase
             'existencias' => 10,
         ]);
 
-        $this->actingAs($usuario)->post('/cotizaciones', [
+        $this->actingAs($usuario)->postJson('/api/cotizaciones', [
             'cliente_id' => $cliente->id,
             'porcentaje_descuento' => 5,
-        ])->assertRedirect('/cotizaciones');
+            'items' => [[
+                'tipo' => 'producto',
+                'producto_id' => $articulo->id,
+                'descripcion' => 'Laptop',
+                'cantidad' => 2,
+                'precio_unitario' => 1000,
+                'porcentaje_descuento' => 0,
+            ]],
+        ])->assertCreated();
 
         $cotizacion = Cotizacion::firstOrFail();
         $this->assertSame('borrador', $cotizacion->estado);
 
-        $this->post("/cotizaciones/{$cotizacion->id}/partidas", [
-            'producto_id' => $articulo->id,
-
-            'descripcion' => 'Laptop',
-            'cantidad' => 2,
-            'precio_unitario' => 1000,
-        ])->assertRedirect();
         $this->assertSame('1900.00', $cotizacion->fresh()->total);
 
-        $this->post("/cotizaciones/{$cotizacion->id}/enviar")->assertRedirect();
+        $this->post("/cotizaciones/{$cotizacion->id}/enviar", [
+            'token_envio' => '11111111-1111-4111-8111-111111111111',
+        ])->assertRedirect();
         $this->assertSame('pendiente', $cotizacion->fresh()->estado);
         $this->assertNotNull($cotizacion->fresh()->vence_en);
     }
@@ -263,10 +266,19 @@ class CotizacionesTest extends TestCase
             'cliente_id' => $cliente->id,
             'usuario_id' => $usuario->id,
             'estado' => 'pendiente',
-            'total' => 0,
+            'total' => 100,
+        ]);
+        $cotizacion->partidas()->create([
+            'tipo' => 'otro',
+            'descripcion' => 'Servicio cotizado',
+            'cantidad' => 1,
+            'precio_unitario' => 100,
+            'subtotal' => 100,
         ]);
 
-        $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/correo")->assertRedirect();
+        $this->actingAs($usuario)->post("/cotizaciones/{$cotizacion->id}/correo", [
+            'token_envio' => '22222222-2222-4222-8222-222222222222',
+        ])->assertRedirect();
 
         Mail::assertSent(CorreoCotizacion::class, function (CorreoCotizacion $mail) use ($cliente) {
             return $mail->hasTo($cliente->correo);

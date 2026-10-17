@@ -17,7 +17,8 @@ class PermisosCotizacionesTest extends TestCase
         $cotizacion = $this->preparar();
 
         $this->get('/cotizaciones')->assertOk()
-            ->assertDontSee('action="'.route('cotizaciones.guardar').'"', false);
+            ->assertDontSee('data-creador-cotizacion', false)
+            ->assertDontSee('href="'.route('cotizaciones.crear').'"', false);
         foreach (['borrador', 'pendiente', 'aceptada', 'cancelada', 'rechazada', 'vencida'] as $estado) {
             $cotizacion->update(['estado' => $estado]);
             $this->get("/cotizaciones/{$cotizacion->id}")->assertOk()
@@ -40,7 +41,7 @@ class PermisosCotizacionesTest extends TestCase
             'subtotal' => 100,
         ]);
 
-        $this->post('/cotizaciones')->assertForbidden();
+        $this->post('/cotizaciones')->assertStatus(405);
         $this->postJson('/api/cotizaciones')->assertForbidden();
         $this->put("/cotizaciones/{$cotizacion->id}")->assertForbidden();
         foreach (['enviar', 'correo', 'aceptar', 'rechazar', 'cancelar', 'partidas'] as $accion) {

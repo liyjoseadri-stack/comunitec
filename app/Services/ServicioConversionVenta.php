@@ -33,6 +33,7 @@ class ServicioConversionVenta
                 ->firstOrFail();
 
             $this->validarCotizacion($cotizacion);
+            app(ServicioIntegridadCotizacion::class)->validarParaAvanzar($cotizacion);
 
             $seleccion = $this->validarSeries($cotizacion, $series);
 
@@ -67,8 +68,15 @@ class ServicioConversionVenta
                     'servicio_id' => $partidaCotizada->servicio_id,
                     'tipo' => $partidaCotizada->tipo,
                     'descripcion' => $partidaCotizada->descripcion,
+                    'nombre_concepto' => $partidaCotizada->nombre_concepto,
+                    'codigo_concepto' => $partidaCotizada->codigo_concepto,
+                    'marca_concepto' => $partidaCotizada->marca_concepto,
+                    'modelo_concepto' => $partidaCotizada->modelo_concepto,
+                    'unidad_concepto' => $partidaCotizada->unidad_concepto,
+                    'requiere_numero_serie' => $partidaCotizada->requiere_numero_serie,
                     'cantidad' => $partidaCotizada->cantidad,
                     'precio_unitario' => $partidaCotizada->precio_unitario,
+                    'porcentaje_descuento' => $partidaCotizada->porcentaje_descuento,
                     'subtotal' => $partidaCotizada->subtotal,
                 ]);
 
@@ -79,13 +87,13 @@ class ServicioConversionVenta
                     )
                         ->where('producto_id', $partidaCotizada->producto_id)
                         ->where('cotizacion_id', $cotizacion->id)
-                        ->where('estado', 'reservada')
+                        ->where('estado', PiezaInventario::ESTADO_RESERVADA)
                         ->lockForUpdate()
                         ->first();
 
                     if ($piezaAnterior !== null) {
                         $piezaAnterior->update([
-                            'estado' => 'entregada',
+                            'estado' => PiezaInventario::ESTADO_ENTREGADA,
                             'cotizacion_id' => null,
                             'partida_venta_id' => $partidaVendida->id,
                         ]);
@@ -96,7 +104,7 @@ class ServicioConversionVenta
                     $partidaVendida->piezas()->create([
                         'producto_id' => $partidaCotizada->producto_id,
                         'numero_serie' => $numeroSerie,
-                        'estado' => 'entregada',
+                        'estado' => PiezaInventario::ESTADO_ENTREGADA,
                         'cotizacion_id' => null,
                     ]);
                 }
@@ -118,13 +126,12 @@ class ServicioConversionVenta
                 'cotizacion' => 'Esta cotización ya fue convertida en venta.',
             ]);
         }
-        if ($cotizacion->estado !== 'aceptada') {
+        if ($cotizacion->estado !== Cotizacion::ESTADO_ACEPTADA) {
             throw ValidationException::withMessages([
                 'cotizacion' => 'Solo una cotización aceptada puede convertirse en venta.',
             ]);
         }
-        $limiteEntrega = $cotizacion->fechaLimiteEntrega();
-        if ($limiteEntrega === null || $limiteEntrega->lessThanOrEqualTo(now())) {
+        if (! $cotizacion->puedeConvertirseEnVenta()) {
             throw ValidationException::withMessages([
                 'cotizacion' => 'La reserva de la cotización venció; no puede convertirse en venta.',
             ]);
@@ -138,8 +145,8 @@ class ServicioConversionVenta
         $seleccion = [];
         $normalizadas = [];
         $partidasSerializables = $cotizacion->partidas->filter(
-            fn (PartidaCotizacion $partida): bool => $partida->tipo === 'producto'
-                && (bool) $partida->articulo?->requiere_numero_serie
+            fn (PartidaCotizacion $partida): bool => $partida->tipo === PartidaCotizacion::TIPO_PRODUCTO
+                && (bool) ($partida->requiere_numero_serie ?? $partida->articulo?->requiere_numero_serie)
         );
 
         foreach (array_keys($series) as $partidaId) {
@@ -151,6 +158,9 @@ class ServicioConversionVenta
         }
 
         foreach ($partidasSerializables as $partida) {
+            if ($partida->producto_id === null) {
+                $this->fallarSeries($partida, 'El producto de esta partida ya no está disponible para registrar sus series.');
+            }
             $numeros = array_map(
                 fn ($numero): string => trim((string) $numero),
                 $series[$partida->id] ?? []
@@ -181,7 +191,7 @@ class ServicioConversionVenta
                 $esReservaAnterior = $existente !== null
                     && $existente->cotizacion_id === $cotizacion->id
                     && $existente->producto_id === $partida->producto_id
-                    && $existente->estado === 'reservada';
+                    && $existente->estado === PiezaInventario::ESTADO_RESERVADA;
                 if ($existente !== null && ! $esReservaAnterior) {
                     $this->fallarSeries($partida, "El número de serie {$numero} ya está registrado.");
                 }

@@ -3,21 +3,27 @@
 @section('titulo', 'Venta '.$venta->folio)
 
 @section('contenido')
-            <header class="encabezado-pagina">
-                <p>Registrada el {{ $venta->vendida_en->format('d/m/Y H:i') }}.</p>
-                <div class="grupo-acciones">
-                    <span class="insignia-tipo">Venta cerrada</span>
-                    <x-boton variante="contorno" :href="route('ventas.pdf', $venta)">Descargar PDF</x-boton>
-                </div>
-            </header>
+    <x-encabezado-pagina :titulo="'Venta '.$venta->folio">
+        <x-slot:acciones>
+            <span class="insignia-tipo">Venta cerrada</span>
+            <x-boton variante="contorno" :href="route('ventas.listado')">Volver al historial</x-boton>
+            <x-boton :href="route('ventas.pdf', $venta)">Descargar PDF</x-boton>
+        </x-slot:acciones>
+    </x-encabezado-pagina>
 
-            @if (session('success'))
-                <p role="status">{{ session('success') }}</p>
-            @endif
 
             <section class="bloque-administrativo" aria-labelledby="titulo-datos-venta">
-                <h2 id="titulo-datos-venta">Datos de la venta</h2>
-                <dl class="datos-operacion">
+                <div class="encabezado-seccion">
+                    <div>
+                        <h2 id="titulo-datos-venta">Información histórica de la venta</h2>
+                        <p>Estos datos corresponden al momento en que se registró la operación.</p>
+                    </div>
+                </div>
+                <dl class="datos-operacion datos-operacion--venta">
+                    <div>
+                        <dt>Fecha de venta</dt>
+                        <dd>{{ $venta->vendida_en->format('d/m/Y H:i') }}</dd>
+                    </div>
                     <div>
                         <dt>Cliente</dt>
                         <dd>{{ $venta->nombreClienteMostrado() }}</dd>
@@ -42,7 +48,11 @@
                     </div>
                     <div>
                         <dt>Cotización de origen</dt>
-                        <dd>{{ $venta->cotizacion->folio }}</dd>
+                        <dd>
+                            <x-boton variante="contorno" :href="route('cotizaciones.detalle', $venta->cotizacion)" compacto>
+                                {{ $venta->cotizacion->folio }}
+                            </x-boton>
+                        </dd>
                     </div>
                     <div>
                         <dt>Responsable</dt>
@@ -60,8 +70,13 @@
             </section>
 
             <section class="bloque-administrativo" aria-labelledby="titulo-partidas-venta">
-                <h2 id="titulo-partidas-venta">Productos y servicios vendidos</h2>
-                <div class="contenedor-tabla" tabindex="0" aria-label="Productos y servicios de la venta">
+                <div class="encabezado-seccion">
+                    <div>
+                        <h2 id="titulo-partidas-venta">Productos y servicios vendidos</h2>
+                        <p>Los conceptos, precios y series se muestran con la información histórica de esta venta.</p>
+                    </div>
+                </div>
+                <x-tabla-responsive etiqueta="Productos y servicios de la venta">
                     <table class="tabla-registros tabla-catalogo">
                         <thead>
                             <tr>
@@ -72,39 +87,53 @@
                                 <th scope="col">Precio unitario</th>
                                 <th scope="col">Descuento</th>
                                 <th scope="col">Subtotal</th>
-                                <th scope="col">Series entregadas</th>
+                                <th scope="col">Números de serie entregados</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($venta->partidas as $partida)
                                 <tr>
-                                    <td><span class="insignia-tipo">{{ ucfirst($partida->tipo) }}</span></td>
-                                    <td>{{ $partida->articulo?->nombre ?? 'Concepto libre' }}</td>
-                                    <td>{{ $partida->descripcion }}</td>
-                                    <td>{{ number_format((float) $partida->cantidad, 2) }}</td>
-                                    <td>${{ number_format((float) $partida->precio_unitario, 2) }}</td>
-                                    <td>{{ (float) $venta->porcentaje_descuento > 0 ? number_format((float) $venta->porcentaje_descuento, 2).'% global' : 'Sin descuento' }}</td>
-                                    <td>${{ number_format((float) $partida->subtotal, 2) }}</td>
-                                    <td>
-                                        {{ $partida->piezas->pluck('numero_serie')->join(', ') ?: 'No aplica' }}
+                                    <td data-etiqueta="Tipo"><span class="insignia-tipo">{{ ucfirst($partida->tipo) }}</span></td>
+                                    <th scope="row" data-etiqueta="Concepto">{{ $partida->nombreHistorico() }}</th>
+                                    <td data-etiqueta="Descripción">{{ $partida->descripcion ?: 'Sin descripción adicional' }}</td>
+                                    <td data-etiqueta="Cantidad">{{ number_format((float) $partida->cantidad, 2) }}</td>
+                                    <td data-etiqueta="Precio unitario">${{ number_format((float) $partida->precio_unitario, 2) }}</td>
+                                    <td data-etiqueta="Descuento">{{ (float) $partida->porcentaje_descuento > 0 ? number_format((float) $partida->porcentaje_descuento, 2).'%' : 'Sin descuento' }}</td>
+                                    <td data-etiqueta="Subtotal">${{ number_format((float) $partida->subtotal, 2) }}</td>
+                                    <td data-etiqueta="Números de serie">
+                                        @if ($partida->piezas->isNotEmpty())
+                                            <ul class="lista-series-venta">
+                                                @foreach ($partida->piezas as $pieza)
+                                                    <li><code>{{ $pieza->numero_serie }}</code></li>
+                                                @endforeach
+                                            </ul>
+                                        @else
+                                            <span class="texto-secundario">No aplica</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
-                </div>
+                </x-tabla-responsive>
 
-                <table class="resumen-importes">
+                <h3 class="titulo-resumen-importes">Resumen de importes</h3>
+                <table class="resumen-importes" aria-label="Resumen de importes de la venta">
                     <tr>
-                        <th>Subtotal</th>
+                        <th scope="row">Subtotal</th>
                         <td>${{ number_format((float) $venta->subtotal, 2) }}</td>
                     </tr>
                     <tr>
-                        <th>Descuento global</th>
-                        <td>{{ number_format((float) $venta->porcentaje_descuento, 2) }}%</td>
+                        <th scope="row">Descuento global</th>
+                        <td>
+                            {{ number_format((float) $venta->porcentaje_descuento, 2) }}%
+                            @if ((float) $venta->porcentaje_descuento > 0)
+                                (−${{ number_format((float) $venta->subtotal - (float) $venta->total, 2) }})
+                            @endif
+                        </td>
                     </tr>
                     <tr>
-                        <th>Total</th>
+                        <th scope="row">Total</th>
                         <td>${{ number_format((float) $venta->total, 2) }}</td>
                     </tr>
                 </table>

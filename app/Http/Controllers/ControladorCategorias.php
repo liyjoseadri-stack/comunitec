@@ -27,11 +27,16 @@ class ControladorCategorias extends Controller
 
     public function guardar(Request $solicitud): RedirectResponse
     {
-        Categoria::create($solicitud->validate([
+        $categoria = Categoria::create($solicitud->validate([
             'nombre' => ['required', 'string', 'max:255', 'unique:categorias,nombre'],
         ]));
 
-        return back()->with('success', 'La categoría fue registrada.');
+        return to_route('inventario.categorias.detalle', $categoria)->with('success', 'La categoría fue registrada.');
+    }
+
+    public function crear(): View
+    {
+        return view('inventario.categorias.crear');
     }
 
     public function mostrar(Categoria $categoria): View
@@ -50,7 +55,12 @@ class ControladorCategorias extends Controller
             'nombre' => ['required', 'string', 'max:255', Rule::unique('categorias', 'nombre')->ignore($categoria)],
         ]));
 
-        return back()->with('success', 'La categoría fue actualizada.');
+        return to_route('inventario.categorias.detalle', $categoria)->with('success', 'La categoría fue actualizada.');
+    }
+
+    public function editar(Categoria $categoria): View
+    {
+        return view('inventario.categorias.editar', compact('categoria'));
     }
 
     public function actualizarEstado(Categoria $categoria): RedirectResponse

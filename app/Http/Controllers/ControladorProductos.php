@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Categoria;
+use App\Models\MovimientoExistencias;
 use App\Models\PiezaInventario;
 use App\Models\Producto;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -43,15 +46,35 @@ class ControladorProductos extends Controller
 
     public function guardar(Request $solicitud): RedirectResponse
     {
-        Producto::create($this->datosValidados($solicitud));
+        $producto = Producto::create($this->datosValidados($solicitud));
 
-        return to_route('inventario.productos.listado')->with('success', 'El producto fue registrado.');
+        return to_route('inventario.productos.detalle', $producto)->with('success', 'El producto fue registrado.');
+    }
+
+    public function crear(): View
+    {
+        return view('inventario.productos.crear', [
+            'categorias' => Categoria::where('activo', true)->orderBy('nombre')->get(),
+        ]);
     }
 
     public function mostrar(Producto $producto): View
     {
         return view('inventario.productos.detalle', [
-            'producto' => $producto->load('categoria', 'seriesVendidas.partidaVenta.venta'),
+            'producto' => $producto->load([
+                'categoria',
+                'seriesVendidas.partidaVenta.venta',
+                'movimientosExistencias' => fn ($consulta) => $consulta
+                    ->with('responsable')
+                    ->latest('creado_en'),
+            ]),
+        ]);
+    }
+
+    public function editar(Producto $producto): View
+    {
+        return view('inventario.productos.editar', [
+            'producto' => $producto->load('categoria'),
             'categorias' => Categoria::query()
                 ->where(function ($consulta) use ($producto) {
                     $consulta->where('activo', true);
@@ -67,9 +90,36 @@ class ControladorProductos extends Controller
 
     public function actualizar(Request $solicitud, Producto $producto): RedirectResponse
     {
-        $producto->update($this->datosValidados($solicitud, $producto));
+        $datos = $this->datosValidados($solicitud, $producto);
 
-        return back()->with('success', 'El producto fue actualizado.');
+        DB::transaction(function () use ($solicitud, $producto, $datos): void {
+            $productoBloqueado = Producto::query()->lockForUpdate()->findOrFail($producto->id);
+            $existenciasAnteriores = $productoBloqueado->existencias;
+            $existenciasNuevas = (int) $datos['existencias'];
+            $cambiaExistencias = $existenciasAnteriores !== $existenciasNuevas;
+
+            $motivo = Validator::make($solicitud->only('motivo_existencias'), [
+                'motivo_existencias' => [Rule::requiredIf($cambiaExistencias), 'nullable', 'string', 'max:500'],
+            ], [
+                'motivo_existencias.required' => 'Explica el motivo del ajuste de existencias.',
+                'motivo_existencias.max' => 'El motivo no puede exceder 500 caracteres.',
+            ])->validate()['motivo_existencias'] ?? null;
+
+            $productoBloqueado->update($datos);
+
+            if ($cambiaExistencias) {
+                MovimientoExistencias::create([
+                    'producto_id' => $productoBloqueado->id,
+                    'usuario_id' => $solicitud->user()->id,
+                    'existencias_anteriores' => $existenciasAnteriores,
+                    'existencias_nuevas' => $existenciasNuevas,
+                    'motivo' => trim($motivo),
+                    'creado_en' => now(),
+                ]);
+            }
+        });
+
+        return to_route('inventario.productos.detalle', $producto)->with('success', 'El producto fue actualizado.');
     }
 
     public function actualizarEstado(Producto $producto): RedirectResponse
@@ -87,7 +137,13 @@ class ControladorProductos extends Controller
             'nombre' => ['required', 'string', 'max:255'],
             'descripcion' => ['nullable', 'string', 'max:2000'],
             'codigo' => ['required', 'string', 'max:255', Rule::unique('productos', 'codigo')->ignore($producto)],
-            'categoria_id' => ['required', Rule::exists('categorias', 'id')->where('activo', true)],
+            'categoria_id' => ['required', Rule::exists('categorias', 'id')->where(function ($consulta) use ($producto) {
+                $consulta->where('activo', true);
+
+                if ($producto?->categoria_id !== null) {
+                    $consulta->orWhere('id', $producto->categoria_id);
+                }
+            })],
             'marca' => ['nullable', 'string', 'max:255'],
             'modelo' => ['nullable', 'string', 'max:255'],
             'unidad' => ['required', 'string', 'max:50'],

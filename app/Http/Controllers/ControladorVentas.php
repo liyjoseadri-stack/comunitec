@@ -13,22 +13,47 @@ use Illuminate\View\View;
 
 class ControladorVentas extends Controller
 {
-    public function listar(): View
+    public function listar(Request $solicitud): View
     {
+        $busqueda = trim($solicitud->string('buscar')->toString());
+        $metodoPago = $solicitud->string('metodo_pago')->toString();
+        $metodoPago = in_array($metodoPago, Venta::metodosPago(), true) ? $metodoPago : '';
+
+        $ventas = Venta::query()
+            ->with('cotizacion', 'cliente')
+            ->when($busqueda, fn ($consulta) => $consulta->where(function ($consulta) use ($busqueda) {
+                $consulta
+                    ->where('folio', 'like', "%{$busqueda}%")
+                    ->orWhere('nombre_cliente', 'like', "%{$busqueda}%")
+                    ->orWhere('rfc_cliente', 'like', "%{$busqueda}%")
+                    ->orWhere('correo_cliente', 'like', "%{$busqueda}%")
+                    ->orWhereHas('cotizacion', fn ($cotizaciones) => $cotizaciones
+                        ->where('folio', 'like', "%{$busqueda}%"));
+            }))
+            ->when($metodoPago, fn ($consulta) => $consulta->where('metodo_pago', $metodoPago))
+            ->latest('vendida_en')
+            ->paginate(15)
+            ->withQueryString();
+
+        $puedeRegistrarVentas = auth()->user()->esAdministrador() || auth()->user()->esComercial();
+        $consultaAceptadas = Cotizacion::query()->convertiblesEnVenta();
+
         return view('ventas.listado', [
-            'ventas' => Venta::with('cotizacion', 'cliente')
-                ->latest('vendida_en')
-                ->get(),
-            'cotizacionesAceptadas' => auth()->user()->esAdministrador() || auth()->user()->esComercial()
-                ? Cotizacion::with('cliente')->where('estado', Cotizacion::ESTADO_ACEPTADA)
-                    ->latest('aceptada_en')->get()
+            'ventas' => $ventas,
+            'filtros' => [
+                'buscar' => $busqueda,
+                'metodo_pago' => $metodoPago,
+            ],
+            'totalCotizacionesAceptadas' => $puedeRegistrarVentas ? (clone $consultaAceptadas)->count() : 0,
+            'cotizacionesAceptadas' => $puedeRegistrarVentas
+                ? $consultaAceptadas->with('cliente')->latest('aceptada_en')->limit(10)->get()
                 : collect(),
         ]);
     }
 
     public function crear(Cotizacion $cotizacion): View
     {
-        abort_unless($cotizacion->estado === Cotizacion::ESTADO_ACEPTADA && ! $cotizacion->venta()->exists(), 422);
+        abort_unless($cotizacion->puedeConvertirseEnVenta(), 422);
 
         return view('ventas.crear', [
             'cotizacion' => $cotizacion->load('cliente', 'partidas.producto', 'partidas.servicio'),

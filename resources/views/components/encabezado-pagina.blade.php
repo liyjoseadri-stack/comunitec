@@ -1,15 +1,9 @@
-@props(['titulo', 'descripcion' => null])
+@props(['titulo'])
 
-<header {{ $attributes->class('encabezado-pagina') }}>
-    @if ($descripcion)
-        <div class="encabezado-pagina__texto">
-            <p>{{ $descripcion }}</p>
-        </div>
-    @endif
-
-    @if (isset($acciones))
+@if (isset($acciones))
+    <header {{ $attributes->class('encabezado-pagina encabezado-pagina--acciones') }}>
         <div class="grupo-acciones">
             {{ $acciones }}
         </div>
-    @endif
-</header>
+    </header>
+@endif

@@ -87,9 +87,9 @@
                 <tr>
                     <td class="tipo">{{ ucfirst($partida->tipo) }}</td>
                     <td class="concepto">
-                        {{ $partida->articulo?->nombre ?? 'Concepto libre' }}
-                        @if ($partida->articulo?->codigo)
-                            <div class="secundario">SKU: {{ $partida->articulo->codigo }}</div>
+                        {{ $partida->nombreHistorico() }}
+                        @if ($partida->codigoHistorico())
+                            <div class="secundario">SKU: {{ $partida->codigoHistorico() }}</div>
                         @endif
                     </td>
                     <td class="descripcion">

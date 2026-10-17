@@ -3,16 +3,12 @@
 @section('titulo', 'Mi perfil')
 
 @section('contenido')
-    <x-encabezado-pagina
-        titulo="Mi perfil"
-        descripcion="Actualiza tus datos personales y la seguridad de tu cuenta."
-    >
+    <x-encabezado-pagina titulo="Mi perfil">
         <x-slot:acciones>
             <x-insignia-estado :estado="$usuario->activo ? 'activo' : 'inactivo'" />
         </x-slot:acciones>
     </x-encabezado-pagina>
 
-    @include('componentes.errores-validacion')
 
     <div class="cuadricula-perfil">
         <section class="bloque-administrativo" aria-labelledby="titulo-datos-perfil">
@@ -27,29 +23,12 @@
             >
                 @csrf
                 @method('PUT')
-                <div class="campo-formulario">
-                    <label for="nombre-perfil">Nombre</label>
-                    <input
-                        id="nombre-perfil"
-                        name="nombre"
-                        value="{{ old('nombre', $usuario->nombre) }}"
-                        required
+                <x-campo-formulario id="nombre-perfil" nombre="nombre" etiqueta="Nombre" :valor="old('nombre', $usuario->nombre)" required
                         maxlength="255"
-                        autocomplete="name"
-                    >
-                </div>
-                <div class="campo-formulario">
-                    <label for="correo-perfil">Correo electrónico</label>
-                    <input
-                        id="correo-perfil"
-                        name="correo"
-                        type="email"
-                        value="{{ old('correo', $usuario->correo) }}"
-                        required
+                        autocomplete="name" />
+                <x-campo-formulario id="correo-perfil" nombre="correo" etiqueta="Correo electrónico" tipo="email" :valor="old('correo', $usuario->correo)" required
                         maxlength="255"
-                        autocomplete="email"
-                    >
-                </div>
+                        autocomplete="email" />
                 <div class="acciones-formulario">
                     <x-boton tipo="submit">Guardar perfil</x-boton>
                 </div>
@@ -65,38 +44,14 @@
             >
                 @csrf
                 @method('PUT')
-                <div class="campo-formulario">
-                    <label for="contrasena-actual">Contraseña actual</label>
-                    <input
-                        id="contrasena-actual"
-                        name="contrasena_actual"
-                        type="password"
-                        required
-                        autocomplete="current-password"
-                    >
-                </div>
-                <div class="campo-formulario">
-                    <label for="contrasena-nueva">Nueva contraseña</label>
-                    <input
-                        id="contrasena-nueva"
-                        name="contrasena"
-                        type="password"
-                        required
+                <x-campo-formulario id="contrasena-actual" nombre="contrasena_actual" etiqueta="Contraseña actual" tipo="password" required
+                        autocomplete="current-password" />
+                <x-campo-formulario id="contrasena-nueva" nombre="contrasena" etiqueta="Nueva contraseña" tipo="password" required
                         minlength="8"
-                        autocomplete="new-password"
-                    >
-                </div>
-                <div class="campo-formulario">
-                    <label for="confirmar-contrasena">Confirmar nueva contraseña</label>
-                    <input
-                        id="confirmar-contrasena"
-                        name="contrasena_confirmation"
-                        type="password"
-                        required
+                        autocomplete="new-password" />
+                <x-campo-formulario id="confirmar-contrasena" nombre="contrasena_confirmation" etiqueta="Confirmar nueva contraseña" tipo="password" required
                         minlength="8"
-                        autocomplete="new-password"
-                    >
-                </div>
+                        autocomplete="new-password" />
                 <div class="acciones-formulario">
                     <x-boton tipo="submit">Actualizar contraseña</x-boton>
                 </div>

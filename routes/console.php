@@ -2,5 +2,13 @@
 
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('cotizaciones:recordar-vencimiento')->dailyAt('08:00')->withoutOverlapping();
-Schedule::command('cotizaciones:vencer')->dailyAt('08:10')->withoutOverlapping();
+$zonaHoraria = config('app.schedule_timezone');
+
+Schedule::command('cotizaciones:recordar-vencimiento')
+    ->dailyAt('08:00')
+    ->timezone($zonaHoraria)
+    ->withoutOverlapping();
+Schedule::command('cotizaciones:vencer')
+    ->dailyAt('08:10')
+    ->timezone($zonaHoraria)
+    ->withoutOverlapping();

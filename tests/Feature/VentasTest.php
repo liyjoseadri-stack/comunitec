@@ -463,6 +463,135 @@ class VentasTest extends TestCase
             ->assertSee(route('ventas.crear', $cotizacion), false);
     }
 
+    public function test_la_venta_muestra_el_descuento_historico_de_cada_concepto(): void
+    {
+        [
+            'usuario' => $usuario,
+            'cotizacion' => $cotizacion,
+            'partidaProducto' => $partidaProducto,
+        ] = $this->prepararCotizacionAceptada();
+
+        $cotizacion->update(['porcentaje_descuento' => 5]);
+        $partidaProducto->update(['porcentaje_descuento' => 10]);
+
+        $this->actingAs($usuario)->get(route('ventas.crear', $cotizacion))
+            ->assertOk()
+            ->assertSee('Descuento global')
+            ->assertSee('5.00%')
+            ->assertSee('10.00%');
+    }
+
+    public function test_una_aceptada_con_reserva_vencida_no_aparece_ni_abre_el_registro_de_venta(): void
+    {
+        [
+            'usuario' => $usuario,
+            'cotizacion' => $cotizacion,
+        ] = $this->prepararCotizacionAceptada();
+
+        $cotizacion->update(['entrega_limite_en' => now()->subSecond()]);
+
+        $this->actingAs($usuario)->get(route('ventas.listado'))
+            ->assertOk()
+            ->assertDontSee($cotizacion->folio);
+
+        $this->get(route('ventas.crear', $cotizacion))->assertStatus(422);
+    }
+
+    public function test_la_cola_de_registro_muestra_solo_las_diez_aceptadas_mas_recientes(): void
+    {
+        [
+            'usuario' => $usuario,
+            'cotizacion' => $cotizacionInicial,
+        ] = $this->prepararCotizacionAceptada();
+
+        foreach (range(1, 11) as $indice) {
+            Cotizacion::create([
+                'folio' => sprintf('COT-COLA-%02d', $indice),
+                'cliente_id' => $cotizacionInicial->cliente_id,
+                'usuario_id' => $usuario->id,
+                'estado' => Cotizacion::ESTADO_ACEPTADA,
+                'aceptada_en' => now()->addMinutes($indice),
+                'vence_en' => now()->addDays(5),
+                'porcentaje_descuento' => 0,
+                'total' => 100,
+            ]);
+        }
+
+        $this->actingAs($usuario)->get(route('ventas.listado'))
+            ->assertOk()
+            ->assertViewHas('cotizacionesAceptadas', fn ($cotizaciones): bool => $cotizaciones->count() === 10)
+            ->assertViewHas('totalCotizacionesAceptadas', 12)
+            ->assertSee('Se muestran las 10 aceptadas más recientes de 12.')
+            ->assertSee('COT-COLA-11')
+            ->assertDontSee($cotizacionInicial->folio);
+    }
+
+    public function test_el_historial_de_ventas_permite_buscar_filtrar_y_limpiar(): void
+    {
+        [
+            'usuario' => $usuario,
+            'cotizacion' => $cotizacion,
+            'partidaProducto' => $partidaProducto,
+            'piezas' => $piezas,
+        ] = $this->prepararCotizacionAceptada();
+
+        $this->actingAs($usuario)->post(route('ventas.guardar', $cotizacion), [
+            'metodo_pago' => Venta::METODO_TRANSFERENCIA,
+            'series' => [
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
+            ],
+        ])->assertRedirect();
+
+        $venta = Venta::sole();
+
+        $this->get(route('ventas.listado', [
+            'buscar' => $venta->folio,
+            'metodo_pago' => Venta::METODO_TRANSFERENCIA,
+        ]))
+            ->assertOk()
+            ->assertSee($venta->folio)
+            ->assertSee('Limpiar filtros')
+            ->assertViewHas('ventas', fn ($ventas): bool => $ventas->total() === 1);
+
+        $this->get(route('ventas.listado', [
+            'buscar' => 'SIN-COINCIDENCIAS',
+            'metodo_pago' => Venta::METODO_EFECTIVO,
+        ]))
+            ->assertOk()
+            ->assertDontSee($venta->folio)
+            ->assertSee('No hay ventas que coincidan con los filtros seleccionados.');
+    }
+
+    public function test_el_detalle_presenta_origen_importes_y_series_historicas_con_acciones_claras(): void
+    {
+        [
+            'usuario' => $usuario,
+            'cotizacion' => $cotizacion,
+            'partidaProducto' => $partidaProducto,
+            'piezas' => $piezas,
+        ] = $this->prepararCotizacionAceptada();
+
+        $this->actingAs($usuario)->post(route('ventas.guardar', $cotizacion), [
+            'metodo_pago' => Venta::METODO_TRANSFERENCIA,
+            'series' => [
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
+            ],
+        ])->assertRedirect();
+
+        $venta = Venta::sole();
+
+        $this->get(route('ventas.detalle', $venta))
+            ->assertOk()
+            ->assertSee('Información histórica de la venta')
+            ->assertSee('Cotización de origen')
+            ->assertSee(route('cotizaciones.detalle', $cotizacion), false)
+            ->assertSee('Resumen de importes')
+            ->assertSee('Números de serie entregados')
+            ->assertSee('SERIE-CONVERSION-1')
+            ->assertSee(route('ventas.pdf', $venta), false)
+            ->assertSee(route('ventas.listado'), false);
+    }
+
     public function test_el_pdf_de_venta_incluye_los_numeros_de_serie_entregados(): void
     {
         [

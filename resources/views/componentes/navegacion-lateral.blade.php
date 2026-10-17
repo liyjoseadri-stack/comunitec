@@ -37,11 +37,14 @@
             </summary>
             <div class="menu-administrativo__subgrupo">
                 @if ($puedeOperar)
-                    <a href="{{ route('cotizaciones.listado') }}#nueva-cotizacion">Nueva cotización</a>
+                    <a
+                        href="{{ route('cotizaciones.crear') }}"
+                        @if (request()->routeIs('cotizaciones.crear')) aria-current="page" @endif
+                    >Nueva cotización</a>
                 @endif
                 <a
                     href="{{ route('cotizaciones.listado') }}"
-                    @if ($cotizacionesActivas && ! request()->filled('estado')) aria-current="page" @endif
+                    @if (request()->routeIs('cotizaciones.listado')) aria-current="page" @endif
                 >Historial de cotizaciones</a>
             </div>
         </details>

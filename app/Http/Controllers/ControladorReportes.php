@@ -42,7 +42,7 @@ class ControladorReportes extends Controller
             'totalCotizaciones' => $totalCotizaciones,
             'resumenCotizaciones' => $resumenCotizaciones,
             'porcentajeAceptacion' => $totalCotizaciones === 0 ? 0.0 : round(
-                ($resumenCotizaciones['aceptada'] + $resumenCotizaciones[Cotizacion::ESTADO_VENTA])
+                ($resumenCotizaciones[Cotizacion::ESTADO_ACEPTADA] + $resumenCotizaciones[Cotizacion::ESTADO_VENTA])
                 * 100 / $totalCotizaciones,
                 1
             ),

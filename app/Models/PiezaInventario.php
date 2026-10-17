@@ -9,6 +9,21 @@ class PiezaInventario extends Model
 {
     use UsaMarcasTiempoEnEspanol;
 
+    public const ESTADO_DISPONIBLE = 'disponible';
+
+    public const ESTADO_RESERVADA = 'reservada';
+
+    public const ESTADO_ENTREGADA = 'entregada';
+
+    public static function estados(): array
+    {
+        return [
+            self::ESTADO_DISPONIBLE,
+            self::ESTADO_RESERVADA,
+            self::ESTADO_ENTREGADA,
+        ];
+    }
+
     protected $table = 'piezas_inventario';
 
     protected $fillable = [

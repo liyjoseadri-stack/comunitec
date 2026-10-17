@@ -24,21 +24,17 @@
 
                 <form class="formulario-administrativo acceso__formulario" method="POST" action="{{ route('login.store') }}">
                     @csrf
-                    <div class="campo-formulario">
-                        <label for="correo">Correo electrónico</label>
-                        <input id="correo" name="correo" type="email" value="{{ old('correo') }}" autocomplete="email" required autofocus>
-                        @error('correo')
-                            <p class="error-campo" role="alert">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div class="campo-formulario">
-                        <label for="contrasena">Contraseña</label>
-                        <input id="contrasena" name="contrasena" type="password" autocomplete="current-password" required>
-                    </div>
+                    <x-campo-formulario id="correo" nombre="correo" etiqueta="Correo electrónico" tipo="email" :valor="old('correo')" autocomplete="email" required autofocus />
+                    <x-campo-formulario id="contrasena" nombre="contrasena" etiqueta="Contraseña" tipo="password" autocomplete="current-password" required />
                     <label class="control-verificacion" for="recordar">
-                        <input id="recordar" name="recordar" type="checkbox" value="1">
+                        <input id="recordar" name="recordar" type="checkbox" value="1"
+                            @if ($errors->has('recordar')) aria-invalid="true" aria-describedby="recordar-error" @endif
+                        >
                         <span>Recordarme en este equipo</span>
                     </label>
+                    @error('recordar')
+                        <p id="recordar-error" class="error-campo">{{ $message }}</p>
+                    @enderror
                     <button type="submit">Iniciar sesión</button>
                 </form>
             </section>

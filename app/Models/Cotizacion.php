@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\UsaMarcasTiempoEnEspanol;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Cotizacion extends Model
@@ -82,15 +83,41 @@ class Cotizacion extends Model
         return $this->entrega_limite_en ?? $this->vence_en;
     }
 
+    public function puedeConvertirseEnVenta(): bool
+    {
+        $limiteEntrega = $this->fechaLimiteEntrega();
+
+        return $this->estado === self::ESTADO_ACEPTADA
+            && ! $this->venta()->exists()
+            && $limiteEntrega !== null
+            && $limiteEntrega->isFuture();
+    }
+
+    public function scopeConvertiblesEnVenta(Builder $consulta): Builder
+    {
+        return $consulta
+            ->where('estado', self::ESTADO_ACEPTADA)
+            ->whereDoesntHave('venta')
+            ->where(function (Builder $vigencia): void {
+                $vigencia
+                    ->where('entrega_limite_en', '>', now())
+                    ->orWhere(function (Builder $alternativa): void {
+                        $alternativa
+                            ->whereNull('entrega_limite_en')
+                            ->where('vence_en', '>', now());
+                    });
+            });
+    }
+
     public function etiquetaEstado(): string
     {
         return match ($this->estado) {
-            'borrador' => 'Borrador',
-            'pendiente' => 'Pendiente',
-            'aceptada' => 'Aceptada',
-            'rechazada' => 'Rechazada',
-            'cancelada' => 'Cancelada',
-            'vencida' => 'Vencida',
+            self::ESTADO_BORRADOR => 'Borrador',
+            self::ESTADO_PENDIENTE => 'Pendiente',
+            self::ESTADO_ACEPTADA => 'Aceptada',
+            self::ESTADO_RECHAZADA => 'Rechazada',
+            self::ESTADO_CANCELADA => 'Cancelada',
+            self::ESTADO_VENCIDA => 'Vencida',
             self::ESTADO_VENTA => 'Venta',
             default => 'Sin definir',
         };
@@ -99,12 +126,12 @@ class Cotizacion extends Model
     public static function estados(): array
     {
         return [
-            'borrador',
-            'pendiente',
-            'aceptada',
-            'rechazada',
-            'cancelada',
-            'vencida',
+            self::ESTADO_BORRADOR,
+            self::ESTADO_PENDIENTE,
+            self::ESTADO_ACEPTADA,
+            self::ESTADO_RECHAZADA,
+            self::ESTADO_CANCELADA,
+            self::ESTADO_VENCIDA,
             self::ESTADO_VENTA,
         ];
     }

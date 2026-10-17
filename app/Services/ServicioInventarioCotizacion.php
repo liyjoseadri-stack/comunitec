@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Cotizacion;
+use App\Models\PartidaCotizacion;
 use App\Models\Producto;
 use App\Support\PlazosHabiles;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,7 @@ class ServicioInventarioCotizacion
     {
         DB::transaction(function () use ($cotizacion): void {
             $cotizacion = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
-            if ($cotizacion->estado !== 'pendiente') {
+            if ($cotizacion->estado !== Cotizacion::ESTADO_PENDIENTE) {
                 throw ValidationException::withMessages([
                     'cotizacion' => 'Solo se puede aceptar una cotización pendiente.',
                 ]);
@@ -25,6 +26,7 @@ class ServicioInventarioCotizacion
                     'cotizacion' => 'La vigencia de la cotización terminó; no puede aceptarse.',
                 ]);
             }
+            app(ServicioIntegridadCotizacion::class)->validarParaAvanzar($cotizacion);
             $cantidades = $this->cantidadesReservadas($cotizacion);
             $articulos = Producto::whereKey($cantidades->keys())
                 ->lockForUpdate()
@@ -43,7 +45,7 @@ class ServicioInventarioCotizacion
             }
 
             $cotizacion->update([
-                'estado' => 'aceptada',
+                'estado' => Cotizacion::ESTADO_ACEPTADA,
                 'aceptada_en' => now(),
                 'entrega_limite_en' => PlazosHabiles::sumar(now(), 5),
             ]);
@@ -52,12 +54,12 @@ class ServicioInventarioCotizacion
 
     public function liberar(Cotizacion $cotizacion, bool $soloSiVencida = false): bool
     {
-        return $this->liberarConEstado($cotizacion, 'cancelada', $soloSiVencida);
+        return $this->liberarConEstado($cotizacion, Cotizacion::ESTADO_CANCELADA, $soloSiVencida);
     }
 
     public function liberarParaEdicion(Cotizacion $cotizacion): bool
     {
-        return $this->liberarConEstado($cotizacion, 'pendiente');
+        return $this->liberarConEstado($cotizacion, Cotizacion::ESTADO_PENDIENTE);
     }
 
     private function liberarConEstado(
@@ -67,7 +69,7 @@ class ServicioInventarioCotizacion
     ): bool {
         return DB::transaction(function () use ($cotizacion, $estadoDestino, $soloSiVencida): bool {
             $cotizacion = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
-            if ($cotizacion->estado !== 'aceptada') {
+            if ($cotizacion->estado !== Cotizacion::ESTADO_ACEPTADA) {
                 return false;
             }
             $limiteEntrega = $cotizacion->fechaLimiteEntrega();
@@ -87,8 +89,8 @@ class ServicioInventarioCotizacion
 
             $cotizacion->update([
                 'estado' => $estadoDestino,
-                'aceptada_en' => $estadoDestino === 'pendiente' ? null : $cotizacion->aceptada_en,
-                'entrega_limite_en' => $estadoDestino === 'pendiente' ? null : $cotizacion->entrega_limite_en,
+                'aceptada_en' => $estadoDestino === Cotizacion::ESTADO_PENDIENTE ? null : $cotizacion->aceptada_en,
+                'entrega_limite_en' => $estadoDestino === Cotizacion::ESTADO_PENDIENTE ? null : $cotizacion->entrega_limite_en,
             ]);
 
             return true;
@@ -98,7 +100,7 @@ class ServicioInventarioCotizacion
     private function cantidadesReservadas(Cotizacion $cotizacion)
     {
         return $cotizacion->partidas()
-            ->where('tipo', 'producto')
+            ->where('tipo', PartidaCotizacion::TIPO_PRODUCTO)
             ->selectRaw('producto_id, SUM(cantidad) AS cantidad')
             ->groupBy('producto_id')
             ->pluck('cantidad', 'producto_id')

@@ -7,16 +7,70 @@ use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\PiezaInventario;
 use App\Models\Producto;
+use App\Models\Servicio;
 use App\Models\Usuario;
 use App\Services\ServicioInventarioCotizacion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class EdicionCotizacionesTest extends TestCase
 {
     use RefreshDatabase;
+
+    public static function entradasDeEdicionConPrecisionExcesiva(): iterable
+    {
+        yield 'cantidad de servicio' => ['cantidad', 1.333];
+        yield 'precio libre' => ['precio_unitario', 12.345];
+        yield 'descuento de partida' => ['porcentaje_descuento', 7.255];
+        yield 'descuento general' => ['descuento_general', 7.255];
+    }
+
+    #[DataProvider('entradasDeEdicionConPrecisionExcesiva')]
+    public function test_la_edicion_rechaza_precision_excesiva_sin_liberar_reservas(string $campo, float $valor): void
+    {
+        [$cotizacion, $partida, $pieza] = $this->preparar('aceptada');
+        $antes = $cotizacion->fresh()->getAttributes();
+        $partidaAntes = $partida->fresh()->getAttributes();
+        $reservaAntes = $pieza->fresh()->getAttributes();
+        if ($campo === 'descuento_general') {
+            $this->putJson("/cotizaciones/{$cotizacion->id}", [
+                'cliente_id' => $cotizacion->cliente_id,
+                'porcentaje_descuento' => $valor,
+            ])->assertUnprocessable()->assertJsonValidationErrors('porcentaje_descuento');
+        } else {
+            $entrada = [
+                'tipo' => 'otro',
+                'descripcion' => 'Concepto libre',
+                'cantidad' => 1,
+                'precio_unitario' => 500,
+                'porcentaje_descuento' => 0,
+                $campo => $valor,
+            ];
+            if ($campo === 'cantidad') {
+                $servicio = Servicio::create([
+                    'nombre' => 'Servicio de prueba',
+                    'codigo' => 'SER-EDICION',
+                    'unidad' => 'servicio',
+                    'precio' => 500,
+                ]);
+                $entrada['tipo'] = 'servicio';
+                $entrada['servicio_id'] = $servicio->id;
+            }
+            $this->putJson("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", $entrada)
+                ->assertUnprocessable()->assertJsonValidationErrors($campo);
+            $this->postJson("/cotizaciones/{$cotizacion->id}/partidas", $entrada)
+                ->assertUnprocessable()->assertJsonValidationErrors($campo);
+        }
+
+        $this->assertSame($antes, $cotizacion->fresh()->getAttributes());
+        $this->assertSame($partidaAntes, $partida->fresh()->getAttributes());
+        $this->assertSame($reservaAntes, $pieza->fresh()->getAttributes());
+        $this->assertDatabaseCount('partidas_cotizacion', 1);
+        $this->assertSame(0, $partida->articulo->fresh()->existencias);
+    }
 
     public function test_editar_una_aceptada_libera_reservas_y_exige_nueva_aceptacion(): void
     {
@@ -126,27 +180,30 @@ class EdicionCotizacionesTest extends TestCase
 
     public function test_crear_rechaza_descuentos_menores_al_cinco_por_ciento(): void
     {
-        [$cotizacion] = $this->preparar('borrador');
-        $this->post('/cotizaciones', [
+        [$cotizacion, $partida] = $this->preparar('borrador');
+        $this->postJson('/api/cotizaciones', [
             'cliente_id' => $cotizacion->cliente_id,
             'porcentaje_descuento' => 3,
+            'items' => [$this->conceptoParaCrear($partida->producto_id)],
         ])
-            ->assertSessionHasErrors('porcentaje_descuento');
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('porcentaje_descuento');
         $this->assertDatabaseCount('cotizaciones', 1);
     }
 
     public function test_dos_cotizaciones_en_el_mismo_instante_tienen_folios_distintos(): void
     {
         $this->freezeTime();
-        [$cotizacion] = $this->preparar('borrador');
+        [$cotizacion, $partida] = $this->preparar('borrador');
         foreach ([
             1,
             2,
         ] as $intento) {
-            $this->post('/cotizaciones', [
+            $this->postJson('/api/cotizaciones', [
                 'cliente_id' => $cotizacion->cliente_id,
+                'items' => [$this->conceptoParaCrear($partida->producto_id)],
             ])
-                ->assertRedirect('/cotizaciones');
+                ->assertCreated();
         }
         $this->assertSame(3, Cotizacion::distinct()->count('folio'));
         $this->assertSame('0.00', Cotizacion::latest('id')->first()->porcentaje_descuento);
@@ -186,6 +243,7 @@ class EdicionCotizacionesTest extends TestCase
             'precio_unitario' => 500,
             'subtotal' => 500,
         ]);
+        $cotizacion->update(['total' => 950]);
         $this->post("/cotizaciones/{$cotizacion->id}/aceptar")->assertSessionHas('error');
         $this->assertSame('pendiente', $cotizacion->fresh()->estado);
         $this->assertSame('disponible', $pieza->fresh()->estado);
@@ -249,17 +307,17 @@ class EdicionCotizacionesTest extends TestCase
         $this->assertSame('reservada', $pieza->fresh()->estado);
     }
 
-    public function test_el_formulario_muestra_el_error_y_conserva_los_datos(): void
+    public function test_el_formulario_de_edicion_muestra_el_error_y_conserva_los_datos(): void
     {
         [$cotizacion] = $this->preparar('borrador');
 
-        $this->from('/cotizaciones')->post('/cotizaciones', [
+        $this->from("/cotizaciones/{$cotizacion->id}")->put("/cotizaciones/{$cotizacion->id}", [
             'cliente_id' => $cotizacion->cliente_id,
             'area_solicitante' => 'Administración',
             'porcentaje_descuento' => 3,
-        ])->assertRedirect('/cotizaciones')->assertSessionHasErrors('porcentaje_descuento');
+        ])->assertRedirect("/cotizaciones/{$cotizacion->id}")->assertSessionHasErrors('porcentaje_descuento');
 
-        $this->get('/cotizaciones')->assertOk()
+        $this->get("/cotizaciones/{$cotizacion->id}")->assertOk()
             ->assertSee('El descuento debe ser 0 (sin descuento) o estar entre 5% y 10%.')
             ->assertSee('value="Administración"', false)
             ->assertSee('value="3"', false);
@@ -348,6 +406,18 @@ class EdicionCotizacionesTest extends TestCase
             'precio_unitario' => 500,
             'subtotal' => 1000,
         ]);
+    }
+
+    private function conceptoParaCrear(int $productoId): array
+    {
+        return [
+            'tipo' => 'producto',
+            'producto_id' => $productoId,
+            'descripcion' => 'Monitor',
+            'cantidad' => 1,
+            'precio_unitario' => 500,
+            'porcentaje_descuento' => 0,
+        ];
     }
 
     private function preparar(string $estado): array

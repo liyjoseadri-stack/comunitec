@@ -35,17 +35,37 @@ class ControladorServicios extends Controller
 
     public function guardar(Request $solicitud): RedirectResponse
     {
-        Servicio::create($this->datosValidados($solicitud));
+        $servicio = Servicio::create($this->datosValidados($solicitud));
 
-        return to_route('inventario.servicios.listado')->with('success', 'El servicio fue registrado.');
+        return to_route('inventario.servicios.detalle', $servicio)->with('success', 'El servicio fue registrado.');
+    }
+
+    public function crear(): View
+    {
+        return view('inventario.servicios.crear', [
+            'categorias' => Categoria::where('activo', true)->orderBy('nombre')->get(),
+        ]);
     }
 
     public function mostrar(Servicio $servicio): View
     {
         return view('inventario.servicios.detalle', [
+            'servicio' => $servicio->load('categoria')->loadCount(['partidasCotizacion', 'partidasVenta']),
+        ]);
+    }
+
+    public function editar(Servicio $servicio): View
+    {
+        return view('inventario.servicios.editar', [
             'servicio' => $servicio->load('categoria'),
-            'categorias' => Categoria::where('activo', true)
-                ->orWhereKey($servicio->categoria_id)
+            'categorias' => Categoria::query()
+                ->where(function ($consulta) use ($servicio) {
+                    $consulta->where('activo', true);
+
+                    if ($servicio->categoria_id !== null) {
+                        $consulta->orWhere('id', $servicio->categoria_id);
+                    }
+                })
                 ->orderBy('nombre')
                 ->get(),
         ]);
@@ -55,7 +75,7 @@ class ControladorServicios extends Controller
     {
         $servicio->update($this->datosValidados($solicitud, $servicio));
 
-        return back()->with('success', 'El servicio fue actualizado.');
+        return to_route('inventario.servicios.detalle', $servicio)->with('success', 'El servicio fue actualizado.');
     }
 
     public function actualizarEstado(Servicio $servicio): RedirectResponse
@@ -73,7 +93,13 @@ class ControladorServicios extends Controller
             'nombre' => ['required', 'string', 'max:255'],
             'descripcion' => ['nullable', 'string', 'max:2000'],
             'codigo' => ['required', 'string', 'max:255', Rule::unique('servicios', 'codigo')->ignore($servicio)],
-            'categoria_id' => ['required', Rule::exists('categorias', 'id')->where('activo', true)],
+            'categoria_id' => ['required', Rule::exists('categorias', 'id')->where(function ($consulta) use ($servicio) {
+                $consulta->where('activo', true);
+
+                if ($servicio?->categoria_id !== null) {
+                    $consulta->orWhere('id', $servicio->categoria_id);
+                }
+            })],
             'unidad' => ['required', 'string', 'max:50'],
             'precio' => ['required', 'numeric', 'min:0'],
         ]);

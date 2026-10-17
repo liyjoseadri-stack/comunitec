@@ -4,6 +4,7 @@
         "vendor",
         "node_modules",
         "storage",
-        "bootstrap/cache"
+        "bootstrap/cache",
+        "tmp"
     ]
 }

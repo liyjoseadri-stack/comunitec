@@ -29,7 +29,7 @@ Route::middleware('guest')->group(function () {
     ])->name('login.store');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'usuario.activo'])->group(function () {
     Route::get('/panel', [
         ControladorPanel::class,
         'mostrar',
@@ -50,6 +50,12 @@ Route::middleware('auth')->group(function () {
         ControladorPerfil::class,
         'actualizarContrasena',
     ])->name('perfil.contrasena');
+    Route::middleware('rol:administrador,comercial')->group(function () {
+        Route::get('/cotizaciones/nueva', [
+            ControladorCotizaciones::class,
+            'crear',
+        ])->name('cotizaciones.crear');
+    });
     Route::middleware('rol:administrador,comercial,consulta')->group(function () {
         Route::get('/reportes', [
             ControladorReportes::class,
@@ -122,10 +128,6 @@ Route::middleware('auth')->group(function () {
             ControladorVentas::class,
             'guardar',
         ])->name('ventas.guardar');
-        Route::post('/cotizaciones', [
-            ControladorCotizaciones::class,
-            'guardar',
-        ])->name('cotizaciones.guardar');
         Route::post('/api/cotizaciones', [
             ControladorCotizaciones::class,
             'guardarCompleta',
@@ -144,11 +146,15 @@ Route::middleware('auth')->group(function () {
         ])->name('cotizaciones.partidas.actualizar');
         Route::get('/inventario', [ControladorProductos::class, 'listar'])->name('inventario.listado');
         Route::get('/inventario/productos', [ControladorProductos::class, 'listar'])->name('inventario.productos.listado');
+        Route::get('/inventario/productos/crear', [ControladorProductos::class, 'crear'])->name('inventario.productos.crear');
+        Route::get('/inventario/productos/{producto}/editar', [ControladorProductos::class, 'editar'])->name('inventario.productos.editar');
         Route::post('/inventario/productos', [ControladorProductos::class, 'guardar'])->name('inventario.productos.guardar');
         Route::get('/inventario/productos/{producto}', [ControladorProductos::class, 'mostrar'])->name('inventario.productos.detalle');
         Route::put('/inventario/productos/{producto}', [ControladorProductos::class, 'actualizar'])->name('inventario.productos.actualizar');
         Route::patch('/inventario/productos/{producto}/estado', [ControladorProductos::class, 'actualizarEstado'])->name('inventario.productos.estado');
         Route::get('/inventario/servicios', [ControladorServicios::class, 'listar'])->name('inventario.servicios.listado');
+        Route::get('/inventario/servicios/crear', [ControladorServicios::class, 'crear'])->name('inventario.servicios.crear');
+        Route::get('/inventario/servicios/{servicio}/editar', [ControladorServicios::class, 'editar'])->name('inventario.servicios.editar');
         Route::post('/inventario/servicios', [ControladorServicios::class, 'guardar'])->name('inventario.servicios.guardar');
         Route::get('/inventario/servicios/{servicio}', [ControladorServicios::class, 'mostrar'])->name('inventario.servicios.detalle');
         Route::put('/inventario/servicios/{servicio}', [ControladorServicios::class, 'actualizar'])->name('inventario.servicios.actualizar');
@@ -161,6 +167,14 @@ Route::middleware('auth')->group(function () {
             ControladorCategorias::class,
             'listar',
         ])->name('inventario.categorias.listado');
+        Route::get('/inventario/categorias/crear', [
+            ControladorCategorias::class,
+            'crear',
+        ])->name('inventario.categorias.crear');
+        Route::get('/inventario/categorias/{categoria}/editar', [
+            ControladorCategorias::class,
+            'editar',
+        ])->name('inventario.categorias.editar');
         Route::get('/inventario/categorias/{categoria}', [
             ControladorCategorias::class,
             'mostrar',
@@ -179,6 +193,14 @@ Route::middleware('auth')->group(function () {
             ControladorClientes::class,
             'listar',
         ])->name('clientes.listado');
+        Route::get('/clientes/crear', [
+            ControladorClientes::class,
+            'crear',
+        ])->name('clientes.crear');
+        Route::get('/clientes/{cliente}/editar', [
+            ControladorClientes::class,
+            'editar',
+        ])->name('clientes.editar');
         Route::post('/clientes', [
             ControladorClientes::class,
             'guardar',
@@ -194,6 +216,14 @@ Route::middleware('auth')->group(function () {
             ControladorUsuarios::class,
             'listar',
         ])->name('administracion.usuarios.listado');
+        Route::get('/administracion/usuarios/crear', [
+            ControladorUsuarios::class,
+            'crear',
+        ])->name('administracion.usuarios.crear');
+        Route::get('/administracion/usuarios/{usuario}/editar', [
+            ControladorUsuarios::class,
+            'editar',
+        ])->name('administracion.usuarios.editar');
         Route::post('/administracion/usuarios', [
             ControladorUsuarios::class,
             'guardar',
