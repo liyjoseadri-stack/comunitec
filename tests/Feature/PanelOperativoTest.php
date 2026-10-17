@@ -64,7 +64,7 @@ class PanelOperativoTest extends TestCase
             ->assertDontSee('Producto suficiente');
     }
 
-    public function test_el_panel_conserva_la_regla_de_no_avisar_entregas_durante_el_fin_de_semana(): void
+    public function test_el_panel_muestra_el_siguiente_dia_habil_durante_el_fin_de_semana(): void
     {
         Carbon::setTestNow('2026-10-17 08:00:00'); // Sábado.
         $administrador = Usuario::factory()->create(['rol' => Usuario::ROL_ADMINISTRADOR]);
@@ -73,8 +73,8 @@ class PanelOperativoTest extends TestCase
 
         $this->actingAs($administrador)->get('/panel')
             ->assertOk()
-            ->assertViewHas('totalEntregasPorVencer', 0)
-            ->assertDontSee('ENTREGA-LUNES');
+            ->assertViewHas('totalEntregasPorVencer', 1)
+            ->assertSee('ENTREGA-LUNES');
     }
 
     public function test_las_alertas_son_exclusivas_del_administrador_y_los_demas_roles_reciben_accesos_utiles(): void

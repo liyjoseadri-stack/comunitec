@@ -139,6 +139,17 @@ class PlazosYRecordatoriosTest extends TestCase
         Mail::assertSent(CorreoRecordatorioCotizacion::class, fn ($correo) => $correo->cotizacion->is($pendiente));
     }
 
+    public function test_el_viernes_recuerda_tambien_las_cotizaciones_que_vencen_el_domingo(): void
+    {
+        Carbon::setTestNow('2026-10-16 08:00:00');
+        Mail::fake();
+        [$pendiente] = $this->crearCotizacion('pendiente', '2026-10-18 10:00:00');
+
+        $this->artisan('cotizaciones:recordar-vencimiento')->assertSuccessful();
+
+        Mail::assertSent(CorreoRecordatorioCotizacion::class, fn ($correo) => $correo->cotizacion->is($pendiente));
+    }
+
     public function test_un_fallo_no_se_reintenta_automaticamente_para_evitar_un_envio_duplicado_incierto(): void
     {
         Carbon::setTestNow('2026-10-15 08:00:00');
@@ -200,7 +211,7 @@ class PlazosYRecordatoriosTest extends TestCase
 
             return str_contains($consulta[0], 'vence_en')
                 && $valores->contains(fn (string $valor): bool => str_contains($valor, '2026-10-16 00:00:00'))
-                && $valores->contains(fn (string $valor): bool => str_contains($valor, '2026-10-17 00:00:00'));
+                && $valores->contains(fn (string $valor): bool => str_contains($valor, '2026-10-19 00:00:00'));
         });
 
         $this->assertGreaterThanOrEqual(2, $consultasObjetivo->count());

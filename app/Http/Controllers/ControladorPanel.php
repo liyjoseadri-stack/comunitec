@@ -19,23 +19,21 @@ class ControladorPanel extends Controller
         $totalProductosStockBajo = 0;
 
         if (auth()->user()->esAdministrador()) {
-            if (today()->isWeekday()) {
-                $siguienteDiaHabil = PlazosHabiles::sumar(today(), 1);
-                $inicioSiguienteDiaHabil = $siguienteDiaHabil->copy()->startOfDay();
-                $finSiguienteDiaHabil = $inicioSiguienteDiaHabil->copy()->addDay();
-                $consultaEntregas = Cotizacion::query()
-                    ->with('cliente')
-                    ->where('estado', Cotizacion::ESTADO_ACEPTADA)
-                    ->where('entrega_limite_en', '>=', $inicioSiguienteDiaHabil)
-                    ->where('entrega_limite_en', '<', $finSiguienteDiaHabil);
+            $siguienteDiaHabil = PlazosHabiles::sumar(today(), 1);
+            $inicioSiguienteDiaHabil = $siguienteDiaHabil->copy()->startOfDay();
+            $finSiguienteDiaHabil = $inicioSiguienteDiaHabil->copy()->addDay();
+            $consultaEntregas = Cotizacion::query()
+                ->with('cliente')
+                ->where('estado', Cotizacion::ESTADO_ACEPTADA)
+                ->where('entrega_limite_en', '>=', $inicioSiguienteDiaHabil)
+                ->where('entrega_limite_en', '<', $finSiguienteDiaHabil);
 
-                $totalEntregasPorVencer = (clone $consultaEntregas)->count();
-                $entregasPorVencer = $consultaEntregas
-                    ->orderBy('entrega_limite_en')
-                    ->orderBy('id')
-                    ->limit(self::LIMITE_ALERTAS)
-                    ->get();
-            }
+            $totalEntregasPorVencer = (clone $consultaEntregas)->count();
+            $entregasPorVencer = $consultaEntregas
+                ->orderBy('entrega_limite_en')
+                ->orderBy('id')
+                ->limit(self::LIMITE_ALERTAS)
+                ->get();
 
             $consultaStockBajo = Producto::query()
                 ->where('activo', true)

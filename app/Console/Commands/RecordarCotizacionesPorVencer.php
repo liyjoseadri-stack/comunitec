@@ -25,18 +25,17 @@ class RecordarCotizacionesPorVencer extends Command
     {
         $enviados = 0;
         $incidencias = 0;
-        $fechaObjetivo = PlazosHabiles::sumar(today(), 1);
-        $inicio = $fechaObjetivo->copy()->startOfDay();
-        $fin = $fechaObjetivo->copy()->addDay()->startOfDay();
+        $inicio = today()->addDay()->startOfDay();
+        $fin = today()->addDays(4)->startOfDay();
 
         Cotizacion::query()
             ->with('cliente', 'partidas.producto', 'partidas.servicio', 'responsable')
             ->where('estado', Cotizacion::ESTADO_PENDIENTE)
             ->where('vence_en', '>=', $inicio)
             ->where('vence_en', '<', $fin)
-            ->chunkById(self::TAMANO_BLOQUE, function ($cotizaciones) use (&$enviados, &$incidencias, $inicio, $fin): void {
+            ->chunkById(self::TAMANO_BLOQUE, function ($cotizaciones) use (&$enviados, &$incidencias): void {
                 foreach ($cotizaciones as $cotizacion) {
-                    $envio = $this->reservar($cotizacion, $inicio, $fin);
+                    $envio = $this->reservar($cotizacion);
 
                     if (! $envio) {
                         continue;
@@ -51,16 +50,15 @@ class RecordarCotizacionesPorVencer extends Command
         return self::SUCCESS;
     }
 
-    private function reservar(Cotizacion $cotizacion, CarbonInterface $inicio, CarbonInterface $fin): ?EnvioCotizacion
+    private function reservar(Cotizacion $cotizacion): ?EnvioCotizacion
     {
-        return DB::transaction(function () use ($cotizacion, $inicio, $fin): ?EnvioCotizacion {
+        return DB::transaction(function () use ($cotizacion): ?EnvioCotizacion {
             $actual = Cotizacion::query()->lockForUpdate()->find($cotizacion->id);
 
             if (! $actual
                 || $actual->estado !== Cotizacion::ESTADO_PENDIENTE
                 || ! $actual->vence_en
-                || $actual->vence_en->lt($inicio)
-                || ! $actual->vence_en->lt($fin)) {
+                || ! $this->debeRecordarseHoy($actual->vence_en)) {
                 return null;
             }
 
@@ -94,6 +92,11 @@ class RecordarCotizacionesPorVencer extends Command
 
             return EnvioCotizacion::query()->where('clave_idempotencia', $clave)->firstOrFail();
         });
+    }
+
+    private function debeRecordarseHoy(CarbonInterface $venceEn): bool
+    {
+        return PlazosHabiles::diaHabilAnterior($venceEn)->isSameDay(today());
     }
 
     private function enviar(Cotizacion $cotizacion, EnvioCotizacion $envio, int &$enviados, int &$incidencias): void
