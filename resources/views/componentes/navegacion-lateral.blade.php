@@ -63,7 +63,7 @@
                 @endif
                 <a
                     href="{{ route('ventas.listado') }}"
-                    @if ($ventasActivas) aria-current="page" @endif
+                    @if (request()->routeIs('ventas.listado')) aria-current="page" @endif
                 >Historial de ventas</a>
             </div>
         </details>

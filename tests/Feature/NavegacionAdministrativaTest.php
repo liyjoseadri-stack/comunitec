@@ -7,6 +7,8 @@ use App\Models\Cotizacion;
 use App\Models\Producto;
 use App\Models\Servicio;
 use App\Models\Usuario;
+use DOMDocument;
+use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -32,6 +34,32 @@ class NavegacionAdministrativaTest extends TestCase
             ->assertOk()
             ->assertSee('Historial de ventas')
             ->assertDontSee('Cotizaciones aceptadas por registrar');
+    }
+
+    public function test_solo_resalta_la_pagina_actual_en_ventas(): void
+    {
+        $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_COMERCIAL]);
+
+        foreach (
+            [
+                route('ventas.registrar') => 'Registrar venta',
+                route('ventas.listado') => 'Historial de ventas',
+            ] as $ruta => $textoActivo
+        ) {
+            $dom = $this->dom(
+                $this->actingAs($usuario)->get($ruta)->assertOk()->getContent(),
+            );
+            $enlacesActivos = $dom->query(
+                '//details[@data-grupo="ventas"]//a[@aria-current="page"]',
+            );
+
+            $this->assertSame(1, $enlacesActivos->length, $ruta);
+            $this->assertSame(
+                $textoActivo,
+                trim($enlacesActivos->item(0)->textContent),
+                $ruta,
+            );
+        }
     }
 
     public function test_inventario_admite_filtro_de_tipo_desde_el_menu(): void
@@ -184,6 +212,14 @@ class NavegacionAdministrativaTest extends TestCase
 
         $this->assertNotFalse($navegacion);
         $this->assertSame(1, substr_count($navegacion, 'aria-current="page"'));
+    }
+
+    private function dom(string $html): DOMXPath
+    {
+        $documento = new DOMDocument;
+        $documento->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NOERROR | LIBXML_NOWARNING);
+
+        return new DOMXPath($documento);
     }
 
     private function crearCliente(): Cliente
