@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="color-scheme" content="light">
+        <link rel="icon" type="image/png" sizes="1254x1254" href="{{ asset('images/favicon-comunitec.png') }}">
         <title>Iniciar sesión | COMUN&amp;TEC</title>
         <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
     </head>

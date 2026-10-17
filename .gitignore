@@ -27,3 +27,12 @@ Thumbs.db
 
 /.local/
 /.superpowers/
+
+# Archivos locales de trabajo y trazas de IA
+/AGENTS.md
+/docs/SEGUIMIENTO-3.md
+/docs/superpowers/
+/docs/verificacion/
+/output/
+/work-entry*.php
+/public/images/nube-comunitec-blanca.svg
