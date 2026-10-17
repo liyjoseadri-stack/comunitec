@@ -106,7 +106,7 @@ class TablasAccesiblesTest extends TestCase
     public function test_los_listados_adaptables_conservan_cada_columna_y_su_etiqueta_movil(): void
     {
         [$categoria] = $this->datos();
-        foreach (['/clientes', '/cotizaciones', '/ventas', '/inventario/productos', '/inventario/servicios', '/inventario/categorias', '/inventario/categorias/'.$categoria->id, '/administracion/usuarios', '/reportes/cotizaciones', '/reportes/ventas'] as $ruta) {
+        foreach (['/clientes', '/cotizaciones', '/ventas', '/inventario/productos', '/inventario/series-vendidas', '/inventario/servicios', '/inventario/categorias', '/inventario/categorias/'.$categoria->id, '/administracion/usuarios', '/reportes/cotizaciones', '/reportes/ventas'] as $ruta) {
             $dom = $this->dom($this->get($ruta)->assertOk()->getContent());
             $tablas = $dom->query('//table[contains(@class, "tabla-adaptable")]');
             $this->assertGreaterThan(0, $tablas->length, $ruta);
@@ -127,7 +127,7 @@ class TablasAccesiblesTest extends TestCase
     public function test_las_tablas_tecnicas_tienen_region_enfocable_e_instruccion_vinculada(): void
     {
         [, $cotizacion, $venta] = $this->datos();
-        foreach (['/cotizaciones/'.$cotizacion->id, '/ventas/registrar/'.$cotizacion->id, '/ventas/'.$venta->id, '/inventario/productos'] as $ruta) {
+        foreach (['/cotizaciones/'.$cotizacion->id, '/ventas/registrar/'.$cotizacion->id, '/ventas/'.$venta->id] as $ruta) {
             $dom = $this->dom($this->get($ruta)->assertOk()->getContent());
             $regiones = $dom->query('//*[contains(@class, "tabla-responsive--tecnica")]');
             $this->assertGreaterThan(0, $regiones->length, $ruta);

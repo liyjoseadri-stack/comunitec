@@ -36,6 +36,12 @@ class ControladorProductos extends Controller
                 ->paginate(15)
                 ->withQueryString(),
             'categorias' => Categoria::where('activo', true)->orderBy('nombre')->get(),
+        ]);
+    }
+
+    public function listarSeriesVendidas(): View
+    {
+        return view('inventario.productos.series-vendidas', [
             'seriesVendidas' => PiezaInventario::whereNotNull('partida_venta_id')
                 ->with('producto', 'partidaVenta.venta.cliente')
                 ->latest('creado_en')

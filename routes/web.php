@@ -77,6 +77,10 @@ Route::middleware(['auth', 'usuario.activo'])->group(function () {
             ControladorVentas::class,
             'listar',
         ])->name('ventas.listado');
+        Route::get('/ventas/registrar', [
+            ControladorVentas::class,
+            'registrar',
+        ])->middleware('rol:administrador,comercial')->name('ventas.registrar');
         Route::get('/ventas/{venta}/pdf', [
             ControladorVentas::class,
             'pdf',
@@ -146,6 +150,7 @@ Route::middleware(['auth', 'usuario.activo'])->group(function () {
         ])->name('cotizaciones.partidas.actualizar');
         Route::get('/inventario', [ControladorProductos::class, 'listar'])->name('inventario.listado');
         Route::get('/inventario/productos', [ControladorProductos::class, 'listar'])->name('inventario.productos.listado');
+        Route::get('/inventario/series-vendidas', [ControladorProductos::class, 'listarSeriesVendidas'])->name('inventario.series-vendidas.listado');
         Route::get('/inventario/productos/crear', [ControladorProductos::class, 'crear'])->name('inventario.productos.crear');
         Route::get('/inventario/productos/{producto}/editar', [ControladorProductos::class, 'editar'])->name('inventario.productos.editar');
         Route::post('/inventario/productos', [ControladorProductos::class, 'guardar'])->name('inventario.productos.guardar');

@@ -13,17 +13,15 @@
         <form class="formulario-filtros" method="GET">
             <x-campo-formulario id="buscar" nombre="buscar" etiqueta="Buscar" :valor="request('buscar')" placeholder="Nombre, SKU, marca o modelo" />
             <x-campo-formulario id="categoria" nombre="categoria" etiqueta="Categoría" tipo="select">
-                    <option value="">Todas</option>
-                    @foreach ($categorias as $categoria)
-                        <option value="{{ $categoria->id }}" @selected(request('categoria') == $categoria->id)>{{ $categoria->nombre }}</option>
-                    @endforeach
-
+                <option value="">Todas</option>
+                @foreach ($categorias as $categoria)
+                    <option value="{{ $categoria->id }}" @selected(request('categoria') == $categoria->id)>{{ $categoria->nombre }}</option>
+                @endforeach
             </x-campo-formulario>
             <x-campo-formulario id="estado" nombre="estado" etiqueta="Estado" tipo="select">
-                    <option value="">Todos</option>
-                    <option value="activos" @selected(request('estado') === 'activos')>Activos</option>
-                    <option value="inactivos" @selected(request('estado') === 'inactivos')>Inactivos</option>
-
+                <option value="">Todos</option>
+                <option value="activos" @selected(request('estado') === 'activos')>Activos</option>
+                <option value="inactivos" @selected(request('estado') === 'inactivos')>Inactivos</option>
             </x-campo-formulario>
             <x-boton tipo="submit" variante="secundario">Filtrar</x-boton>
             @if (request()->filled('buscar') || request()->filled('categoria') || request()->filled('estado'))
@@ -87,43 +85,5 @@
             </table>
         </x-tabla-responsive>
         @include('componentes.paginacion', ['paginador' => $productos])
-    </section>
-
-    <section id="series-vendidas" class="bloque-administrativo">
-        <h2>Series vendidas recientemente</h2>
-        @if ($seriesVendidas->isNotEmpty())
-            <x-tabla-responsive etiqueta="Series vendidas recientemente">
-                <table class="tabla-registros">
-                    <thead>
-                        <tr>
-                            <th scope="col">Serie</th>
-                            <th scope="col">Producto</th>
-                            <th scope="col">Venta</th>
-                            <th scope="col">Cliente</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($seriesVendidas as $serie)
-                            <tr>
-                                <th scope="row"><strong>{{ $serie->numero_serie }}</strong></th>
-                                <td>{{ $serie->producto?->nombre }}</td>
-                                <td>
-                                    <x-grupo-acciones-fila>
-                                        <x-boton compacto variante="contorno" :href="route('ventas.detalle', $serie->partidaVenta->venta)">{{ $serie->partidaVenta->venta->folio }}</x-boton>
-                                    </x-grupo-acciones-fila>
-                                </td>
-                                <td>{{ $serie->partidaVenta->venta->nombreClienteMostrado() }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </x-tabla-responsive>
-        @else
-            <x-estado-vacio mensaje="Las series se registran al convertir una cotización aceptada en venta.">
-                <x-slot:acciones>
-                    <x-boton variante="contorno" :href="route('cotizaciones.listado', ['estado' => 'aceptada'])">Consultar cotizaciones aceptadas</x-boton>
-                </x-slot:acciones>
-            </x-estado-vacio>
-        @endif
     </section>
 @endsection

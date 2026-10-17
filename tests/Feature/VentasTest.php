@@ -456,7 +456,7 @@ class VentasTest extends TestCase
             'cotizacion' => $cotizacion,
         ] = $this->prepararCotizacionAceptada();
 
-        $this->actingAs($usuario)->get(route('ventas.listado'))
+        $this->actingAs($usuario)->get(route('ventas.registrar'))
             ->assertOk()
             ->assertSee('Cotizaciones aceptadas por registrar')
             ->assertSee($cotizacion->folio)
@@ -490,7 +490,7 @@ class VentasTest extends TestCase
 
         $cotizacion->update(['entrega_limite_en' => now()->subSecond()]);
 
-        $this->actingAs($usuario)->get(route('ventas.listado'))
+        $this->actingAs($usuario)->get(route('ventas.registrar'))
             ->assertOk()
             ->assertDontSee($cotizacion->folio);
 
@@ -517,7 +517,7 @@ class VentasTest extends TestCase
             ]);
         }
 
-        $this->actingAs($usuario)->get(route('ventas.listado'))
+        $this->actingAs($usuario)->get(route('ventas.registrar'))
             ->assertOk()
             ->assertViewHas('cotizacionesAceptadas', fn ($cotizaciones): bool => $cotizaciones->count() === 10)
             ->assertViewHas('totalCotizacionesAceptadas', 12)
@@ -714,7 +714,7 @@ class VentasTest extends TestCase
         ])->assertRedirect();
         $venta = Venta::sole();
 
-        $this->get('/inventario')
+        $this->get(route('inventario.series-vendidas.listado'))
             ->assertOk()
             ->assertSee('SERIE-CONVERSION-1')
             ->assertSee($venta->folio)

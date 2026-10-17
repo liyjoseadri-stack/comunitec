@@ -35,19 +35,26 @@ class ControladorVentas extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $puedeRegistrarVentas = auth()->user()->esAdministrador() || auth()->user()->esComercial();
-        $consultaAceptadas = Cotizacion::query()->convertiblesEnVenta();
-
         return view('ventas.listado', [
             'ventas' => $ventas,
             'filtros' => [
                 'buscar' => $busqueda,
                 'metodo_pago' => $metodoPago,
             ],
-            'totalCotizacionesAceptadas' => $puedeRegistrarVentas ? (clone $consultaAceptadas)->count() : 0,
-            'cotizacionesAceptadas' => $puedeRegistrarVentas
-                ? $consultaAceptadas->with('cliente')->latest('aceptada_en')->limit(10)->get()
-                : collect(),
+        ]);
+    }
+
+    public function registrar(): View
+    {
+        $consultaAceptadas = Cotizacion::query()->convertiblesEnVenta();
+
+        return view('ventas.registrar', [
+            'totalCotizacionesAceptadas' => (clone $consultaAceptadas)->count(),
+            'cotizacionesAceptadas' => $consultaAceptadas
+                ->with('cliente')
+                ->latest('aceptada_en')
+                ->limit(10)
+                ->get(),
         ]);
     }
 

@@ -56,7 +56,10 @@
             </summary>
             <div class="menu-administrativo__subgrupo">
                 @if ($puedeOperar)
-                    <a href="{{ route('ventas.listado') }}#cotizaciones-aceptadas">Registrar venta</a>
+                    <a
+                        href="{{ route('ventas.registrar') }}"
+                        @if (request()->routeIs('ventas.registrar')) aria-current="page" @endif
+                    >Registrar venta</a>
                 @endif
                 <a
                     href="{{ route('ventas.listado') }}"
@@ -93,7 +96,10 @@
                         href="{{ route('inventario.categorias.listado') }}"
                         @if (request()->routeIs('inventario.categorias.*')) aria-current="page" @endif
                     >Categorías</a>
-                    <a href="{{ route('inventario.listado') }}#series-vendidas">Series vendidas</a>
+                    <a
+                        href="{{ route('inventario.series-vendidas.listado') }}"
+                        @if (request()->routeIs('inventario.series-vendidas.*')) aria-current="page" @endif
+                    >Series vendidas</a>
                 </div>
             </details>
         @endif

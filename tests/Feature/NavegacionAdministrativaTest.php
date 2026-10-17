@@ -14,7 +14,7 @@ class NavegacionAdministrativaTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_ventas_muestra_solo_cotizaciones_aceptadas_pendientes_de_registro(): void
+    public function test_registrar_venta_muestra_solo_cotizaciones_aceptadas_pendientes_de_registro(): void
     {
         $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_COMERCIAL]);
         $cliente = $this->crearCliente();
@@ -22,11 +22,16 @@ class NavegacionAdministrativaTest extends TestCase
         $this->crearCotizacion($cliente, $usuario, 'COT-PENDIENTE', 'pendiente');
 
         $this->actingAs($usuario)
-            ->get(route('ventas.listado'))
+            ->get(route('ventas.registrar'))
             ->assertOk()
             ->assertSee('Cotizaciones aceptadas por registrar')
             ->assertSee('COT-LISTA-VENTA')
             ->assertDontSee('COT-PENDIENTE');
+
+        $this->get(route('ventas.listado'))
+            ->assertOk()
+            ->assertSee('Historial de ventas')
+            ->assertDontSee('Cotizaciones aceptadas por registrar');
     }
 
     public function test_inventario_admite_filtro_de_tipo_desde_el_menu(): void
@@ -55,6 +60,22 @@ class NavegacionAdministrativaTest extends TestCase
             ->assertSee(route('inventario.servicios.crear'), false)
             ->assertDontSee('action="'.route('inventario.servicios.guardar').'"', false)
             ->assertDontSee('Existencias');
+    }
+
+    public function test_series_vendidas_tiene_un_listado_separado_de_productos(): void
+    {
+        $usuario = Usuario::factory()->create(['rol' => Usuario::ROL_COMERCIAL]);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.productos.listado'))
+            ->assertOk()
+            ->assertSee('Productos')
+            ->assertDontSee('Series vendidas recientemente');
+
+        $this->get(route('inventario.series-vendidas.listado'))
+            ->assertOk()
+            ->assertSee('Series vendidas')
+            ->assertSee('Historial de números de serie entregados');
     }
 
     public function test_administrador_recibe_el_shell_lateral_con_todos_los_modulos(): void
@@ -87,7 +108,7 @@ class NavegacionAdministrativaTest extends TestCase
             ->assertSee('aria-controls="navegacion-lateral"', false)
             ->assertSee('aria-expanded="false"', false)
             ->assertSee(route('cotizaciones.crear'), false)
-            ->assertSee(route('ventas.listado').'#cotizaciones-aceptadas', false);
+            ->assertSee(route('ventas.registrar'), false);
     }
 
     public function test_el_inventario_usa_la_marca_y_el_titulo_superior_sin_repetir_encabezados(): void

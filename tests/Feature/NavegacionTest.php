@@ -31,6 +31,7 @@ class NavegacionTest extends TestCase
                 ->assertSee('aria-label="Navegación administrativa"', false)
                 ->assertSee('href="'.route('cotizaciones.listado').'"', false)
                 ->assertSee('href="'.route('ventas.listado').'"', false)
+                ->assertSee('href="'.route('ventas.registrar').'"', false)
                 ->assertSee('href="'.route('reportes.cotizaciones').'"', false)
                 ->assertSee(route('inventario.listado'), false)
                 ->assertSee('href="'.route('administracion.usuarios.listado').'"', false)
@@ -44,6 +45,7 @@ class NavegacionTest extends TestCase
         $this->get('/panel')->assertOk()
             ->assertSee('href="'.route('cotizaciones.listado').'"', false)
             ->assertSee('href="'.route('ventas.listado').'"', false)
+            ->assertDontSee('href="'.route('ventas.registrar').'"', false)
             ->assertSee('href="'.route('reportes.cotizaciones').'"', false)
             ->assertDontSee('href="'.route('inventario.listado').'"', false)
             ->assertDontSee('href="'.route('administracion.usuarios.listado').'"', false);
