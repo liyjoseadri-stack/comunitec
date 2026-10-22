@@ -49,7 +49,16 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          test -n "$SSH_HOST"
+          test -n "$SSH_KEY"
+          ssh-keyscan -T 15 -t ed25519 "$SSH_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          test -s ~/.ssh/known_hosts
+          ACTUAL=$(ssh-keygen -lf ~/.ssh/known_hosts -E sha256 | awk '{print $2}')
+          EXPECTED="SHA256:sOn0oE3KC0OsEYDyb1f4iaNr9UA3OX7On1DodCZucP8"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "ERROR: huella SSH del servidor no coincide"
+            exit 1
+          fi
           chmod 600 ~/.ssh/known_hosts
 
       - name: Enviar frontend a Azure
@@ -67,9 +76,15 @@ jobs:
           SSH_USER: ${{ secrets.AZURE_USER }}
           SEEDER: ${{ inputs.seeder }}
         run: |
+          if [[ -n "$SEEDER" && ! "$SEEDER" =~ ^[A-Za-z][A-Za-z0-9_]*$ ]]; then
+            echo "Nombre de seeder no válido"
+            exit 1
+          fi
+          SEEDER_B64=$(printf '%s' "$SEEDER" | base64 -w0)
           ssh -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" \
-            "SEEDER='$SEEDER' bash -se" <<'REMOTE'
+            "bash -se -- '$SEEDER_B64'" <<'REMOTE'
           set -euo pipefail
+          SEEDER=$(printf '%s' "${1:-}" | base64 -d)
 
           cd /var/www/comunitec
 
