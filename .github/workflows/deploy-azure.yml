@@ -1,0 +1,117 @@
+
+name: Desplegar ComunTec en Azure
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      seeder:
+        description: "Seeder opcional (ej. CategoriasSeeder). Dejar vacío para no ejecutar."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: comunitec-azure
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Compilar frontend
+        run: |
+          npm ci
+          npm run build
+          tar -czf /tmp/comunitec-build.tar.gz -C public build
+
+      - name: Preparar SSH
+        env:
+          SSH_KEY: ${{ secrets.AZURE_SSH_KEY }}
+          SSH_HOST: ${{ secrets.AZURE_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Enviar frontend a Azure
+        env:
+          SSH_HOST: ${{ secrets.AZURE_HOST }}
+          SSH_USER: ${{ secrets.AZURE_USER }}
+        run: |
+          scp -i ~/.ssh/id_ed25519 \
+            /tmp/comunitec-build.tar.gz \
+            "$SSH_USER@$SSH_HOST:/tmp/comunitec-build.tar.gz"
+
+      - name: Actualizar Laravel y base de datos
+        env:
+          SSH_HOST: ${{ secrets.AZURE_HOST }}
+          SSH_USER: ${{ secrets.AZURE_USER }}
+          SEEDER: ${{ inputs.seeder }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "$SSH_USER@$SSH_HOST" \
+            "SEEDER='$SEEDER' bash -se" <<'REMOTE'
+          set -euo pipefail
+
+          cd /var/www/comunitec
+
+          echo "Respaldando base de datos..."
+          /home/comunitec/respaldo-mysql.sh
+
+          echo "Activando mantenimiento..."
+          php artisan down
+
+          cleanup() {
+            php artisan up || true
+          }
+          trap cleanup EXIT
+
+          echo "Actualizando código..."
+          git pull --ff-only origin main
+
+          echo "Actualizando dependencias..."
+          composer install \
+            --no-dev \
+            --prefer-dist \
+            --optimize-autoloader \
+            --no-interaction
+
+          echo "Publicando frontend..."
+          tar -xzf /tmp/comunitec-build.tar.gz -C public
+          rm -f /tmp/comunitec-build.tar.gz
+
+          echo "Ejecutando migraciones..."
+          php artisan migrate --force
+
+          if [ -n "$SEEDER" ]; then
+            if [[ ! "$SEEDER" =~ ^[A-Za-z][A-Za-z0-9_]*$ ]]; then
+              echo "Nombre de seeder no válido"
+              exit 1
+            fi
+            echo "Ejecutando seeder: $SEEDER"
+            php artisan db:seed --class="$SEEDER" --force
+          fi
+
+          echo "Limpiando cachés..."
+          php artisan optimize:clear
+
+          echo "Despliegue terminado."
+          REMOTE
