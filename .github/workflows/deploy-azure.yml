@@ -49,10 +49,22 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          test -n "$SSH_HOST"
-          test -n "$SSH_KEY"
-          ssh-keyscan -T 15 -t ed25519 "$SSH_HOST" > ~/.ssh/known_hosts 2>/dev/null
-          test -s ~/.ssh/known_hosts
+          if [ -z "$SSH_HOST" ]; then
+            echo "::error::AZURE_HOST está vacío o no disponible"
+            exit 1
+          fi
+          if [ -z "$SSH_KEY" ]; then
+            echo "::error::AZURE_SSH_KEY está vacío o no disponible"
+            exit 1
+          fi
+          if ! ssh-keyscan -T 15 -t ed25519 "$SSH_HOST" > ~/.ssh/known_hosts 2>/dev/null; then
+            echo "::error::No se pudo consultar SSH en Azure (puerto 22)"
+            exit 1
+          fi
+          if [ ! -s ~/.ssh/known_hosts ]; then
+            echo "::error::El servidor no devolvió una clave SSH"
+            exit 1
+          fi
           ACTUAL=$(ssh-keygen -lf ~/.ssh/known_hosts -E sha256 | awk '{print $2}')
           EXPECTED="SHA256:sOn0oE3KC0OsEYDyb1f4iaNr9UA3OX7On1DodCZucP8"
           if [ "$ACTUAL" != "$EXPECTED" ]; then
