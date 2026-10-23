@@ -289,7 +289,7 @@
         raiz.querySelector('[data-total-subtotal]').textContent = moneda.format(subtotalSinIva);
         raiz.querySelector('[data-total-iva]').textContent = moneda.format(iva);
         raiz.querySelector('[data-total-final]').textContent = moneda.format(total);
-        raiz.querySelector('[data-contador-conceptos]').textContent = `${filas.length} ${filas.length === 1 ? 'concepto' : 'conceptos'}`;
+        raiz.querySelector('[data-contador-conceptos]').textContent = filas.length;
     }
 
     function validar() {

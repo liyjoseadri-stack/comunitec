@@ -3,12 +3,14 @@
 @section('titulo', 'Editar cliente')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Editar cliente">
-        <x-slot:acciones><x-boton variante="contorno" :href="route('clientes.listado')">Regresar al listado</x-boton></x-slot:acciones>
-    </x-encabezado-pagina>
 
     <section class="bloque-administrativo" aria-labelledby="titulo-editar-cliente">
-        <h2 id="titulo-editar-cliente">Editar cliente</h2>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <h2 id="titulo-editar-cliente">Editar cliente</h2>
+            <div class="grupo-acciones">
+                <x-boton variante="contorno" :href="route('clientes.listado')">Regresar al listado</x-boton>
+            </div>
+        </div>
         <form class="formulario-administrativo formulario-dos-columnas" method="POST" action="{{ route('clientes.actualizar', $cliente) }}">
             @csrf
             @method('PUT')

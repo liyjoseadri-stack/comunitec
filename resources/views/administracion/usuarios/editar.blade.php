@@ -3,12 +3,14 @@
 @section('titulo', 'Editar usuario')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Editar usuario">
-        <x-slot:acciones><x-boton variante="contorno" :href="route('administracion.usuarios.listado')">Regresar al listado</x-boton></x-slot:acciones>
-    </x-encabezado-pagina>
 
     <section class="bloque-administrativo" aria-labelledby="titulo-editar-usuario">
-        <h2 id="titulo-editar-usuario">Datos de {{ $usuario->nombre }}</h2>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <h2 id="titulo-editar-usuario">Datos de {{ $usuario->nombre }}</h2>
+            <div class="grupo-acciones">
+                <x-boton variante="contorno" :href="route('administracion.usuarios.listado')">Regresar al listado</x-boton>
+            </div>
+        </div>
         <form class="formulario-administrativo formulario-dos-columnas" method="POST" action="{{ route('administracion.usuarios.actualizar', $usuario) }}">
             @csrf
             @method('PUT')

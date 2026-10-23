@@ -3,14 +3,14 @@
 @section('titulo', 'Editar producto')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Editar producto">
-        <x-slot:acciones>
-            <x-boton variante="contorno" :href="route('inventario.productos.detalle', $producto)">Cancelar</x-boton>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
 
     <section class="bloque-administrativo" aria-labelledby="titulo-editar-producto">
-        <h2 id="titulo-editar-producto">Editar producto</h2>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <h2 id="titulo-editar-producto">Editar producto</h2>
+            <div class="grupo-acciones">
+                <x-boton variante="contorno" :href="route('inventario.productos.detalle', $producto)">Cancelar</x-boton>
+            </div>
+        </div>
         <form class="formulario-administrativo formulario-catalogo" method="POST" action="{{ route('inventario.productos.actualizar', $producto) }}">
             @csrf
             @method('PUT')

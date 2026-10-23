@@ -3,15 +3,14 @@
 @section('titulo', 'Series vendidas')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Series vendidas" descripcion="Consulta los números de serie registrados al convertir cotizaciones aceptadas en ventas.">
-        <x-slot:acciones>
-            <x-boton variante="contorno" :href="route('inventario.productos.listado')">Ver productos</x-boton>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
 
     <section class="bloque-administrativo" aria-labelledby="titulo-series-vendidas">
-        <h2 id="titulo-series-vendidas">Historial de números de serie entregados</h2>
-        <p>Consulta el producto, la venta y el cliente relacionados con cada serie.</p>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <div>
+                <h2 id="titulo-series-vendidas">Historial de números de serie entregados</h2>
+                <p>Consulta el producto, la venta y el cliente relacionados con cada serie.</p>
+            </div>
+        </div>
         @if ($seriesVendidas->isNotEmpty())
             <x-tabla-responsive etiqueta="Series vendidas" adaptable>
                 <table class="tabla-registros tabla-adaptable">

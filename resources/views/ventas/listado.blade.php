@@ -3,18 +3,10 @@
 @section('titulo', 'Ventas')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Ventas">
-        <x-slot:acciones>
-            <span class="contador-registros">
-                {{ $ventas->total() }} {{ $ventas->total() === 1 ? 'venta' : 'ventas' }}
-            </span>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
-
     <section class="bloque-administrativo" aria-labelledby="titulo-ventas">
-        <div class="encabezado-seccion">
+        <div class="encabezado-seccion encabezado-seccion--acciones">
             <div>
-                <h2 id="titulo-ventas">Historial de ventas</h2>
+                <h2 id="titulo-ventas">Historial de ventas <span class="contador-titulo">{{ $ventas->total() }}</span></h2>
                 <p>Consulta los datos conservados al momento de registrar cada venta.</p>
             </div>
         </div>

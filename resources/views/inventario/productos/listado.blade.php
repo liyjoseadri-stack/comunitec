@@ -3,13 +3,13 @@
 @section('titulo', 'Productos')
 
 @section('contenido')
-    <div class="grupo-acciones acciones-pagina">
-        <span class="contador-registros">{{ $productos->total() }} {{ $productos->total() === 1 ? 'producto' : 'productos' }}</span>
-        <x-boton :href="route('inventario.productos.crear')">Registrar producto</x-boton>
-    </div>
-
     <section class="bloque-administrativo">
-        <h2>Productos registrados</h2>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <h2>Productos registrados <span class="contador-titulo">{{ $productos->total() }}</span></h2>
+            <div class="grupo-acciones">
+                <x-boton :href="route('inventario.productos.crear')">Registrar producto</x-boton>
+            </div>
+        </div>
         <form class="formulario-filtros" method="GET">
             <x-campo-formulario id="buscar" nombre="buscar" etiqueta="Buscar" :valor="request('buscar')" placeholder="Nombre, SKU, marca o modelo" />
             <x-campo-formulario id="categoria" nombre="categoria" etiqueta="Categoría" tipo="select">

@@ -51,6 +51,61 @@
         @case('flecha')
             <path d="m8 10 4 4 4-4" />
             @break
+        @case('calendario')
+            <rect x="3" y="5" width="18" height="16" rx="2" />
+            <path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+            @break
+        @case('camion')
+            <path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z" />
+            <circle cx="7" cy="18" r="2" />
+            <circle cx="18" cy="18" r="2" />
+            @break
+        @case('alerta')
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v6M12 17h.01" />
+            @break
+        @case('informacion')
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v6M12 7h.01" />
+            @break
+        @case('chevron-derecha')
+            <path d="m9 5 7 7-7 7" />
+            @break
+        @case('agregar')
+            <path d="M12 5v14M5 12h14" />
+            @break
+        @case('editar')
+            <path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10zM14 7l3 3" />
+            @break
+        @case('eliminar')
+            <path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6" />
+            @break
+        @case('guardar')
+            <path d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-7h8v7" />
+            @break
+        @case('regresar')
+            <path d="m10 7-5 5 5 5M5 12h14" />
+            @break
+        @case('buscar')
+            <circle cx="10.5" cy="10.5" r="6.5" />
+            <path d="m16 16 4 4" />
+            @break
+        @case('ver')
+            <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+            <circle cx="12" cy="12" r="2.5" />
+            @break
+        @case('descargar')
+            <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+            @break
+        @case('enviar')
+            <path d="m3 11 18-8-8 18-2-8zM11 13 21 3" />
+            @break
+        @case('aceptar')
+            <path d="m5 12 4 4L19 6" />
+            @break
+        @case('cerrar-simple')
+            <path d="m6 6 12 12M18 6 6 18" />
+            @break
         @default
             <circle cx="12" cy="12" r="8" />
     @endswitch

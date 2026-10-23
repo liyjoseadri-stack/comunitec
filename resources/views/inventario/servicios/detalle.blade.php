@@ -3,18 +3,16 @@
 @section('titulo', $servicio->nombre)
 
 @section('contenido')
-    <x-encabezado-pagina :titulo="$servicio->nombre">
-        <x-slot:acciones>
-            <x-boton variante="contorno" :href="route('inventario.servicios.listado')">Regresar al listado</x-boton>
-            <x-boton :href="route('inventario.servicios.editar', $servicio)">Editar servicio</x-boton>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
-
-
     <section class="bloque-administrativo" aria-labelledby="titulo-informacion-servicio">
-        <div class="encabezado-seccion">
-            <h2 id="titulo-informacion-servicio">Información del servicio</h2>
-            <x-insignia-estado :estado="$servicio->activo ? 'activo' : 'inactivo'" />
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <div class="grupo-acciones">
+                <h2 id="titulo-informacion-servicio">Información del servicio</h2>
+                <x-insignia-estado :estado="$servicio->activo ? 'activo' : 'inactivo'" />
+            </div>
+            <div class="grupo-acciones">
+                <x-boton variante="contorno" :href="route('inventario.servicios.listado')">Regresar al listado</x-boton>
+                <x-boton :href="route('inventario.servicios.editar', $servicio)">Editar servicio</x-boton>
+            </div>
         </div>
 
         <dl class="cuadricula-detalle">

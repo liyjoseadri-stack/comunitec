@@ -117,8 +117,7 @@
         <div class="cuadricula-actividad">
             <section class="panel-actividad" aria-labelledby="titulo-cotizaciones-recientes">
                 <div class="panel-actividad__encabezado">
-                    <h3 id="titulo-cotizaciones-recientes">Cotizaciones recientes</h3>
-                    <span class="contador-registros">{{ $cotizacionesRecientes->count() }}</span>
+                    <h3 id="titulo-cotizaciones-recientes">Cotizaciones recientes <span class="contador-titulo">{{ $cotizacionesRecientes->count() }}</span></h3>
                 </div>
                 <ul class="lista-actividad">
                     @forelse ($cotizacionesRecientes as $cotizacion)
@@ -140,8 +139,7 @@
 
             <section class="panel-actividad" aria-labelledby="titulo-ventas-recientes">
                 <div class="panel-actividad__encabezado">
-                    <h3 id="titulo-ventas-recientes">Ventas recientes</h3>
-                    <span class="contador-registros">{{ $ventasRecientes->count() }}</span>
+                    <h3 id="titulo-ventas-recientes">Ventas recientes <span class="contador-titulo">{{ $ventasRecientes->count() }}</span></h3>
                 </div>
                 <ul class="lista-actividad">
                     @forelse ($ventasRecientes as $venta)

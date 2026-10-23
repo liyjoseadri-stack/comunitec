@@ -3,8 +3,15 @@
 .env
 .env.backup
 .env.production
+.env.*
+!.env.example
+.eslintcache
 .phpactor.json
 .phpunit.result.cache
+*.bak
+*.swp
+*.tmp
+*~
 /.fleet
 /.idea
 /.nova
@@ -12,7 +19,10 @@
 /.vscode
 /.zed
 /auth.json
+/coverage
 /node_modules
+/npm-debug.log*
+/pnpm-debug.log*
 /public/build
 /public/hot
 /public/storage
@@ -21,6 +31,8 @@
 /storage/framework/composer-cache
 /tmp
 /vendor
+/yarn-debug.log*
+/yarn-error.log*
 Homestead.json
 Homestead.yaml
 Thumbs.db
@@ -34,5 +46,5 @@ Thumbs.db
 /docs/superpowers/
 /docs/verificacion/
 /output/
-/work-entry*.php
+/work-entry*
 /public/images/nube-comunitec-blanca.svg

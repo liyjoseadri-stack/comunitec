@@ -3,13 +3,13 @@
 @section('titulo', 'Servicios')
 
 @section('contenido')
-    <div class="grupo-acciones acciones-pagina">
-        <span class="contador-registros">{{ $servicios->total() }} {{ $servicios->total() === 1 ? 'servicio' : 'servicios' }}</span>
-        <x-boton :href="route('inventario.servicios.crear')">Registrar servicio</x-boton>
-    </div>
-
     <section class="bloque-administrativo">
-        <h2>Servicios registrados</h2>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <h2>Servicios registrados <span class="contador-titulo">{{ $servicios->total() }}</span></h2>
+            <div class="grupo-acciones">
+                <x-boton :href="route('inventario.servicios.crear')">Registrar servicio</x-boton>
+            </div>
+        </div>
         <form class="formulario-filtros" method="GET">
             <div class="campo-formulario">
                 <label for="buscar">Buscar</label>

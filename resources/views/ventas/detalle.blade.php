@@ -3,20 +3,16 @@
 @section('titulo', 'Venta '.$venta->folio)
 
 @section('contenido')
-    <x-encabezado-pagina :titulo="'Venta '.$venta->folio">
-        <x-slot:acciones>
-            <span class="insignia-tipo">Venta cerrada</span>
-            <x-boton variante="contorno" :href="route('ventas.listado')">Volver al historial</x-boton>
-            <x-boton :href="route('ventas.pdf', $venta)">Descargar PDF</x-boton>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
-
-
             <section class="bloque-administrativo" aria-labelledby="titulo-datos-venta">
-                <div class="encabezado-seccion">
+                <div class="encabezado-seccion encabezado-seccion--acciones">
                     <div>
                         <h2 id="titulo-datos-venta">Información histórica de la venta</h2>
                         <p>Estos datos corresponden al momento en que se registró la operación.</p>
+                    </div>
+                    <div class="grupo-acciones">
+                        <span class="insignia-tipo">Venta cerrada</span>
+                        <x-boton variante="contorno" :href="route('ventas.listado')">Volver al historial</x-boton>
+                        <x-boton :href="route('ventas.pdf', $venta)">Descargar PDF</x-boton>
                     </div>
                 </div>
                 <dl class="datos-operacion datos-operacion--venta">

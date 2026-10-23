@@ -3,17 +3,16 @@
 @section('titulo', $producto->nombre)
 
 @section('contenido')
-    <x-encabezado-pagina :titulo="$producto->nombre">
-        <x-slot:acciones>
-            <x-boton variante="contorno" :href="route('inventario.productos.listado')">Regresar al listado</x-boton>
-            <x-boton :href="route('inventario.productos.editar', $producto)">Editar producto</x-boton>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
-
     <section class="bloque-administrativo" aria-labelledby="titulo-informacion-producto">
-        <div class="encabezado-seccion">
-            <h2 id="titulo-informacion-producto">Información del producto</h2>
-            <x-insignia-estado :estado="$producto->activo ? 'activo' : 'inactivo'" />
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <div class="grupo-acciones">
+                <h2 id="titulo-informacion-producto">Información del producto</h2>
+                <x-insignia-estado :estado="$producto->activo ? 'activo' : 'inactivo'" />
+            </div>
+            <div class="grupo-acciones">
+                <x-boton variante="contorno" :href="route('inventario.productos.listado')">Regresar al listado</x-boton>
+                <x-boton :href="route('inventario.productos.editar', $producto)">Editar producto</x-boton>
+            </div>
         </div>
 
         <dl class="cuadricula-detalle">

@@ -59,10 +59,9 @@
             <div class="encabezado-seccion encabezado-seccion--venta">
                 <div>
                     <p class="sobrelinea">Paso final</p>
-                    <h2 id="titulo-datos-cierre">Datos que debes capturar</h2>
+                    <h2 id="titulo-datos-cierre">Datos que debes capturar <span class="contador-titulo">{{ $partidasConSerie->count() }}</span></h2>
                     <p>Confirma el método de pago y registra las series físicas que se entregarán.</p>
                 </div>
-                <span class="contador-registros">{{ $partidasConSerie->count() }} {{ $partidasConSerie->count() === 1 ? 'producto con series' : 'productos con series' }}</span>
             </div>
 
             <form class="formulario-administrativo formulario-venta" method="post" action="{{ route('ventas.guardar', $cotizacion) }}">

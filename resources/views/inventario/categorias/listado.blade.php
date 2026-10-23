@@ -3,13 +3,13 @@
 @section('titulo', 'Categorías de inventario')
 
 @section('contenido')
-    <div class="grupo-acciones acciones-pagina">
-        <span class="contador-registros">{{ $categorias->total() }} {{ $categorias->total() === 1 ? 'categoría' : 'categorías' }}</span>
-        <x-boton :href="route('inventario.categorias.crear')">Registrar categoría</x-boton>
-    </div>
-
     <section class="bloque-administrativo" aria-labelledby="titulo-listado-categorias">
-        <h2 id="titulo-listado-categorias">Categorías registradas</h2>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <h2 id="titulo-listado-categorias">Categorías registradas <span class="contador-titulo">{{ $categorias->total() }}</span></h2>
+            <div class="grupo-acciones">
+                <x-boton :href="route('inventario.categorias.crear')">Registrar categoría</x-boton>
+            </div>
+        </div>
         <form class="formulario-filtros" method="GET">
             <x-campo-formulario id="buscar" nombre="buscar" etiqueta="Buscar" :valor="request('buscar')" placeholder="Nombre de categoría" />
             <x-campo-formulario id="estado" nombre="estado" etiqueta="Estado" tipo="select">

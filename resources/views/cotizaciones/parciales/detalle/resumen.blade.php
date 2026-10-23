@@ -1,5 +1,11 @@
             <section class="bloque-administrativo" aria-labelledby="titulo-resumen-cotizacion">
-                <h2 id="titulo-resumen-cotizacion">Resumen de la cotización</h2>
+                <div class="encabezado-seccion encabezado-seccion--acciones">
+                    <h2 id="titulo-resumen-cotizacion">Resumen de la cotización</h2>
+                    <div class="grupo-acciones">
+                        <x-insignia-estado :estado="$cotizacion->estado" :etiqueta="$cotizacion->etiquetaEstado()" />
+                        <x-boton variante="contorno" :href="route('cotizaciones.pdf', $cotizacion)">Generar PDF</x-boton>
+                    </div>
+                </div>
                 <dl class="datos-operacion">
                     <div>
                         <dt>Cliente</dt>
@@ -9,9 +15,6 @@
                         <dt>Estado</dt>
                         <dd>
                             <x-insignia-estado :estado="$cotizacion->estado" :etiqueta="$cotizacion->etiquetaEstado()" />
-                            @if ($cotizacion->venta)
-                                <span class="detalle-tabla">Convertida en venta</span>
-                            @endif
                         </dd>
                     </div>
                     <div>

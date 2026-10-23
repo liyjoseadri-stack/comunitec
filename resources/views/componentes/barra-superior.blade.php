@@ -24,6 +24,7 @@
                 <strong>{{ auth()->user()->nombre }}</strong>
                 <small>{{ ucfirst(auth()->user()->rol) }}</small>
             </span>
+            <x-icono nombre="flecha" class="barra-superior__desplegable" />
         </a>
         <form method="POST" action="{{ route('logout') }}">
             @csrf

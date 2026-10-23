@@ -3,12 +3,14 @@
 @section('titulo', 'Registrar cliente')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Registrar cliente">
-        <x-slot:acciones><x-boton variante="contorno" :href="route('clientes.listado')">Regresar al listado</x-boton></x-slot:acciones>
-    </x-encabezado-pagina>
 
     <section class="bloque-administrativo" aria-labelledby="titulo-registrar-cliente">
-        <h2 id="titulo-registrar-cliente">Registrar cliente</h2>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <h2 id="titulo-registrar-cliente">Registrar cliente</h2>
+            <div class="grupo-acciones">
+                <x-boton variante="contorno" :href="route('clientes.listado')">Regresar al listado</x-boton>
+            </div>
+        </div>
         <form class="formulario-administrativo formulario-dos-columnas" method="POST" action="{{ route('clientes.guardar') }}">
             @csrf
             @include('clientes.campos', ['cliente' => null])

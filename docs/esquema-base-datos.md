@@ -166,7 +166,8 @@ Registra cada intento de envío para auditoría y evita duplicar el recordatorio
 | `usuario_id` | Responsable asociado al envío. | Llave foránea a `usuarios.id`. |
 | `destinatario` | Dirección de correo utilizada. | Obligatorio. |
 | `tipo` | Envío de cotización o recordatorio. | `cotizacion` o `recordatorio`. |
-| `resultado` | Resultado técnico del intento. | `aceptada` o `fallido`. |
+| `clave_idempotencia` | Identidad persistente de un intento automático o manual. | Única y opcional solo para registros históricos anteriores a esta protección. |
+| `resultado` | Resultado técnico del intento. | `pendiente`, `aceptada` o `fallido`. |
 | `mensaje` | Explicación del resultado. | Opcional. |
 | `intentado_en` | Fecha y hora del intento. | Obligatorio. |
 | `creado_en`, `actualizado_en` | Fechas de auditoría. | Automáticas. |
@@ -236,7 +237,11 @@ Los días hábiles excluyen sábado y domingo. Los días festivos no se excluyen
 
 ## Correos automáticos
 
-`envios_correo_cotizacion` conserva cada intento. La columna `tipo` distingue el envío inicial de un `recordatorio`. El comando `cotizaciones:recordar-vencimiento` procesa únicamente cotizaciones pendientes un día hábil antes de `vence_en` y evita repetir un recordatorio aceptado por el servidor de correo.
+`envios_correo_cotizacion` conserva cada intento. La columna `tipo` distingue el envío inicial de un `recordatorio`. Tanto los recordatorios como los envíos manuales reservan una `clave_idempotencia` única antes de contactar SMTP. En el formulario manual la clave incorpora un UUID nuevo por presentación; dos envíos del mismo formulario representan el mismo intento y no vuelven a contactar al proveedor. Abrir de nuevo el detalle genera un intento intencional distinto.
+
+El resultado comienza como `pendiente`. Solo una respuesta de rechazo confirmada por el transporte lo cambia a `fallido`; una aceptación confirmada lo cambia a `aceptada`. Si el proceso se interrumpe después de contactar SMTP o falla la confirmación en base de datos, permanece `pendiente`: ese estado significa resultado incierto y bloquea la repetición con la misma clave. La transición de borrador a pendiente y sus fechas se aplican al confirmar el primer envío, dentro de una transacción corta que relee el estado; nunca se sobrescribe un cambio concurrente.
+
+El comando `cotizaciones:recordar-vencimiento` calcula el siguiente día hábil, filtra ese rango de `vence_en` directamente en SQL y procesa por identificador en bloques de 100. Dentro de una transacción corta relee y bloquea únicamente la cotización candidata, confirma que continúa pendiente y reserva la clave. La transacción termina antes de contactar al servidor de correo. La restricción única impide que dos ejecuciones concurrentes reserven el mismo recordatorio. Un registro histórico de recordatorio sin clave también bloquea un envío nuevo para conservar la compatibilidad y evitar duplicados durante la actualización.
 
 El programador ejecuta diariamente:
 

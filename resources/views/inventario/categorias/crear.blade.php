@@ -3,12 +3,14 @@
 @section('titulo', 'Registrar categoría')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Registrar categoría">
-        <x-slot:acciones><x-boton variante="contorno" :href="route('inventario.categorias.listado')">Regresar al listado</x-boton></x-slot:acciones>
-    </x-encabezado-pagina>
 
     <section class="bloque-administrativo" aria-labelledby="titulo-registrar-categoria">
-        <h2 id="titulo-registrar-categoria">Registrar categoría</h2>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <h2 id="titulo-registrar-categoria">Registrar categoría</h2>
+            <div class="grupo-acciones">
+                <x-boton variante="contorno" :href="route('inventario.categorias.listado')">Regresar al listado</x-boton>
+            </div>
+        </div>
         <form class="formulario-administrativo formulario-filtros" method="POST" action="{{ route('inventario.categorias.guardar') }}">
             @csrf
             <x-campo-formulario id="nombre" nombre="nombre" etiqueta="Nombre" :valor="old('nombre')" required maxlength="255" />

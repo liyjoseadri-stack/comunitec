@@ -459,7 +459,7 @@ class PanelReportesTest extends TestCase
             $tabla = $xpath->query('//table[contains(concat(" ", normalize-space(@class), " "), " tabla-adaptable ")]')->item(0);
 
             $this->assertNotNull($tabla, $ruta);
-            $this->assertSame(1, $xpath->query('//span[contains(@class, "contador-registros") and contains(., "1 resultado")]')->length, $ruta);
+            $this->assertSame(1, $xpath->query('//h2[normalize-space(text())="Resultados"]/span[contains(@class, "contador-titulo") and normalize-space(.)="1"]')->length, $ruta);
             $respuesta->assertSee($esperado['etiqueta'].': $1,000.00')->assertSee($esperado['folio']);
 
             $cabeceras = $xpath->query('./thead/tr/th', $tabla);

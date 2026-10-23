@@ -3,18 +3,14 @@
 @section('titulo', 'Registrar venta')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Registrar venta" descripcion="Convierte una cotización aceptada en una venta y registra sus series entregadas.">
-        <x-slot:acciones>
-            <span class="contador-registros">
-                {{ $totalCotizacionesAceptadas }} {{ $totalCotizacionesAceptadas === 1 ? 'cotización aceptada' : 'cotizaciones aceptadas' }}
-            </span>
-            <x-boton variante="contorno" :href="route('ventas.listado')">Historial de ventas</x-boton>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
 
     <section class="bloque-administrativo" aria-labelledby="titulo-cotizaciones-aceptadas">
-        <h2 id="titulo-cotizaciones-aceptadas">Cotizaciones aceptadas por registrar</h2>
-        <p>Selecciona una cotización aceptada para confirmar el método de pago y registrar las series entregadas.</p>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <div>
+                <h2 id="titulo-cotizaciones-aceptadas">Cotizaciones aceptadas por registrar <span class="contador-titulo">{{ $totalCotizacionesAceptadas }}</span></h2>
+                <p>Selecciona una cotización aceptada para confirmar el método de pago y registrar las series entregadas.</p>
+            </div>
+        </div>
         @if ($totalCotizacionesAceptadas > $cotizacionesAceptadas->count())
             <p class="texto-secundario">
                 Se muestran las 10 aceptadas más recientes de {{ $totalCotizacionesAceptadas }}.

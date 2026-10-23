@@ -3,16 +3,12 @@
 @section('titulo', 'Cotizaciones')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Cotizaciones">
-        <x-slot:acciones>
-            <span class="contador-registros">{{ $cotizaciones->total() }} cotizaciones</span>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
-
     <section class="bloque-administrativo" aria-labelledby="titulo-registradas">
-        <h2 id="titulo-registradas">
-            {{ $estadoFiltrado === 'aceptada' ? 'Cotizaciones listas para venta' : 'Cotizaciones registradas' }}
-        </h2>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <h2 id="titulo-registradas">
+                {{ $estadoFiltrado === 'aceptada' ? 'Cotizaciones listas para venta' : 'Cotizaciones registradas' }} <span class="contador-titulo">{{ $cotizaciones->total() }}</span>
+            </h2>
+        </div>
         <x-tabla-responsive etiqueta="Cotizaciones registradas" adaptable>
             <table class="tabla-registros tabla-adaptable tabla-catalogo">
                 <thead>
@@ -33,9 +29,6 @@
                             <td data-etiqueta="Fecha">{{ $cotizacion->creado_en->format('d/m/Y') }}</td>
                             <td data-etiqueta="Estado">
                                 <x-insignia-estado :estado="$cotizacion->estado" :etiqueta="$cotizacion->etiquetaEstado()" />
-                                @if ($cotizacion->venta)
-                                    <small class="detalle-tabla">Convertida en venta</small>
-                                @endif
                             </td>
                             <td data-etiqueta="Total">${{ number_format((float) $cotizacion->total, 2) }}</td>
                             <td data-etiqueta="Acción">
@@ -62,6 +55,6 @@
                 </tbody>
             </table>
         </x-tabla-responsive>
-        {{ $cotizaciones->links() }}
+        @include('componentes.paginacion', ['paginador' => $cotizaciones])
     </section>
 @endsection

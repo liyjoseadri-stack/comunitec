@@ -1,19 +1,32 @@
 @extends('layouts.aplicacion')
 
 @section('titulo', 'Panel principal')
+@section('clase_pagina', 'pagina-panel')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Panel principal" />
+    <section class="bienvenida-panel" aria-labelledby="saludo-panel">
+        <div>
+            <h2 id="saludo-panel">¡Hola, {{ strtok(auth()->user()->nombre, ' ') }}!</h2>
+            <p>Resumen rápido de la información más importante.</p>
+        </div>
+        <div class="bienvenida-panel__fecha">
+            <x-icono nombre="calendario" />
+            <time datetime="{{ now()->toDateString() }}">{{ ucfirst(now()->locale('es')->translatedFormat('l, d \d\e F \d\e Y')) }}</time>
+        </div>
+    </section>
 
     @if (auth()->user()->esAdministrador())
         <div class="cuadricula-alertas-operativas">
             <section class="tarjeta-alerta-operativa {{ $totalEntregasPorVencer > 0 ? 'tarjeta-alerta-operativa--advertencia' : 'tarjeta-alerta-operativa--correcta' }}" aria-labelledby="titulo-entregas-proximas">
                 <header class="tarjeta-alerta-operativa__encabezado">
-                    <div>
-                        <span class="tarjeta-alerta-operativa__categoria">Entregas</span>
-                        <h2 id="titulo-entregas-proximas">Entregas del siguiente día hábil</h2>
+                    <div class="tarjeta-alerta-operativa__titulo">
+                        <span class="tarjeta-alerta-operativa__icono"><x-icono nombre="camion" /></span>
+                        <div>
+                            <span class="tarjeta-alerta-operativa__categoria">Entregas</span>
+                            <h2 id="titulo-entregas-proximas">Entregas del siguiente día hábil</h2>
+                        </div>
                     </div>
-                    <span class="contador-alerta" aria-label="{{ $totalEntregasPorVencer }} {{ $totalEntregasPorVencer === 1 ? 'entrega próxima' : 'entregas próximas' }}">{{ $totalEntregasPorVencer }}</span>
+                    <span class="contador-alerta" aria-label="{{ $totalEntregasPorVencer }} {{ $totalEntregasPorVencer === 1 ? 'entrega próxima' : 'entregas próximas' }}"><strong>{{ $totalEntregasPorVencer }}</strong> {{ $totalEntregasPorVencer === 1 ? 'entrega' : 'entregas' }}</span>
                 </header>
 
                 @if ($entregasPorVencer->isEmpty())
@@ -27,8 +40,9 @@
                                     <span>{{ $cotizacion->cliente->nombre }}</span>
                                 </div>
                                 <div class="alerta-operativa__meta">
-                                    <span class="insignia-severidad insignia-severidad--advertencia">Próxima</span>
+                                    <span class="insignia-severidad insignia-severidad--advertencia">Próxima entrega</span>
                                     <time datetime="{{ $cotizacion->entrega_limite_en->toDateString() }}">{{ $cotizacion->entrega_limite_en->format('d/m/Y') }}</time>
+                                    <x-icono nombre="chevron-derecha" />
                                 </div>
                             </li>
                         @endforeach
@@ -36,27 +50,34 @@
                 @endif
 
                 <footer class="tarjeta-alerta-operativa__pie">
-                    @if ($totalEntregasPorVencer > $entregasPorVencer->count())
-                        <span>Mostrando {{ $entregasPorVencer->count() }} de {{ $totalEntregasPorVencer }}</span>
-                    @else
-                        <span>{{ $totalEntregasPorVencer }} {{ $totalEntregasPorVencer === 1 ? 'entrega requiere' : 'entregas requieren' }} atención</span>
-                    @endif
-                    <x-boton variante="contorno" :href="route('cotizaciones.listado', ['estado' => \App\Models\Cotizacion::ESTADO_ACEPTADA])" compacto>Ver cotizaciones aceptadas</x-boton>
+                    <span class="resumen-alerta">
+                        <x-icono nombre="informacion" />
+                        @if ($totalEntregasPorVencer > $entregasPorVencer->count())
+                            Mostrando {{ $entregasPorVencer->count() }} de {{ $totalEntregasPorVencer }}
+                        @else
+                            {{ $totalEntregasPorVencer }} {{ $totalEntregasPorVencer === 1 ? 'entrega requiere' : 'entregas requieren' }} atención
+                        @endif
+                    </span>
+                    <x-boton :href="route('cotizaciones.listado', ['estado' => \App\Models\Cotizacion::ESTADO_ACEPTADA])" compacto><x-icono nombre="camion" /> Ver cotizaciones aceptadas <x-icono nombre="chevron-derecha" /></x-boton>
                 </footer>
             </section>
 
             <section class="tarjeta-alerta-operativa {{ $totalProductosStockBajo > 0 ? 'tarjeta-alerta-operativa--peligro' : 'tarjeta-alerta-operativa--correcta' }}" aria-labelledby="titulo-alertas-inventario">
                 <header class="tarjeta-alerta-operativa__encabezado">
-                    <div>
-                        <span class="tarjeta-alerta-operativa__categoria">Inventario</span>
-                        <h2 id="titulo-alertas-inventario">Productos con stock bajo</h2>
+                    <div class="tarjeta-alerta-operativa__titulo">
+                        <span class="tarjeta-alerta-operativa__icono"><x-icono nombre="inventario" /></span>
+                        <div>
+                            <span class="tarjeta-alerta-operativa__categoria">Inventario</span>
+                            <h2 id="titulo-alertas-inventario">Productos con stock bajo</h2>
+                        </div>
                     </div>
-                    <span class="contador-alerta" aria-label="{{ $totalProductosStockBajo }} {{ $totalProductosStockBajo === 1 ? 'producto con stock bajo' : 'productos con stock bajo' }}">{{ $totalProductosStockBajo }}</span>
+                    <span class="contador-alerta" aria-label="{{ $totalProductosStockBajo }} {{ $totalProductosStockBajo === 1 ? 'producto con stock bajo' : 'productos con stock bajo' }}"><strong>{{ $totalProductosStockBajo }}</strong> {{ $totalProductosStockBajo === 1 ? 'producto' : 'productos' }}</span>
                 </header>
 
                 @if ($productosStockBajo->isEmpty())
                     <x-estado-vacio mensaje="No hay productos con stock bajo." />
                 @else
+                    <div class="cabecera-lista-alertas" aria-hidden="true"><span>Producto</span><span>Existencias</span></div>
                     <ul class="lista-alertas-operativas">
                         @foreach ($productosStockBajo as $producto)
                             @php
@@ -69,8 +90,9 @@
                                     <span>{{ $producto->codigo ?: 'Sin SKU' }}</span>
                                 </div>
                                 <div class="alerta-operativa__meta">
-                                    <span class="insignia-severidad insignia-severidad--{{ $severidad }}">{{ $etiquetaSeveridad }}</span>
-                                    <strong>{{ $producto->existencias }} {{ $producto->existencias === 1 ? 'pieza' : 'piezas' }}</strong>
+                                    <span class="insignia-severidad insignia-severidad--{{ $severidad }} texto-solo-lectores">{{ $etiquetaSeveridad }}</span>
+                                    <strong class="existencias-alerta">{{ $producto->existencias }} {{ $producto->existencias === 1 ? 'pieza' : 'piezas' }}</strong>
+                                    <x-icono nombre="chevron-derecha" />
                                 </div>
                             </li>
                         @endforeach
@@ -78,22 +100,23 @@
                 @endif
 
                 <footer class="tarjeta-alerta-operativa__pie">
-                    @if ($totalProductosStockBajo > $productosStockBajo->count())
-                        <span>Mostrando {{ $productosStockBajo->count() }} de {{ $totalProductosStockBajo }}</span>
-                    @else
-                        <span>{{ $totalProductosStockBajo }} {{ $totalProductosStockBajo === 1 ? 'producto requiere' : 'productos requieren' }} atención</span>
-                    @endif
-                    <x-boton variante="contorno" :href="route('inventario.productos.listado')" compacto>Ver inventario completo</x-boton>
+                    <span class="resumen-alerta">
+                        <x-icono nombre="alerta" />
+                        @if ($totalProductosStockBajo > $productosStockBajo->count())
+                            Mostrando {{ $productosStockBajo->count() }} de {{ $totalProductosStockBajo }}
+                        @else
+                            {{ $totalProductosStockBajo }} {{ $totalProductosStockBajo === 1 ? 'producto requiere' : 'productos requieren' }} atención
+                        @endif
+                    </span>
+                    <x-boton variante="peligro" :href="route('inventario.productos.listado')" compacto><x-icono nombre="inventario" /> Ver inventario completo <x-icono nombre="chevron-derecha" /></x-boton>
                 </footer>
             </section>
         </div>
     @else
-        <section class="bloque-administrativo accesos-panel" aria-labelledby="titulo-accesos-panel">
-            <div class="encabezado-seccion">
-                <div>
-                    <h2 id="titulo-accesos-panel">Accesos de trabajo</h2>
-                    <p>Continúa con las operaciones disponibles para tu rol.</p>
-                </div>
+        <section class="bienvenida-panel bienvenida-panel--accesos" aria-labelledby="titulo-accesos-panel">
+            <div>
+                <h2 id="titulo-accesos-panel">Accesos de trabajo</h2>
+                <p>Continúa con las operaciones disponibles para tu rol.</p>
             </div>
             <div class="cuadricula-accesos-panel">
                 @if (auth()->user()->esComercial())

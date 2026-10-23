@@ -3,18 +3,16 @@
 @section('titulo', $categoria->nombre)
 
 @section('contenido')
-    <x-encabezado-pagina :titulo="$categoria->nombre">
-        <x-slot:acciones>
-            <x-boton variante="contorno" :href="route('inventario.categorias.listado')">Regresar al listado</x-boton>
-            <x-boton :href="route('inventario.categorias.editar', $categoria)">Editar categoría</x-boton>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
-
-
     <section class="bloque-administrativo" aria-labelledby="titulo-informacion-categoria">
-        <div class="encabezado-seccion">
-            <h2 id="titulo-informacion-categoria">Información de la categoría</h2>
-            <x-insignia-estado :estado="$categoria->activo ? 'activa' : 'inactiva'" />
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <div class="grupo-acciones">
+                <h2 id="titulo-informacion-categoria">Información de la categoría</h2>
+                <x-insignia-estado :estado="$categoria->activo ? 'activa' : 'inactiva'" />
+            </div>
+            <div class="grupo-acciones">
+                <x-boton variante="contorno" :href="route('inventario.categorias.listado')">Regresar al listado</x-boton>
+                <x-boton :href="route('inventario.categorias.editar', $categoria)">Editar categoría</x-boton>
+            </div>
         </div>
         <dl class="cuadricula-detalle">
             <div><dt>Nombre</dt><dd>{{ $categoria->nombre }}</dd></div>

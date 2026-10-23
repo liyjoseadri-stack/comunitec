@@ -3,16 +3,12 @@
 @section('titulo', 'Mi perfil')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Mi perfil">
-        <x-slot:acciones>
-            <x-insignia-estado :estado="$usuario->activo ? 'activo' : 'inactivo'" />
-        </x-slot:acciones>
-    </x-encabezado-pagina>
-
-
     <div class="cuadricula-perfil">
         <section class="bloque-administrativo" aria-labelledby="titulo-datos-perfil">
-            <h2 id="titulo-datos-perfil">Datos personales</h2>
+            <div class="encabezado-seccion encabezado-seccion--acciones">
+                <h2 id="titulo-datos-perfil">Datos personales</h2>
+                <x-insignia-estado :estado="$usuario->activo ? 'activo' : 'inactivo'" />
+            </div>
             <p class="ayuda-campo">
                 Tu rol es {{ ucfirst($usuario->rol) }} y solo un administrador puede cambiarlo.
             </p>

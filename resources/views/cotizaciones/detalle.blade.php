@@ -4,14 +4,6 @@
 @section('clase_pagina', 'detalle-cotizacion')
 
 @section('contenido')
-            <x-encabezado-pagina
-                :titulo="'Cotización '.$cotizacion->folio"
-            >
-                <x-slot:acciones>
-                    <x-insignia-estado :estado="$cotizacion->estado" :etiqueta="$cotizacion->etiquetaEstado()" />
-                    <x-boton variante="contorno" :href="route('cotizaciones.pdf', $cotizacion)">Generar PDF</x-boton>
-                </x-slot:acciones>
-            </x-encabezado-pagina>
 
             @include('cotizaciones.parciales.detalle.resumen')
             @include('cotizaciones.parciales.detalle.seguimiento-acciones')

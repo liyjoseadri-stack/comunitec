@@ -3,15 +3,13 @@
 @section('titulo', 'Usuarios')
 
 @section('contenido')
-    <x-encabezado-pagina titulo="Usuarios">
-        <x-slot:acciones>
-            <span class="contador-registros">{{ $usuarios->total() }} {{ $usuarios->total() === 1 ? 'usuario' : 'usuarios' }}</span>
-            <x-boton :href="route('administracion.usuarios.crear')">Crear usuario</x-boton>
-        </x-slot:acciones>
-    </x-encabezado-pagina>
-
     <section class="bloque-administrativo" aria-labelledby="titulo-usuarios-registrados">
-        <h2 id="titulo-usuarios-registrados">Usuarios registrados</h2>
+        <div class="encabezado-seccion encabezado-seccion--acciones">
+            <h2 id="titulo-usuarios-registrados">Usuarios registrados <span class="contador-titulo">{{ $usuarios->total() }}</span></h2>
+            <div class="grupo-acciones">
+                <x-boton :href="route('administracion.usuarios.crear')">Crear usuario</x-boton>
+            </div>
+        </div>
 
         <form class="formulario-filtros" method="GET" action="{{ route('administracion.usuarios.listado') }}">
             <x-campo-formulario id="buscar-usuarios" nombre="buscar" etiqueta="Buscar usuarios" :valor="request('buscar')" placeholder="Nombre o correo electrónico" />

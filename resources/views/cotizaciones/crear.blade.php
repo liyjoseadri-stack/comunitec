@@ -68,10 +68,9 @@
                 <section aria-labelledby="titulo-conceptos-nuevos">
                     <div class="encabezado-seccion">
                         <div>
-                            <h3 id="titulo-conceptos-nuevos">Conceptos de la cotización</h3>
+                            <h3 id="titulo-conceptos-nuevos">Conceptos de la cotización <span class="contador-titulo" data-contador-conceptos>0</span></h3>
                             <p>Busca por nombre, código o categoría. Usa las flechas y Enter para seleccionar.</p>
                         </div>
-                        <span class="contador-registros" data-contador-conceptos>0 conceptos</span>
                     </div>
 
                     <x-tabla-responsive etiqueta="Conceptos de la nueva cotización" adaptable class="creador-cotizacion__tabla">
@@ -98,12 +97,6 @@
                 </section>
 
                 <div class="creador-cotizacion__cierre">
-                    <aside class="creador-cotizacion__atajos" aria-label="Atajos de teclado">
-                        <strong>Captura rápida</strong>
-                        <span><kbd>↑</kbd><kbd>↓</kbd> recorrer resultados</span>
-                        <span><kbd>Enter</kbd> seleccionar o agregar otra fila</span>
-                        <span><kbd>Esc</kbd> cerrar resultados</span>
-                    </aside>
                     <dl class="totales-cotizacion" aria-live="polite">
                         <div><dt>Subtotal antes de descuentos</dt><dd data-total-bruto>$0.00</dd></div>
                         <div><dt>Descuento acumulado</dt><dd data-total-descuento>−$0.00</dd></div>
