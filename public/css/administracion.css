@@ -908,7 +908,15 @@ a.tarjeta-indicador:focus-visible { transform: translateY(-2px); }
 .nota-captura-venta { margin: 0; padding: var(--espacio-3) var(--espacio-4); color: var(--texto-suave); background: var(--marca-50); border-left: 3px solid var(--marca-600); border-radius: var(--radio-control); }
 .acciones-formulario--venta { padding-top: var(--espacio-4); border-top: 1px solid var(--borde); }
 .lista-series-venta { display: grid; gap: var(--espacio-1); margin: 0; padding: 0; list-style: none; }
-.lista-series-venta code { display: inline-block; padding: 0.2rem 0.45rem; color: var(--marca-900); background: var(--marca-50); border: 1px solid var(--borde); border-radius: var(--radio-control); font-size: 0.82rem; overflow-wrap: anywhere; }
+.lista-series-venta code {
+    color: var(--texto);
+    font-size: 0.88rem;
+    font-weight: 650;
+    background: transparent;
+    border: 0;
+    overflow-wrap: anywhere;
+}
+.texto-tipo-concepto { color: var(--texto); font-weight: 650; }
 .titulo-resumen-importes { margin: var(--espacio-5) 0 var(--espacio-2) auto; width: min(100%, 24rem); color: var(--marca-900); font-size: 1rem; }
 .editor-tabla { position: relative; margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; }
 .editor-tabla summary { list-style: none; }

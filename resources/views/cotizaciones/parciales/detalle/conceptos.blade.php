@@ -89,7 +89,7 @@
                                     </tr>
                                 @endif
                                 <tr>
-                                    <td><span class="insignia-tipo">{{ ucfirst($partida->tipo) }}</span></td>
+                                    <td><span class="texto-tipo-concepto">{{ ucfirst($partida->tipo) }}</span></td>
                                     <th scope="row">
                                         {{ $partida->nombreHistorico() }}
                                         @if ($partida->codigoHistorico())

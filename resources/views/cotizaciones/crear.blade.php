@@ -13,10 +13,9 @@
         >
             <div class="encabezado-seccion">
                 <div>
-                    <h2 id="titulo-borrador">Crear cotización</h2>
+                    <h2 id="titulo-borrador">Borrador de cotización</h2>
                     <p>Captura los datos generales y todos los productos o servicios antes de guardar.</p>
                 </div>
-                <span class="insignia">Borrador</span>
             </div>
             @if ($clientes->isEmpty())
                 <div class="alerta alerta--advertencia" role="status">

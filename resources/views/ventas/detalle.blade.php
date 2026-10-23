@@ -10,7 +10,6 @@
                         <p>Estos datos corresponden al momento en que se registró la operación.</p>
                     </div>
                     <div class="grupo-acciones">
-                        <span class="insignia-tipo">Venta cerrada</span>
                         <x-boton variante="contorno" :href="route('ventas.listado')">Volver al historial</x-boton>
                         <x-boton :href="route('ventas.pdf', $venta)">Descargar PDF</x-boton>
                     </div>
@@ -89,7 +88,7 @@
                         <tbody>
                             @foreach ($venta->partidas as $partida)
                                 <tr>
-                                    <td data-etiqueta="Tipo"><span class="insignia-tipo">{{ ucfirst($partida->tipo) }}</span></td>
+                                    <td data-etiqueta="Tipo"><span class="texto-tipo-concepto">{{ ucfirst($partida->tipo) }}</span></td>
                                     <th scope="row" data-etiqueta="Concepto">{{ $partida->nombreHistorico() }}</th>
                                     <td data-etiqueta="Descripción">{{ $partida->descripcion ?: 'Sin descripción adicional' }}</td>
                                     <td data-etiqueta="Cantidad">{{ number_format((float) $partida->cantidad, 2) }}</td>

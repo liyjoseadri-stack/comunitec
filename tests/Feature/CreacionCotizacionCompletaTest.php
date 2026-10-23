@@ -77,7 +77,7 @@ class CreacionCotizacionCompletaTest extends TestCase
         $this->actingAs($datos['usuario'])
             ->get(route('cotizaciones.crear'))
             ->assertOk()
-            ->assertSee('Crear cotización')
+            ->assertSee('Borrador de cotización')
             ->assertSee('Buscar cliente por nombre o RFC')
             ->assertSee('Conceptos de la cotización')
             ->assertSee('Subtotal sin IVA')

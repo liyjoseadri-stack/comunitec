@@ -10,22 +10,18 @@
         )->values();
     @endphp
 
-    <header class="encabezado-pagina encabezado-pagina--acciones">
-        <div class="grupo-acciones">
-            <x-insignia-estado estado="aceptada" etiqueta="Cotización aceptada" />
-            <x-boton variante="contorno" :href="route('cotizaciones.detalle', $cotizacion)">Ver cotización</x-boton>
-        </div>
-    </header>
-
     <div class="flujo-registro-venta">
         <section class="bloque-administrativo" aria-labelledby="titulo-resumen-origen">
-            <div class="encabezado-seccion encabezado-seccion--venta">
+            <div class="encabezado-seccion encabezado-seccion--venta encabezado-seccion--acciones">
                 <div>
                     <p class="sobrelinea">Información de consulta</p>
                     <h2 id="titulo-resumen-origen">Datos heredados de la cotización</h2>
                     <p>Estos datos se conservarán en la venta tal como fueron aceptados.</p>
                 </div>
-                <span class="insignia-tipo">Solo lectura</span>
+                <div class="grupo-acciones">
+                    <x-insignia-estado estado="aceptada" etiqueta="Cotización aceptada" />
+                    <x-boton variante="contorno" :href="route('cotizaciones.detalle', $cotizacion)">Ver cotización</x-boton>
+                </div>
             </div>
 
             <dl class="datos-operacion datos-operacion--venta">
@@ -41,7 +37,7 @@
                     <tbody>
                         @foreach ($cotizacion->partidas as $partida)
                             <tr>
-                                <td data-etiqueta="Tipo"><span class="insignia-tipo">{{ ucfirst($partida->tipo) }}</span></td>
+                                <td data-etiqueta="Tipo"><span class="texto-tipo-concepto">{{ ucfirst($partida->tipo) }}</span></td>
                                 <th scope="row" data-etiqueta="Concepto">{{ $partida->nombreHistorico() }}</th>
                                 <td data-etiqueta="Descripción">{{ $partida->descripcion }}</td>
                                 <td data-etiqueta="Cantidad">{{ number_format((float) $partida->cantidad, 2) }}</td>
