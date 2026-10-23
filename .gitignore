@@ -9,10 +9,17 @@
 .phpactor.json
 .phpunit.result.cache
 *.bak
+*.orig
+*.rej
 *.swp
 *.tmp
 *~
+*.sqlite
+*.sqlite3
+*.dump
 /.fleet
+/.cache
+/.history
 /.idea
 /.nova
 /.phpunit.cache
@@ -20,6 +27,7 @@
 /.zed
 /auth.json
 /coverage
+/dist
 /node_modules
 /npm-debug.log*
 /pnpm-debug.log*
@@ -27,15 +35,18 @@
 /public/hot
 /public/storage
 /storage/*.key
+/storage/app/*.sql
 /storage/pail
 /storage/framework/composer-cache
 /tmp
+/temp
 /vendor
 /yarn-debug.log*
 /yarn-error.log*
 Homestead.json
 Homestead.yaml
 Thumbs.db
+Desktop.ini
 
 /.local/
 /.superpowers/
@@ -47,4 +58,7 @@ Thumbs.db
 /docs/verificacion/
 /output/
 /work-entry*
+/codex-clipboard-*
+/captura-*
+/screenshot-*
 /public/images/nube-comunitec-blanca.svg

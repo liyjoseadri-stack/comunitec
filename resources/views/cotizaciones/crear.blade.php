@@ -122,5 +122,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/creador-cotizacion.js') }}" defer></script>
+    <script src="{{ asset('js/creador-cotizacion.js') }}?v={{ filemtime(public_path('js/creador-cotizacion.js')) }}" defer></script>
 @endpush

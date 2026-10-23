@@ -6,7 +6,7 @@
         <meta name="color-scheme" content="light">
         <link rel="icon" type="image/png" sizes="1254x1254" href="{{ asset('images/favicon-comunitec.png') }}">
         <title>Iniciar sesión | COMUN&amp;TEC</title>
-        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/administracion.css') }}?v={{ filemtime(public_path('css/administracion.css')) }}">
     </head>
     <body class="acceso">
         <main class="acceso__contenedor">
