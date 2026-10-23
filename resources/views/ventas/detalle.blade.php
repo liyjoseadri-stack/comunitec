@@ -7,11 +7,19 @@
                 <div class="encabezado-seccion encabezado-seccion--acciones">
                     <div>
                         <h2 id="titulo-datos-venta">Información histórica de la venta</h2>
-                        <p>Estos datos corresponden al momento en que se registró la operación.</p>
+                        <p>Estos datos corresponden al momento en que se registró la operación. El comprobante puede enviarse nuevamente cuando sea necesario.</p>
                     </div>
                     <div class="grupo-acciones">
                         <x-boton variante="contorno" :href="route('ventas.listado')">Volver al historial</x-boton>
-                        <x-boton :href="route('ventas.pdf', $venta)">Descargar PDF</x-boton>
+                        <x-boton variante="contorno" :href="route('ventas.pdf', $venta)">Descargar PDF</x-boton>
+                        <form method="POST" action="{{ route('ventas.correo', $venta) }}"
+                            data-confirmar
+                            data-confirmar-titulo="Enviar comprobante"
+                            data-confirmar-mensaje="Se enviará el comprobante de {{ $venta->folio }} a {{ $venta->correo_cliente }}. Puedes repetir esta acción cuando el cliente necesite otra copia."
+                            data-confirmar-etiqueta="Enviar por correo">
+                            @csrf
+                            <x-boton type="submit">Enviar por correo</x-boton>
+                        </form>
                     </div>
                 </div>
                 <dl class="datos-operacion datos-operacion--venta">

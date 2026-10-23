@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CorreoVenta;
 use App\Models\Cotizacion;
 use App\Models\Venta;
 use App\Services\ServicioConversionVenta;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class ControladorVentas extends Controller
 {
@@ -93,6 +96,37 @@ class ControladorVentas extends Controller
                 'partidas.piezas'
             ),
         ])->download("{$venta->folio}.pdf");
+    }
+
+    public function enviarCorreo(Venta $venta): RedirectResponse
+    {
+        if (! filter_var($venta->correo_cliente, FILTER_VALIDATE_EMAIL)) {
+            return back()->with('error', 'La venta no tiene un correo de cliente válido.');
+        }
+
+        $transporte = config('mail.default');
+        if ($transporte === 'log' || ($transporte === 'array' && ! app()->runningUnitTests())) {
+            return back()->with('error', 'Configura un servicio de correo real antes de enviar el comprobante.');
+        }
+
+        $venta->load(
+            'cotizacion',
+            'cliente',
+            'responsable',
+            'partidas.producto',
+            'partidas.servicio',
+            'partidas.piezas'
+        );
+
+        try {
+            Mail::to($venta->correo_cliente)->send(new CorreoVenta($venta));
+        } catch (Throwable $excepcion) {
+            report($excepcion);
+
+            return back()->with('error', 'No fue posible enviar el comprobante. Revisa la configuración del correo e inténtalo de nuevo.');
+        }
+
+        return back()->with('success', "El comprobante de la venta {$venta->folio} se envió a {$venta->correo_cliente}.");
     }
 
     public function guardar(

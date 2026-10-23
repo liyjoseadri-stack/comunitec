@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -720,6 +721,48 @@ class VentasTest extends TestCase
             ->assertSee($venta->folio)
             ->assertSee('Cliente de venta')
             ->assertSee('href="'.route('ventas.detalle', $venta).'"', false);
+    }
+
+    public function test_el_comercial_envia_un_comprobante_de_venta_con_series_y_pdf(): void
+    {
+        [
+            'usuario' => $usuario,
+            'cotizacion' => $cotizacion,
+            'partidaProducto' => $partidaProducto,
+            'piezas' => $piezas,
+        ] = $this->prepararCotizacionAceptada();
+        $this->actingAs($usuario)->post(route('ventas.guardar', $cotizacion), [
+            'metodo_pago' => Venta::METODO_TRANSFERENCIA,
+            'series' => [
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
+            ],
+        ])->assertRedirect();
+        $venta = Venta::sole();
+
+        $this->get(route('ventas.detalle', $venta))
+            ->assertOk()
+            ->assertSee('Enviar por correo')
+            ->assertSee('El comprobante puede enviarse nuevamente cuando sea necesario.')
+            ->assertSee('Puedes repetir esta acción cuando el cliente necesite otra copia.')
+            ->assertSee('action="'.route('ventas.correo', $venta).'"', false);
+
+        $this->post(route('ventas.correo', $venta))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $mensaje = Mail::mailer()->getSymfonyTransport()->messages()->sole()->getOriginalMessage();
+        $this->assertSame('venta@example.test', $mensaje->getTo()[0]->getAddress());
+        $this->assertStringContainsString($venta->folio, $mensaje->getSubject());
+        $this->assertStringContainsString('SERIE-CONVERSION-1', $mensaje->getHtmlBody());
+        $this->assertStringContainsString('Transferencia', $mensaje->getHtmlBody());
+        $this->assertCount(1, $mensaje->getAttachments());
+        $this->assertSame('pdf', $mensaje->getAttachments()[0]->getMediaSubtype());
+
+        $this->post(route('ventas.correo', $venta))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertCount(2, Mail::mailer()->getSymfonyTransport()->messages());
     }
 
     private function prepararCotizacionAceptada(): array

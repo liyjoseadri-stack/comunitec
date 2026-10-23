@@ -132,6 +132,10 @@ Route::middleware(['auth', 'usuario.activo'])->group(function () {
             ControladorVentas::class,
             'guardar',
         ])->name('ventas.guardar');
+        Route::post('/ventas/{venta}/correo', [
+            ControladorVentas::class,
+            'enviarCorreo',
+        ])->name('ventas.correo');
         Route::post('/api/cotizaciones', [
             ControladorCotizaciones::class,
             'guardarCompleta',
