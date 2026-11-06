@@ -26,7 +26,7 @@ class SolicitudGuardarCotizacionCompleta extends FormRequest
                 'bail',
                 'nullable',
                 new NumeroFinito,
-                'numeric',
+                'integer',
                 CalculosCotizacion::REGLA_PRECISION,
                 function ($atributo, $valor, $fallar) {
                     if ((float) $valor !== 0.0 && ((float) $valor < 5 || (float) $valor > 10)) {
@@ -46,12 +46,12 @@ class SolicitudGuardarCotizacionCompleta extends FormRequest
                 'required_if:items.*.tipo,'.PartidaCotizacion::TIPO_SERVICIO,
                 Rule::exists('servicios', 'id')->where('activo', true),
             ],
-            'items.*.descripcion' => ['required', 'string', 'max:1000'],
+            'items.*.descripcion' => ['nullable', 'string', 'max:1000'],
             'items.*.cantidad' => [
                 'bail',
                 'required',
                 new NumeroFinito,
-                'numeric',
+                'integer',
                 CalculosCotizacion::REGLA_PRECISION,
                 'gt:0',
             ],
@@ -67,7 +67,7 @@ class SolicitudGuardarCotizacionCompleta extends FormRequest
                 'bail',
                 'required',
                 new NumeroFinito,
-                'numeric',
+                'integer',
                 CalculosCotizacion::REGLA_PRECISION,
                 'between:0,100',
             ],
@@ -77,6 +77,9 @@ class SolicitudGuardarCotizacionCompleta extends FormRequest
     public function messages(): array
     {
         return [
+            'porcentaje_descuento.integer' => 'El descuento general debe ser un número entero.',
+            'items.*.cantidad.integer' => 'La cantidad debe ser un número entero.',
+            'items.*.porcentaje_descuento.integer' => 'El descuento del concepto debe ser un número entero.',
             'porcentaje_descuento.decimal' => 'El descuento general admite como máximo dos decimales.',
             'items.*.cantidad.decimal' => 'La cantidad admite como máximo dos decimales.',
             'items.*.precio_unitario.decimal' => 'El precio admite como máximo dos decimales.',

@@ -8,6 +8,7 @@
             fn ($partida) => $partida->tipo === 'producto'
                 && ($partida->requiere_numero_serie ?? $partida->articulo?->requiere_numero_serie)
         )->values();
+        $mostrarDetallePago = old('metodo_pago') === \App\Models\Venta::METODO_OTRO;
     @endphp
 
     <div class="flujo-registro-venta">
@@ -72,7 +73,16 @@
                                 <option value="{{ $valor }}" @selected(old('metodo_pago') === $valor)>{{ $etiqueta }}</option>
                             @endforeach
                         </x-campo-formulario>
-                        <x-campo-formulario id="detalle-metodo-pago" nombre="detalle_metodo_pago" etiqueta="Descripción del método de pago" ayuda="Solo es obligatoria cuando eliges Otro." :valor="old('detalle_metodo_pago')" maxlength="255" />
+                        <div class="campo-formulario" data-contenedor-detalle-pago @if (! $mostrarDetallePago) hidden @endif>
+                            <label for="detalle-metodo-pago">Descripción del método de pago</label>
+                            <input id="detalle-metodo-pago" name="detalle_metodo_pago" value="{{ old('detalle_metodo_pago') }}" maxlength="255"
+                                @disabled(! $mostrarDetallePago) @required($mostrarDetallePago)
+                                @if ($errors->has('detalle_metodo_pago')) aria-invalid="true" aria-describedby="detalle-metodo-pago-error" @endif>
+                            <small>Especifica el método utilizado.</small>
+                            @error('detalle_metodo_pago')
+                                <p id="detalle-metodo-pago-error" class="error-campo">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
                 </fieldset>
 
@@ -122,3 +132,26 @@
         </section>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        (() => {
+            const metodo = document.querySelector('#metodo-pago');
+            const contenedor = document.querySelector('[data-contenedor-detalle-pago]');
+            const detalle = document.querySelector('#detalle-metodo-pago');
+
+            if (!metodo || !contenedor || !detalle) return;
+
+            const actualizarDetalle = () => {
+                const esOtro = metodo.value === 'otro';
+                contenedor.hidden = !esOtro;
+                detalle.disabled = !esOtro;
+                detalle.required = esOtro;
+                if (!esOtro) detalle.value = '';
+            };
+
+            metodo.addEventListener('change', actualizarDetalle);
+            actualizarDetalle();
+        })();
+    </script>
+@endpush

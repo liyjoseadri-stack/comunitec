@@ -222,14 +222,14 @@ class SnapshotsHistoricosTest extends TestCase
             'items' => [
                 ['tipo' => 'producto', 'producto_id' => $producto->id, 'precio_unitario' => 1, 'descripcion' => 'Primera configuración', 'cantidad' => 1, 'porcentaje_descuento' => 5],
                 ['tipo' => 'producto', 'producto_id' => $producto->id, 'precio_unitario' => 1, 'descripcion' => 'Segunda configuración', 'cantidad' => 2, 'porcentaje_descuento' => 10],
-                ['tipo' => 'servicio', 'servicio_id' => $servicio->id, 'precio_unitario' => 1, 'descripcion' => 'Alcance acordado', 'cantidad' => 1.5, 'porcentaje_descuento' => 0],
+                ['tipo' => 'servicio', 'servicio_id' => $servicio->id, 'precio_unitario' => 1, 'descripcion' => 'Alcance acordado', 'cantidad' => 2, 'porcentaje_descuento' => 0],
             ],
         ])->assertCreated();
 
         $partidas = Cotizacion::whereKeyNot($anterior->id)->sole()->partidas;
         $this->assertSame(['Equipo de catálogo', 'Equipo de catálogo', 'Instalación original'], $partidas->pluck('nombre_concepto')->all());
         $this->assertSame(['EQ-001', 'EQ-001', 'SER-001'], $partidas->pluck('codigo_concepto')->all());
-        $this->assertSame(['949.05', '1798.20', '675.00'], $partidas->pluck('subtotal')->all());
+        $this->assertSame(['949.05', '1798.20', '900.00'], $partidas->pluck('subtotal')->all());
         $this->assertTrue($partidas[0]->requiere_numero_serie);
         $this->assertSame('Marca original', $partidas[0]->marca_concepto);
         $this->assertSame('Modelo original', $partidas[0]->modelo_concepto);

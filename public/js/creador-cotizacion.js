@@ -25,6 +25,20 @@
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase();
 
+    function limitarAEnteros(control) {
+        control.addEventListener('keydown', (evento) => {
+            if (['.', ',', 'e', 'E', '+', '-'].includes(evento.key)) {
+                evento.preventDefault();
+            }
+        });
+        control.addEventListener('paste', (evento) => {
+            const texto = evento.clipboardData?.getData('text').trim() ?? '';
+            if (!/^\d+$/.test(texto)) {
+                evento.preventDefault();
+            }
+        });
+    }
+
     function configurarAutocompletado({entrada, lista, obtenerOpciones, alSeleccionar}) {
         let resultados = [];
         let activo = -1;
@@ -173,10 +187,10 @@
                 </div>
                 <small class="captura-concepto__detalle">Escribe al menos 2 caracteres.</small>
             </td>
-            <td data-label="Descripción adicional"><textarea class="captura-descripcion" rows="2" aria-label="Descripción adicional"></textarea></td>
-            <td data-label="Cantidad"><input class="captura-cantidad" type="number" min="1" step="1" value="1" aria-label="Cantidad"></td>
+            <td data-label="Descripción del catálogo"><textarea class="captura-descripcion" rows="2" aria-label="Descripción del catálogo" readonly></textarea></td>
+            <td data-label="Cantidad"><input class="captura-cantidad" type="number" min="1" step="1" value="1" inputmode="numeric" aria-label="Cantidad"></td>
             <td data-label="Precio unitario"><input class="captura-precio" type="number" min="0.01" step="0.01" value="0.00" aria-label="Precio unitario" readonly></td>
-            <td data-label="Descuento (%)"><input class="captura-descuento" type="number" min="0" max="100" step="0.01" value="0" aria-label="Descuento porcentual"></td>
+            <td data-label="Descuento (%)"><input class="captura-descuento" type="number" min="0" max="100" step="1" value="0" inputmode="numeric" aria-label="Descuento porcentual"></td>
             <td data-label="Subtotal"><output class="captura-subtotal">$0.00</output></td>
             <td data-label="Acciones"><button class="boton boton--peligro boton--compacto captura-eliminar" type="button" aria-label="Eliminar concepto">Eliminar</button></td>
         `;
@@ -196,6 +210,8 @@
         };
         filas.push(estado);
         cuerpo.append(fila);
+        limitarAEnteros(estado.cantidad);
+        limitarAEnteros(estado.descuento);
 
         const lista = fila.querySelector('.lista-autocompletado');
         const autocompletado = configurarAutocompletado({
@@ -228,6 +244,7 @@
         });
         estado.busqueda.addEventListener('input', () => {
             estado.elemento = null;
+            estado.descripcion.value = '';
             estado.precio.value = '0.00';
             calcularTotales();
         });
@@ -309,14 +326,21 @@
             }
             if (Number(fila.cantidad.value) <= 0) {
                 errores.push(`La cantidad de la fila ${indice + 1} debe ser mayor que cero.`);
+            } else if (!Number.isInteger(Number(fila.cantidad.value))) {
+                errores.push(`La cantidad de la fila ${indice + 1} debe ser un número entero.`);
             }
             if (Number(fila.precio.value) <= 0) {
                 errores.push(`El precio de la fila ${indice + 1} debe ser mayor que cero.`);
             }
             if (Number(fila.descuento.value) < 0 || Number(fila.descuento.value) > 100) {
                 errores.push(`El descuento de la fila ${indice + 1} debe estar entre 0 y 100%.`);
+            } else if (!Number.isInteger(Number(fila.descuento.value))) {
+                errores.push(`El descuento de la fila ${indice + 1} debe ser un número entero.`);
             }
         });
+        if (!Number.isInteger(Number(descuentoGeneral.value))) {
+            errores.push('El descuento general debe ser un número entero.');
+        }
         return errores;
     }
 
@@ -397,6 +421,7 @@
 
     botonAgregar.addEventListener('click', crearFila);
     descuentoGeneral.addEventListener('input', calcularTotales);
+    limitarAEnteros(descuentoGeneral);
     configurarCliente();
     crearFila();
 })();

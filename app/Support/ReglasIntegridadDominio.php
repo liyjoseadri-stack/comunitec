@@ -15,10 +15,12 @@ class ReglasIntegridadDominio
             return;
         }
 
-        if ($motor !== 'mysql' || preg_match('/^(\d+\.\d+\.\d+)/', $version ?? '', $coincidencias) !== 1
-            || str_contains(strtolower($version ?? ''), 'mariadb')
-            || version_compare($coincidencias[1], '8.0.16', '<')) {
-            throw new RuntimeException('Las restricciones de dominio requieren MySQL 8.0.16+ o SQLite. No se modificó el esquema.');
+        $versionValida = preg_match('/^(\d+\.\d+\.\d+)/', $version ?? '', $coincidencias) === 1;
+        $esMariaDb = str_contains(strtolower($version ?? ''), 'mariadb');
+        $versionMinima = $esMariaDb ? '10.2.1' : '8.0.16';
+
+        if ($motor !== 'mysql' || ! $versionValida || version_compare($coincidencias[1], $versionMinima, '<')) {
+            throw new RuntimeException('Las restricciones de dominio requieren MySQL 8.0.16+, MariaDB 10.2.1+ o SQLite. No se modificó el esquema.');
         }
     }
 
@@ -76,8 +78,9 @@ class ReglasIntegridadDominio
         return $reglas;
     }
 
-    public static function protecciones(string $motor): array
+    public static function protecciones(string $motor, ?string $version = null): array
     {
+        $esMariaDb = $motor === 'mysql' && str_contains(strtolower($version ?? ''), 'mariadb');
         $protecciones = [];
         foreach (self::reglas($motor) as $nombre => $regla) {
             $tabla = $regla['tabla'];
@@ -85,7 +88,7 @@ class ReglasIntegridadDominio
                 $expresion = $regla['expresion'];
                 $protecciones[$nombre] = [
                     'crear' => "ALTER TABLE `$tabla` ADD CONSTRAINT `$nombre` CHECK (COALESCE(($expresion), 0) = 1)",
-                    'eliminar' => "ALTER TABLE `$tabla` DROP CHECK `$nombre`",
+                    'eliminar' => "ALTER TABLE `$tabla` DROP ".($esMariaDb ? 'CONSTRAINT' : 'CHECK')." `$nombre`",
                     'check' => true,
                 ];
 

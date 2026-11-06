@@ -545,7 +545,7 @@ class CotizacionesTest extends TestCase
 
         $this->assertDatabaseHas('partidas_cotizacion', [
             'cotizacion_id' => $cotizacion->id,
-            'descripcion' => 'Equipo para el área administrativa',
+            'descripcion' => 'Equipo de cómputo',
             'cantidad' => 2,
             'precio_unitario' => 1250,
             'subtotal' => 2500,

@@ -33,13 +33,20 @@ class IntegridadCotizacionTest extends TestCase
                 'cantidad cero' => ['cantidad' => 0],
                 'cantidad negativa' => ['cantidad' => -1],
                 'producto fraccionario' => ['cantidad' => 1.5, 'subtotal' => 150, 'total' => 150],
+                'servicio fraccionario' => [
+                    'tipo' => 'servicio', 'cantidad' => 1.5, 'subtotal' => 150, 'total' => 150,
+                ],
                 'precio negativo' => ['precio_unitario' => -100],
                 'precio no numerico' => ['precio_unitario' => 'invalido'],
                 'subtotal negativo' => ['subtotal' => -100],
                 'total negativo' => ['total' => -100],
                 'descuento de partida negativo' => ['porcentaje_descuento' => -10],
                 'descuento de partida excesivo' => ['porcentaje_descuento' => 101],
+                'descuento de partida fraccionario' => [
+                    'porcentaje_descuento' => 0.5, 'subtotal' => 99.5, 'total' => 99.5,
+                ],
                 'descuento general invalido' => ['descuento_general' => 50, 'total' => 50],
+                'descuento general fraccionario' => ['descuento_general' => 7.5, 'total' => 92.5],
                 'cantidad de servicio con precision excesiva' => [
                     'tipo' => 'servicio',
                     'cantidad' => 1.333,

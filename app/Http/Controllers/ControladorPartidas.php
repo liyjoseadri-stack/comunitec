@@ -19,9 +19,9 @@ class ControladorPartidas extends Controller
     public function guardar(Request $solicitud, Cotizacion $cotizacion)
     {
         $datos = $this->validar($solicitud);
-        $this->modificar($cotizacion, fn () => $cotizacion->partidas()->create($datos));
+        $this->modificar($cotizacion, fn () => $cotizacion->partidas()->create($datos), false);
 
-        return back()->with('success', 'Partida agregada. Si la cotización estaba aceptada, requiere una nueva aceptación.');
+        return back()->with('success', 'Partida agregada.');
     }
 
     public function actualizar(Request $solicitud, Cotizacion $cotizacion, PartidaCotizacion $partida)
@@ -45,7 +45,7 @@ class ControladorPartidas extends Controller
     {
         if (! $solicitud->filled('porcentaje_descuento')) {
             $solicitud->merge([
-                'porcentaje_descuento' => $partida?->porcentaje_descuento ?? 0,
+                'porcentaje_descuento' => (int) ($partida?->porcentaje_descuento ?? 0),
             ]);
         }
 
@@ -93,7 +93,8 @@ class ControladorPartidas extends Controller
             ],
 
             'descripcion' => [
-                'required',
+                'required_if:tipo,'.PartidaCotizacion::TIPO_OTRO,
+                'nullable',
                 'string',
                 'max:1000',
             ],
@@ -102,7 +103,7 @@ class ControladorPartidas extends Controller
                 'bail',
                 'required',
                 new NumeroFinito,
-                $solicitud->input('tipo') === PartidaCotizacion::TIPO_PRODUCTO ? 'integer' : 'numeric',
+                'integer',
                 CalculosCotizacion::REGLA_PRECISION,
                 'gt:0',
             ],
@@ -121,7 +122,7 @@ class ControladorPartidas extends Controller
                 'bail',
                 'required',
                 new NumeroFinito,
-                'numeric',
+                'integer',
                 CalculosCotizacion::REGLA_PRECISION,
                 'between:0,100',
             ],
@@ -148,6 +149,9 @@ class ControladorPartidas extends Controller
                 abort_if($elemento === null, 422);
                 $datos = [...$datos, ...app(ServicioCreacionCotizacion::class)->snapshot($elemento)];
             }
+            $datos['descripcion'] = $mismoElemento
+                ? $partida->descripcion
+                : (trim((string) $elemento->descripcion) ?: $elemento->nombre);
             $datos['producto_id'] = $esProducto ? $elemento?->id : null;
             $datos['servicio_id'] = $esProducto ? null : $elemento?->id;
             $datos['precio_unitario'] = $mismoElemento
@@ -164,16 +168,19 @@ class ControladorPartidas extends Controller
         ];
     }
 
-    private function modificar(Cotizacion $cotizacion, callable $operacion): void
+    private function modificar(Cotizacion $cotizacion, callable $operacion, bool $permiteAceptada = true): void
     {
-        DB::transaction(function () use ($cotizacion, $operacion) {
+        DB::transaction(function () use ($cotizacion, $operacion, $permiteAceptada) {
             $actual = Cotizacion::whereKey($cotizacion->id)->lockForUpdate()->firstOrFail();
             abort_if($actual->venta()->exists(), 422, 'Una cotización convertida en venta ya no admite cambios.');
-            abort_unless(in_array($actual->estado, [
+            $estadosPermitidos = [
                 Cotizacion::ESTADO_BORRADOR,
                 Cotizacion::ESTADO_PENDIENTE,
-                Cotizacion::ESTADO_ACEPTADA,
-            ], true), 422, 'Esta cotización ya no admite cambios.');
+            ];
+            if ($permiteAceptada) {
+                $estadosPermitidos[] = Cotizacion::ESTADO_ACEPTADA;
+            }
+            abort_unless(in_array($actual->estado, $estadosPermitidos, true), 422, 'Esta cotización ya no admite nuevos conceptos.');
             if ($actual->estado === Cotizacion::ESTADO_ACEPTADA) {
                 app(ServicioInventarioCotizacion::class)->liberarParaEdicion($actual);
             }

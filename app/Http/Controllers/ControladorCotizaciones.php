@@ -263,7 +263,7 @@ class ControladorCotizaciones extends Controller
                 'bail',
                 'nullable',
                 new NumeroFinito,
-                'numeric',
+                'integer',
                 CalculosCotizacion::REGLA_PRECISION,
                 function ($atributo,
                     $valor,

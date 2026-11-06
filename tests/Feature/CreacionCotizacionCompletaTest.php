@@ -24,6 +24,9 @@ class CreacionCotizacionCompletaTest extends TestCase
         yield 'descuento general' => ['descuento_general', 7.255, 'porcentaje_descuento'];
         yield 'precio unitario' => ['precio_unitario', 12.345, 'items.0.precio_unitario'];
         yield 'cantidad de producto fraccionaria' => ['cantidad', 1.33, 'items.0.cantidad', 'producto'];
+        yield 'cantidad de servicio fraccionaria' => ['cantidad', 1.33, 'items.0.cantidad'];
+        yield 'descuento de concepto fraccionario' => ['porcentaje_descuento', 0.5, 'items.0.porcentaje_descuento'];
+        yield 'descuento general fraccionario' => ['descuento_general', 7.5, 'porcentaje_descuento'];
     }
 
     #[DataProvider('entradasConPrecisionExcesiva')]
@@ -89,6 +92,33 @@ class CreacionCotizacionCompletaTest extends TestCase
             ->assertOk()
             ->assertSee('Cotizaciones registradas')
             ->assertDontSee('data-creador-cotizacion', false);
+
+        $script = file_get_contents(public_path('js/creador-cotizacion.js'));
+        $this->assertStringContainsString('class="captura-descripcion"', $script);
+        $this->assertStringContainsString('readonly', $script);
+    }
+
+    public function test_la_descripcion_del_catalogo_no_puede_sustituirse_desde_la_solicitud(): void
+    {
+        $datos = $this->catalogo();
+        $datos['producto']->update(['descripcion' => 'Descripción oficial del inventario']);
+
+        $this->actingAs($datos['usuario'])->postJson('/api/cotizaciones', [
+            'cliente_id' => $datos['cliente']->id,
+            'items' => [[
+                'tipo' => 'producto',
+                'producto_id' => $datos['producto']->id,
+                'descripcion' => 'Descripción manipulada',
+                'cantidad' => 1,
+                'precio_unitario' => 1,
+                'porcentaje_descuento' => 0,
+            ]],
+        ])->assertCreated();
+
+        $this->assertSame(
+            'Descripción oficial del inventario',
+            Cotizacion::sole()->partidas()->sole()->descripcion
+        );
     }
 
     public function test_guarda_la_cotizacion_y_todos_sus_conceptos_en_una_transaccion(): void
@@ -157,7 +187,7 @@ class CreacionCotizacionCompletaTest extends TestCase
         $this->assertDatabaseCount('partidas_cotizacion', 0);
     }
 
-    public function test_el_flujo_completo_admite_servicios_fraccionarios_y_descuentos_con_redondeo(): void
+    public function test_el_flujo_completo_admite_precios_con_centavos_y_descuentos_enteros(): void
     {
         Mail::fake();
         $datos = $this->catalogo();
@@ -166,7 +196,7 @@ class CreacionCotizacionCompletaTest extends TestCase
 
         $this->actingAs($datos['usuario'])->postJson('/api/cotizaciones', [
             'cliente_id' => $datos['cliente']->id,
-            'porcentaje_descuento' => 7.5,
+            'porcentaje_descuento' => 7,
             'items' => [
                 [
                     'tipo' => 'producto',
@@ -174,7 +204,7 @@ class CreacionCotizacionCompletaTest extends TestCase
                     'descripcion' => 'Primer lote',
                     'cantidad' => 2,
                     'precio_unitario' => 1,
-                    'porcentaje_descuento' => 7.25,
+                    'porcentaje_descuento' => 7,
                 ],
                 [
                     'tipo' => 'producto',
@@ -188,14 +218,14 @@ class CreacionCotizacionCompletaTest extends TestCase
                     'tipo' => 'servicio',
                     'servicio_id' => $datos['servicio']->id,
                     'descripcion' => 'Trabajo parcial',
-                    'cantidad' => 1.33,
+                    'cantidad' => 1,
                     'precio_unitario' => 1,
-                    'porcentaje_descuento' => 3.5,
+                    'porcentaje_descuento' => 3,
                 ],
             ],
         ])->assertCreated();
         $cotizacion = Cotizacion::sole();
-        $this->assertSame('50.17', $cotizacion->total);
+        $this->assertSame('46.64', $cotizacion->total);
         $partidasOriginales = $cotizacion->partidas()->orderBy('id')->get()->map(fn ($partida): array => [
             'cantidad' => $partida->cantidad,
             'precio_unitario' => $partida->precio_unitario,
@@ -217,7 +247,7 @@ class CreacionCotizacionCompletaTest extends TestCase
 
         $this->assertSame('venta', $cotizacion->fresh()->estado);
         $this->assertSame(2, $datos['producto']->fresh()->existencias);
-        $this->assertSame('50.17', Venta::sole()->total);
+        $this->assertSame('46.64', Venta::sole()->total);
         $this->assertDatabaseCount('partidas_venta', 3);
         $this->assertSame($partidasOriginales, Venta::sole()->partidas()->orderBy('id')->get()
             ->map(fn ($partida): array => [

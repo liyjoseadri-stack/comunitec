@@ -60,7 +60,7 @@
                     <x-campo-formulario id="fecha-vigencia" etiqueta="Vigencia estimada" tipo="date" :valor="$vigenciaEstimada->toDateString()" ayuda="Se confirma al enviar: 15 días hábiles." readonly />
                     <x-campo-formulario id="folio-informativo" etiqueta="Folio" :valor="$folioInformativo" ayuda="El folio definitivo se asigna al guardar." readonly />
                     <x-campo-formulario id="area" nombre="area_solicitante" etiqueta="Área solicitante (opcional)" :valor="old('area_solicitante')" maxlength="255" />
-                    <x-campo-formulario id="descuento-general" nombre="porcentaje_descuento" etiqueta="Descuento general (%)" tipo="number" :valor="old('porcentaje_descuento', 0)" ayuda="Usa 0 o un porcentaje entre 5 y 10. Se aplica después de los descuentos por concepto." min="0" max="10" step="0.01" />
+                    <x-campo-formulario id="descuento-general" nombre="porcentaje_descuento" etiqueta="Descuento general (%)" tipo="number" :valor="old('porcentaje_descuento', 0)" ayuda="Usa 0 o un número entero entre 5 y 10. Se aplica después de los descuentos por concepto." min="0" max="10" step="1" inputmode="numeric" data-entero />
                     <x-campo-formulario id="notas-cotizacion" nombre="notas" etiqueta="Notas generales o términos comerciales (opcional)" tipo="textarea" contenedor="campo-formulario creador-cotizacion__notas" :valor="old('notas')" maxlength="3000" rows="3" />
                 </fieldset>
 
@@ -78,7 +78,7 @@
                                 <tr>
                                     <th scope="col">Tipo</th>
                                     <th scope="col">Concepto / búsqueda</th>
-                                    <th scope="col">Descripción adicional</th>
+                                    <th scope="col">Descripción del catálogo</th>
                                     <th scope="col">Cantidad</th>
                                     <th scope="col">Precio unitario</th>
                                     <th scope="col">Descuento</th>

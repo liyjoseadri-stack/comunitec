@@ -52,7 +52,7 @@ class SeriesVentaTest extends TestCase
             ->assertSee('Unidad 1 de 2 · Número de serie')
             ->assertSee('Unidad 2 de 2 · Número de serie')
             ->assertSee('Descripción del método de pago')
-            ->assertSee('Solo es obligatoria cuando eliges Otro')
+            ->assertSee('Especifica el método utilizado')
             ->assertSee('aria-labelledby="producto-serie-'.$partidaSerializable->id.'"', false);
     }
 

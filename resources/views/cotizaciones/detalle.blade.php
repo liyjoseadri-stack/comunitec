@@ -28,12 +28,28 @@
                 grupos.forEach((grupo) => {
                     const visible = grupo.dataset.catalogoTipo === tipo.value;
                     grupo.hidden = !visible;
-                    grupo.querySelector('select').disabled = !visible;
+                    grupo.querySelectorAll('input, select, textarea').forEach((campo) => {
+                        campo.disabled = !visible;
+                    });
                 });
             };
 
             tipo.addEventListener('change', actualizar);
             actualizar();
+
+            document.querySelectorAll('[data-entero]').forEach((campo) => {
+                campo.addEventListener('keydown', (evento) => {
+                    if (['.', ',', 'e', 'E', '+', '-'].includes(evento.key)) {
+                        evento.preventDefault();
+                    }
+                });
+                campo.addEventListener('paste', (evento) => {
+                    const texto = evento.clipboardData?.getData('text').trim() ?? '';
+                    if (!/^\d+$/.test(texto)) {
+                        evento.preventDefault();
+                    }
+                });
+            });
         })();
     </script>
 @endpush

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Cotizacion;
-use App\Models\PartidaCotizacion;
 use App\Support\CalculosCotizacion;
 use Illuminate\Validation\ValidationException;
 
@@ -26,10 +25,10 @@ class ServicioIntegridadCotizacion
             $descuento = $this->numero($partida->getRawOriginal('porcentaje_descuento'));
             $subtotalGuardado = $this->numero($partida->getRawOriginal('subtotal'));
 
-            if ($cantidad <= 0 || ($partida->tipo === PartidaCotizacion::TIPO_PRODUCTO && floor($cantidad) !== $cantidad)) {
-                $this->fallar('Los conceptos requieren cantidades positivas y los productos cantidades enteras.');
+            if ($cantidad <= 0 || floor($cantidad) !== $cantidad) {
+                $this->fallar('Los conceptos requieren cantidades positivas y enteras.');
             }
-            if ($precio < 0 || $descuento < 0 || $descuento > 100 || $subtotalGuardado < 0) {
+            if ($precio < 0 || $descuento < 0 || $descuento > 100 || floor($descuento) !== $descuento || $subtotalGuardado < 0) {
                 $this->fallar('Revisa los precios, descuentos y subtotales de los conceptos.');
             }
 
@@ -41,8 +40,9 @@ class ServicioIntegridadCotizacion
         }
 
         $descuentoGeneral = $this->numero($cotizacion->getRawOriginal('porcentaje_descuento'));
-        if ($descuentoGeneral !== 0.0 && ($descuentoGeneral < 5 || $descuentoGeneral > 10)) {
-            $this->fallar('El descuento general debe ser 0 o estar entre 5% y 10%.');
+        if (floor($descuentoGeneral) !== $descuentoGeneral
+            || ($descuentoGeneral !== 0.0 && ($descuentoGeneral < 5 || $descuentoGeneral > 10))) {
+            $this->fallar('El descuento general debe ser 0 o un número entero entre 5% y 10%.');
         }
 
         $total = $this->numero($cotizacion->getRawOriginal('total'));

@@ -79,7 +79,7 @@ class EdicionCotizacionesTest extends TestCase
 
             'producto_id' => $pieza->producto_id,
 
-            'descripcion' => 'Monitor actualizado',
+            'descripcion' => 'Monitor',
             'cantidad' => 2,
             'precio_unitario' => 500,
 
@@ -90,7 +90,7 @@ class EdicionCotizacionesTest extends TestCase
         $this->assertSame(1, $partida->articulo->fresh()->existencias);
         $this->assertDatabaseHas('partidas_cotizacion', [
             'id' => $partida->id,
-            'descripcion' => 'Monitor actualizado',
+            'descripcion' => 'Monitor',
             'cantidad' => 2,
         ]);
     }
@@ -366,6 +366,26 @@ class EdicionCotizacionesTest extends TestCase
         $this->assertSame('475.00', $cotizacion->fresh()->total);
     }
 
+    public function test_una_cotizacion_aceptada_no_muestra_ni_admite_nuevos_conceptos(): void
+    {
+        [$cotizacion, $partida, $pieza] = $this->preparar('aceptada');
+
+        $this->get(route('cotizaciones.detalle', $cotizacion))
+            ->assertOk()
+            ->assertDontSee('Agregar producto o servicio')
+            ->assertDontSee('action="'.route('cotizaciones.partidas.guardar', $cotizacion).'"', false)
+            ->assertSee('Conceptos de la cotización');
+
+        $this->post(route('cotizaciones.partidas.guardar', $cotizacion),
+            $this->conceptoParaCrear($pieza->producto_id)
+        )->assertStatus(422);
+
+        $this->assertDatabaseCount('partidas_cotizacion', 1);
+        $this->assertDatabaseHas('partidas_cotizacion', ['id' => $partida->id]);
+        $this->assertSame('aceptada', $cotizacion->fresh()->estado);
+        $this->assertSame('reservada', $pieza->fresh()->estado);
+    }
+
     public function test_editar_una_partida_conserva_el_precio_cotizado_aunque_cambie_el_catalogo(): void
     {
         [$cotizacion, $partida, $pieza] = $this->preparar('borrador');
@@ -374,13 +394,13 @@ class EdicionCotizacionesTest extends TestCase
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
 
             'producto_id' => $pieza->producto_id,
-            'descripcion' => 'Monitor para recepción',
+            'descripcion' => 'Monitor',
             'cantidad' => 2,
         ])->assertRedirect();
 
         $this->assertDatabaseHas('partidas_cotizacion', [
             'id' => $partida->id,
-            'descripcion' => 'Monitor para recepción',
+            'descripcion' => 'Monitor',
             'cantidad' => 2,
             'precio_unitario' => 500,
             'subtotal' => 1000,
@@ -396,13 +416,13 @@ class EdicionCotizacionesTest extends TestCase
         $this->put("/cotizaciones/{$cotizacion->id}/partidas/{$partida->id}", [
 
             'producto_id' => $pieza->producto_id,
-            'descripcion' => 'Monitor conservado en el historial',
+            'descripcion' => 'Monitor',
             'cantidad' => 2,
         ])->assertSessionDoesntHaveErrors();
 
         $this->assertDatabaseHas('partidas_cotizacion', [
             'id' => $partida->id,
-            'descripcion' => 'Monitor conservado en el historial',
+            'descripcion' => 'Monitor',
             'precio_unitario' => 500,
             'subtotal' => 1000,
         ]);

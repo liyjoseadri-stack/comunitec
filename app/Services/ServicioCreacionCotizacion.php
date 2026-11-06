@@ -68,7 +68,7 @@ class ServicioCreacionCotizacion
             'tipo' => $item['tipo'],
             'producto_id' => $esProducto ? $elemento->id : null,
             'servicio_id' => $esProducto ? null : $elemento->id,
-            'descripcion' => $item['descripcion'],
+            'descripcion' => trim((string) $elemento->descripcion) ?: $elemento->nombre,
             'cantidad' => $item['cantidad'],
             'precio_unitario' => $precio,
             'porcentaje_descuento' => $descuento,

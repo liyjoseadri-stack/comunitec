@@ -287,6 +287,36 @@ class VentasTest extends TestCase
             ->assertSee('Crédito autorizado por dirección');
     }
 
+    public function test_un_metodo_predefinido_no_conserva_una_descripcion_adicional(): void
+    {
+        [
+            'usuario' => $usuario,
+            'cotizacion' => $cotizacion,
+            'partidaProducto' => $partidaProducto,
+            'piezas' => $piezas,
+        ] = $this->prepararCotizacionAceptada();
+
+        $this->actingAs($usuario)->get(route('ventas.crear', $cotizacion))
+            ->assertOk()
+            ->assertSee('data-contenedor-detalle-pago', false)
+            ->assertSee('hidden', false)
+            ->assertSee('id="detalle-metodo-pago"', false)
+            ->assertSee('disabled', false);
+
+        $this->post(route('ventas.guardar', $cotizacion), [
+            'metodo_pago' => Venta::METODO_EFECTIVO,
+            'detalle_metodo_pago' => 'Se realizará en dos pagos',
+            'series' => [
+                $partidaProducto->id => $piezas->pluck('numero_serie')->all(),
+            ],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $venta = Venta::sole();
+        $this->assertSame(Venta::METODO_EFECTIVO, $venta->metodo_pago);
+        $this->assertNull($venta->detalle_metodo_pago);
+        $this->assertSame('Efectivo', $venta->etiquetaMetodoPago());
+    }
+
     public function test_una_falla_intermedia_revierte_la_venta_y_la_entrega_de_series(): void
     {
         [

@@ -37,46 +37,53 @@
                                                     <input type="hidden" name="tipo" value="{{ $partida->tipo }}">
                                                     <input type="hidden" name="producto_id" value="{{ $partida->producto_id }}">
                                                     <input type="hidden" name="servicio_id" value="{{ $partida->servicio_id }}">
-                                                    <label>
-                                                        Descripción
-                                                        <input
-                                                            name="descripcion"
-                                                            value="{{ $partida->descripcion }}"
-                                                            required
-                                                        >
-                                                    </label>
+                                                    @if ($partida->tipo === 'otro')
+                                                        <label>
+                                                            Concepto libre
+                                                            <input
+                                                                name="descripcion"
+                                                                value="{{ $partida->descripcion }}"
+                                                                required
+                                                            >
+                                                        </label>
+                                                    @endif
                                                     <label>
                                                         Cantidad
                                                         <input
                                                             type="number"
                                                             name="cantidad"
                                                             value="{{ $partida->cantidad }}"
-                                                            min="{{ $partida->tipo === 'producto' ? '1' : '0.01' }}"
-                                                            step="{{ $partida->tipo === 'producto' ? '1' : '0.01' }}"
+                                                            min="1"
+                                                            step="1"
+                                                            inputmode="numeric"
+                                                            data-entero
                                                             required
                                                         >
                                                     </label>
-                                                    <label>
-                                                        Precio unitario
-                                                        <input
-                                                            type="number"
-                                                            name="precio_unitario"
-                                                            value="{{ $partida->precio_unitario }}"
-                                                            min="0"
-                                                            step="0.01"
-                                                            @readonly($partida->tipo !== 'otro')
-                                                            required
-                                                        >
-                                                    </label>
+                                                    @if ($partida->tipo === 'otro')
+                                                        <label>
+                                                            Precio unitario
+                                                            <input
+                                                                type="number"
+                                                                name="precio_unitario"
+                                                                value="{{ $partida->precio_unitario }}"
+                                                                min="0"
+                                                                step="0.01"
+                                                                required
+                                                            >
+                                                        </label>
+                                                    @endif
                                                     <label>
                                                         Descuento del concepto (%)
                                                         <input
                                                             type="number"
                                                             name="porcentaje_descuento"
-                                                            value="{{ $partida->porcentaje_descuento }}"
+                                                            value="{{ (float) $partida->porcentaje_descuento }}"
                                                             min="0"
                                                             max="100"
-                                                            step="0.01"
+                                                            step="1"
+                                                            inputmode="numeric"
+                                                            data-entero
                                                             required
                                                         >
                                                     </label>
@@ -139,7 +146,7 @@
                                     <td colspan="8" class="tabla-estado-vacio">
                                         <x-estado-vacio mensaje="Esta cotización todavía no tiene conceptos.">
                                             <x-slot:acciones>
-                                                @if ($puedeEditar && in_array($cotizacion->estado, ['borrador', 'pendiente', 'aceptada'], true))
+                                                @if ($puedeEditar && in_array($cotizacion->estado, ['borrador', 'pendiente'], true))
                                                     <x-boton variante="contorno" href="#tipo-partida">Agregar concepto</x-boton>
                                                 @endif
                                             </x-slot:acciones>

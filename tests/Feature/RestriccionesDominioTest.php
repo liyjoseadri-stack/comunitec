@@ -261,14 +261,14 @@ class RestriccionesDominioTest extends TestCase
     public function test_rechaza_motores_sin_garantia_de_enforcement(string $motor, ?string $version): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('MySQL 8.0.16+');
+        $this->expectExceptionMessage('MariaDB 10.2.1+');
         ReglasIntegridadDominio::validarMotor($motor, $version);
     }
 
     public static function versionesIncompatibles(): array
     {
         return [
-            ['mysql', '5.7.44'], ['mysql', '8.0.15'], ['mysql', '10.11.6-MariaDB'],
+            ['mysql', '5.7.44'], ['mysql', '8.0.15'], ['mysql', '10.2.0-MariaDB'],
             ['mariadb', '11.4.2-MariaDB'], ['mysql', null], ['mysql', 'versión desconocida'],
             ['pgsql', '16.0'],
         ];
@@ -278,6 +278,7 @@ class RestriccionesDominioTest extends TestCase
     {
         ReglasIntegridadDominio::validarMotor('mysql', '8.0.16');
         ReglasIntegridadDominio::validarMotor('mysql', '8.4.3-commercial');
+        ReglasIntegridadDominio::validarMotor('mysql', '10.4.32-MariaDB');
         $protecciones = ReglasIntegridadDominio::protecciones('mysql');
         $checks = array_filter($protecciones, fn (array $proteccion): bool => $proteccion['check']);
         $this->assertCount(4, $checks);
@@ -307,6 +308,17 @@ class RestriccionesDominioTest extends TestCase
             foreach (['productos', 'servicios'] as $catalogo) {
                 $this->assertStringContainsString('CHAR('.$codigo.')', $protecciones['dominio_'.$catalogo.'_historial_delete']['crear']);
             }
+        }
+    }
+
+    public function test_sql_mariadb_elimina_checks_con_sintaxis_compatible(): void
+    {
+        $protecciones = ReglasIntegridadDominio::protecciones('mysql', '10.4.32-MariaDB');
+        $checks = array_filter($protecciones, fn (array $proteccion): bool => $proteccion['check']);
+
+        $this->assertCount(4, $checks);
+        foreach ($checks as $proteccion) {
+            $this->assertStringContainsString('DROP CONSTRAINT', $proteccion['eliminar']);
         }
     }
 

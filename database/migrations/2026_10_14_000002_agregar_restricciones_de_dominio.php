@@ -22,7 +22,7 @@ return new class extends Migration
 
         $creadas = [];
         try {
-            foreach (ReglasIntegridadDominio::protecciones($motor) as $proteccion) {
+            foreach (ReglasIntegridadDominio::protecciones($motor, $version) as $proteccion) {
                 DB::unprepared($proteccion['crear']);
                 $creadas[] = $proteccion;
             }
@@ -39,7 +39,8 @@ return new class extends Migration
     public function down(): void
     {
         $motor = DB::connection()->getDriverName();
-        foreach (array_reverse(ReglasIntegridadDominio::protecciones($motor)) as $proteccion) {
+        $version = $motor === 'mysql' ? DB::selectOne('SELECT VERSION() AS version')->version : null;
+        foreach (array_reverse(ReglasIntegridadDominio::protecciones($motor, $version)) as $proteccion) {
             DB::unprepared($proteccion['eliminar']);
         }
     }

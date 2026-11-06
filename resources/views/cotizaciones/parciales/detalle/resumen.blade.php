@@ -105,14 +105,14 @@
                         </label>
                         <label>
                             Descuento global (%)
-                            <input type="number" name="porcentaje_descuento" value="{{ old('porcentaje_descuento', $cotizacion->porcentaje_descuento) }}" min="0" max="10" step="0.01">
+                            <input type="number" name="porcentaje_descuento" value="{{ old('porcentaje_descuento', (float) $cotizacion->porcentaje_descuento) }}" min="0" max="10" step="1" inputmode="numeric" data-entero>
                         </label>
                         <label class="campo-formulario--ancho">
                             Notas generales o términos comerciales
                             <textarea name="notas" maxlength="3000">{{ old('notas', $cotizacion->notas) }}</textarea>
                         </label>
                         <p class="ayuda-campo campo-formulario--ancho">
-                            Usa 0 para no aplicar descuento, o un porcentaje entre 5 y 10.
+                            Usa 0 para no aplicar descuento, o un número entero entre 5 y 10.
                         </p>
                         <div class="acciones-formulario campo-formulario--ancho">
                             <button type="submit">Guardar datos de la cotización</button>
