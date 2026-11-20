@@ -21,6 +21,7 @@
             <div><dt>Categoría</dt><dd>{{ $producto->categoria?->nombre ?? 'Sin categoría' }}</dd></div>
             <div><dt>Marca</dt><dd>{{ $producto->marca ?: 'No especificada' }}</dd></div>
             <div><dt>Modelo</dt><dd>{{ $producto->modelo ?: 'No especificado' }}</dd></div>
+            <div><dt>Componente para PC</dt><dd>{{ \App\Models\Producto::etiquetaTipoComponentePc($producto->tipo_componente_pc) }}</dd></div>
             <div><dt>Unidad</dt><dd>{{ $producto->unidad }}</dd></div>
             <div><dt>Precio con IVA</dt><dd>${{ number_format((float) $producto->precio, 2) }}</dd></div>
             <div><dt>Existencias</dt><dd>{{ $producto->existencias }}</dd></div>

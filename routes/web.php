@@ -7,6 +7,7 @@ use App\Http\Controllers\ControladorClientes;
 use App\Http\Controllers\ControladorCotizaciones;
 use App\Http\Controllers\ControladorPanel;
 use App\Http\Controllers\ControladorPartidas;
+use App\Http\Controllers\ControladorPcArmadas;
 use App\Http\Controllers\ControladorPerfil;
 use App\Http\Controllers\ControladorProductos;
 use App\Http\Controllers\ControladorReportes;
@@ -57,6 +58,8 @@ Route::middleware(['auth', 'usuario.activo'])->group(function () {
         ])->name('cotizaciones.crear');
     });
     Route::middleware('rol:administrador,comercial,consulta')->group(function () {
+        Route::get('/inventario/pc-armadas', [ControladorPcArmadas::class, 'listar'])->name('inventario.pc-armadas.listado');
+        Route::get('/inventario/pc-armadas/{pcArmada}', [ControladorPcArmadas::class, 'mostrar'])->whereNumber('pcArmada')->name('inventario.pc-armadas.detalle');
         Route::get('/reportes', [
             ControladorReportes::class,
             'resumen',
@@ -168,6 +171,11 @@ Route::middleware(['auth', 'usuario.activo'])->group(function () {
         Route::get('/inventario/servicios/{servicio}', [ControladorServicios::class, 'mostrar'])->name('inventario.servicios.detalle');
         Route::put('/inventario/servicios/{servicio}', [ControladorServicios::class, 'actualizar'])->name('inventario.servicios.actualizar');
         Route::patch('/inventario/servicios/{servicio}/estado', [ControladorServicios::class, 'actualizarEstado'])->name('inventario.servicios.estado');
+        Route::get('/inventario/pc-armadas/crear', [ControladorPcArmadas::class, 'crear'])->name('inventario.pc-armadas.crear');
+        Route::post('/inventario/pc-armadas', [ControladorPcArmadas::class, 'guardar'])->name('inventario.pc-armadas.guardar');
+        Route::get('/inventario/pc-armadas/{pcArmada}/editar', [ControladorPcArmadas::class, 'editar'])->whereNumber('pcArmada')->name('inventario.pc-armadas.editar');
+        Route::put('/inventario/pc-armadas/{pcArmada}', [ControladorPcArmadas::class, 'actualizar'])->whereNumber('pcArmada')->name('inventario.pc-armadas.actualizar');
+        Route::patch('/inventario/pc-armadas/{pcArmada}/estado', [ControladorPcArmadas::class, 'actualizarEstado'])->whereNumber('pcArmada')->name('inventario.pc-armadas.estado');
         Route::post('/inventario/categorias', [
             ControladorCategorias::class,
             'guardar',

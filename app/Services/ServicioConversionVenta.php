@@ -29,7 +29,7 @@ class ServicioConversionVenta
         ): Venta {
             $cotizacion = Cotizacion::whereKey($cotizacion->id)
                 ->lockForUpdate()
-                ->with('cliente', 'partidas.producto', 'partidas.servicio')
+                ->with('cliente', 'partidas.producto', 'partidas.servicio', 'partidas.configuracionPc')
                 ->firstOrFail();
 
             $this->validarCotizacion($cotizacion);
@@ -74,6 +74,8 @@ class ServicioConversionVenta
                     'modelo_concepto' => $partidaCotizada->modelo_concepto,
                     'unidad_concepto' => $partidaCotizada->unidad_concepto,
                     'requiere_numero_serie' => $partidaCotizada->requiere_numero_serie,
+                    'nombre_pc' => $partidaCotizada->configuracionPc?->nombre,
+                    'tipo_componente_pc' => $partidaCotizada->tipo_componente_pc,
                     'cantidad' => $partidaCotizada->cantidad,
                     'precio_unitario' => $partidaCotizada->precio_unitario,
                     'porcentaje_descuento' => $partidaCotizada->porcentaje_descuento,

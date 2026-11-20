@@ -32,10 +32,13 @@ class ControladorProductos extends Controller
                     ->where('categoria_id', $solicitud->integer('categoria')))
                 ->when($solicitud->input('estado') === 'activos', fn ($consulta) => $consulta->where('activo', true))
                 ->when($solicitud->input('estado') === 'inactivos', fn ($consulta) => $consulta->where('activo', false))
+                ->when($solicitud->filled('tipo_componente_pc'), fn ($consulta) => $consulta
+                    ->where('tipo_componente_pc', $solicitud->string('tipo_componente_pc')->toString()))
                 ->orderBy('nombre')
                 ->paginate(15)
                 ->withQueryString(),
             'categorias' => Categoria::where('activo', true)->orderBy('nombre')->get(),
+            'tiposComponentesPc' => Producto::etiquetasComponentesPc(),
         ]);
     }
 
@@ -61,6 +64,7 @@ class ControladorProductos extends Controller
     {
         return view('inventario.productos.crear', [
             'categorias' => Categoria::where('activo', true)->orderBy('nombre')->get(),
+            'tiposComponentesPc' => Producto::etiquetasComponentesPc(),
         ]);
     }
 
@@ -91,6 +95,7 @@ class ControladorProductos extends Controller
                 })
                 ->orderBy('nombre')
                 ->get(),
+            'tiposComponentesPc' => Producto::etiquetasComponentesPc(),
         ]);
     }
 
@@ -156,6 +161,7 @@ class ControladorProductos extends Controller
             'precio' => ['required', 'numeric', 'min:0'],
             'existencias' => ['required', 'integer', 'min:0'],
             'requiere_numero_serie' => ['nullable', 'boolean'],
+            'tipo_componente_pc' => ['nullable', Rule::in(Producto::tiposComponentesPc())],
         ]);
         $datos['requiere_numero_serie'] = $solicitud->boolean('requiere_numero_serie');
 

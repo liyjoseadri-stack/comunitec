@@ -2,6 +2,7 @@
 
 @section('titulo', 'Registrar venta')
 
+@section('contexto_carga', 'formulario')
 @section('contenido')
     @php
         $partidasConSerie = $cotizacion->partidas->filter(

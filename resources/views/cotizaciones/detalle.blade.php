@@ -3,6 +3,7 @@
 @section('titulo', 'Cotización '.$cotizacion->folio)
 @section('clase_pagina', 'detalle-cotizacion')
 
+@section('contexto_carga', 'formulario')
 @section('contenido')
 
             @include('cotizaciones.parciales.detalle.resumen')

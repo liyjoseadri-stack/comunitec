@@ -1,5 +1,6 @@
 import './bootstrap';
 import './confirmaciones';
+import './carga';
 
 const enfocarResumenErrores = () => {
     const resumen = document.getElementById('resumen-errores-validacion');

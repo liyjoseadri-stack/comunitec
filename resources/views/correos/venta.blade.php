@@ -31,6 +31,9 @@
                             @foreach ($venta->partidas as $partida)
                                 <div style="padding:14px 0;border-top:1px solid #d6e3e8;">
                                     <div style="font-weight:bold;line-height:1.4;">{{ $partida->nombreHistorico() }}</div>
+                                    @if ($partida->nombre_pc)
+                                        <div style="margin-top:4px;color:#526777;font-size:14px;">PC: {{ $partida->nombre_pc }} · {{ \App\Models\Producto::etiquetaTipoComponentePc($partida->tipo_componente_pc) }}</div>
+                                    @endif
                                     <div style="margin-top:4px;color:#526777;font-size:14px;">Cantidad: {{ number_format((float) $partida->cantidad, 2) }} · Subtotal: ${{ number_format((float) $partida->subtotal, 2) }}</div>
                                     @if ($partida->piezas->isNotEmpty())
                                         <div style="margin-top:8px;font-size:14px;">

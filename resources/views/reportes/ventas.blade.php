@@ -1,6 +1,7 @@
 @extends('layouts.aplicacion')
 
 @section('titulo', 'Reporte de ventas')
+@section('contexto_carga', 'listado')
 
 @section('contenido')
             <x-reportes.filtros

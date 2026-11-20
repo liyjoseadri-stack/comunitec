@@ -21,11 +21,11 @@ class DatosDemostracionSeederTest extends TestCase
         $this->seed(DatosDemostracionSeeder::class);
 
         $this->assertSame(6, Categoria::count());
-        $this->assertSame(13, Producto::count());
+        $this->assertSame(200, Producto::count());
         $this->assertSame(6, Servicio::count());
-        $this->assertSame(4, Cliente::count());
-        $this->assertSame(13, Cotizacion::count());
-        $this->assertSame(2, Cotizacion::where('estado', Cotizacion::ESTADO_BORRADOR)->count());
+        $this->assertSame(5, Cliente::count());
+        $this->assertSame(14, Cotizacion::count());
+        $this->assertSame(3, Cotizacion::where('estado', Cotizacion::ESTADO_BORRADOR)->count());
         $this->assertSame(4, Cotizacion::where('estado', Cotizacion::ESTADO_PENDIENTE)->count());
         $this->assertSame(3, Cotizacion::where('estado', Cotizacion::ESTADO_ACEPTADA)->count());
         $this->assertSame(1, Cotizacion::where('estado', Cotizacion::ESTADO_RECHAZADA)->count());

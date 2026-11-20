@@ -1,4 +1,54 @@
             <section class="bloque-administrativo" aria-labelledby="titulo-conceptos-cotizacion">
+                @foreach ($cotizacion->configuracionesPc as $configuracionPc)
+                    @php
+                        $partidasPc = $cotizacion->partidas
+                            ->where('configuracion_pc_cotizacion_id', $configuracionPc->id)
+                            ->sortBy(fn ($partidaPc) => array_flip(\App\Models\Producto::tiposComponentesPc())[$partidaPc->tipo_componente_pc] ?? 99);
+                        $tiposPrincipalesPc = [
+                            \App\Models\Producto::TIPO_COMPONENTE_PROCESADOR,
+                            \App\Models\Producto::TIPO_COMPONENTE_PLACA_MADRE,
+                            \App\Models\Producto::TIPO_COMPONENTE_MEMORIA_RAM,
+                            \App\Models\Producto::TIPO_COMPONENTE_ALMACENAMIENTO,
+                            \App\Models\Producto::TIPO_COMPONENTE_TARJETA_GRAFICA,
+                            \App\Models\Producto::TIPO_COMPONENTE_FUENTE_PODER,
+                            \App\Models\Producto::TIPO_COMPONENTE_GABINETE,
+                        ];
+                        $cantidadPc = max((int) $configuracionPc->cantidad, 1);
+                    @endphp
+                    <article class="cotizacion-pc-resumen">
+                        <div class="encabezado-seccion encabezado-seccion--acciones">
+                            <div>
+                                <p class="ceja-seccion">PC armada</p>
+                                <h3>{{ $configuracionPc->nombre }}</h3>
+                                @if ($configuracionPc->descripcion)
+                                    <p>{{ $configuracionPc->descripcion }}</p>
+                                @endif
+                            </div>
+                            <div>
+                                <strong>{{ $cantidadPc }} PC{{ $cantidadPc === 1 ? '' : 's' }}</strong>
+                                <strong>${{ number_format((float) $partidasPc->sum('subtotal'), 2) }}</strong>
+                            </div>
+                        </div>
+                        <ul class="cotizacion-pc-resumen__componentes">
+                            @foreach ($partidasPc->filter(fn ($partidaPc) => in_array($partidaPc->tipo_componente_pc, $tiposPrincipalesPc, true)) as $partidaPc)
+                                <li>
+                                    <span><strong>{{ \App\Models\Producto::etiquetaTipoComponentePc($partidaPc->tipo_componente_pc) }}:</strong> {{ number_format((float) $partidaPc->cantidad / $cantidadPc, 0) }} × {{ $partidaPc->nombreHistorico() }} por PC</span>
+                                    <strong>${{ number_format((float) $partidaPc->subtotal, 2) }}</strong>
+                                </li>
+                            @endforeach
+                            @if ($partidasPc->reject(fn ($partidaPc) => in_array($partidaPc->tipo_componente_pc, $tiposPrincipalesPc, true))->isNotEmpty())
+                                <li class="cotizacion-pc-resumen__separador"><strong>Extras opcionales</strong></li>
+                                @foreach ($partidasPc->reject(fn ($partidaPc) => in_array($partidaPc->tipo_componente_pc, $tiposPrincipalesPc, true)) as $partidaPc)
+                                    <li>
+                                        <span><strong>{{ \App\Models\Producto::etiquetaTipoComponentePc($partidaPc->tipo_componente_pc) }}:</strong> {{ number_format((float) $partidaPc->cantidad / $cantidadPc, 0) }} × {{ $partidaPc->nombreHistorico() }} por PC</span>
+                                        <strong>${{ number_format((float) $partidaPc->subtotal, 2) }}</strong>
+                                    </li>
+                                @endforeach
+                            @endif
+                        </ul>
+                        <p class="texto-ayuda">Esta PC se administra como un solo concepto. Sus componentes se reservan individualmente al aceptar la cotización.</p>
+                    </article>
+                @endforeach
                 <h2 id="titulo-conceptos-cotizacion">Conceptos de la cotización</h2>
                 <x-tabla-responsive etiqueta="Productos y servicios de la cotización" class="contenedor-partidas" :vacia="$cotizacion->partidas->isEmpty()">
                     <table class="tabla-registros tabla-partidas">
@@ -25,8 +75,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($cotizacion->partidas as $partida)
-                                @if ($puedeEditar && in_array($cotizacion->estado, ['borrador', 'pendiente', 'aceptada'], true))
+                            @php($partidasSinPc = $cotizacion->partidas->whereNull('configuracion_pc_cotizacion_id'))
+                            @forelse ($partidasSinPc as $partida)
+                                @if (! $partida->configuracion_pc_cotizacion_id && $puedeEditar && in_array($cotizacion->estado, ['borrador', 'pendiente', 'aceptada'], true))
                                     <tr>
                                         <td colspan="8">
                                             <details>
@@ -99,6 +150,9 @@
                                     <td><span class="texto-tipo-concepto">{{ ucfirst($partida->tipo) }}</span></td>
                                     <th scope="row">
                                         {{ $partida->nombreHistorico() }}
+                                        @if ($partida->configuracionPc)
+                                            <small class="detalle-tabla">PC: {{ $partida->configuracionPc->nombre }} · {{ \App\Models\Producto::etiquetaTipoComponentePc($partida->tipo_componente_pc) }}</small>
+                                        @endif
                                         @if ($partida->codigoHistorico())
                                             <small class="detalle-tabla">{{ $partida->codigoHistorico() }}</small>
                                         @endif
@@ -126,7 +180,7 @@
                                     </td>
                                     <td>
                                         <x-grupo-acciones-fila>
-                                            @if ($puedeEditar && $cotizacion->estado === 'borrador')
+                                            @if (! $partida->configuracion_pc_cotizacion_id && $puedeEditar && $cotizacion->estado === 'borrador')
                                                 <form class="formulario-administrativo" method="post" action="{{ route('cotizaciones.partidas.eliminar', [$cotizacion, $partida]) }}"
                                                     data-confirmar data-confirmar-titulo="Quitar concepto"
                                                     data-confirmar-mensaje="Se quitará {{ $partida->descripcion }} de la cotización {{ $cotizacion->folio }} y se recalculará el total."
@@ -142,6 +196,7 @@
                                     </td>
                                 </tr>
                             @empty
+                                @if ($cotizacion->configuracionesPc->isEmpty())
                                 <tr>
                                     <td colspan="8" class="tabla-estado-vacio">
                                         <x-estado-vacio mensaje="Esta cotización todavía no tiene conceptos.">
@@ -153,6 +208,7 @@
                                         </x-estado-vacio>
                                     </td>
                                 </tr>
+                                @endif
                             @endforelse
                         </tbody>
                     </table>

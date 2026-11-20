@@ -1,6 +1,7 @@
 @extends('layouts.aplicacion')
 
 @section('titulo', 'Resumen de reportes')
+@section('contexto_carga', 'listado')
 
 @section('contenido')
 

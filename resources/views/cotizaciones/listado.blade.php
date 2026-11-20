@@ -1,6 +1,7 @@
 @extends('layouts.aplicacion')
 
 @section('titulo', 'Cotizaciones')
+@section('contexto_carga', 'listado')
 
 @section('contenido')
     <section class="bloque-administrativo" aria-labelledby="titulo-registradas">

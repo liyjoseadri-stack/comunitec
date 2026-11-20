@@ -66,7 +66,7 @@ class ControladorVentas extends Controller
         abort_unless($cotizacion->puedeConvertirseEnVenta(), 422);
 
         return view('ventas.crear', [
-            'cotizacion' => $cotizacion->load('cliente', 'partidas.producto', 'partidas.servicio'),
+            'cotizacion' => $cotizacion->load('cliente', 'partidas.producto', 'partidas.servicio', 'partidas.configuracionPc'),
         ]);
     }
 
@@ -79,6 +79,7 @@ class ControladorVentas extends Controller
                 'responsable',
                 'partidas.producto',
                 'partidas.servicio',
+                'partidas.partidaCotizacion.configuracionPc',
                 'partidas.piezas'
             ),
         ]);
@@ -93,6 +94,7 @@ class ControladorVentas extends Controller
                 'responsable',
                 'partidas.producto',
                 'partidas.servicio',
+                'partidas.partidaCotizacion.configuracionPc',
                 'partidas.piezas'
             ),
         ])->download("{$venta->folio}.pdf");

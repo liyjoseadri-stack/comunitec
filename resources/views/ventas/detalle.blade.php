@@ -97,7 +97,12 @@
                             @foreach ($venta->partidas as $partida)
                                 <tr>
                                     <td data-etiqueta="Tipo"><span class="texto-tipo-concepto">{{ ucfirst($partida->tipo) }}</span></td>
-                                    <th scope="row" data-etiqueta="Concepto">{{ $partida->nombreHistorico() }}</th>
+                                    <th scope="row" data-etiqueta="Concepto">
+                                        {{ $partida->nombreHistorico() }}
+                                        @if ($partida->partidaCotizacion?->configuracionPc)
+                                            <small class="detalle-tabla">PC: {{ $partida->partidaCotizacion->configuracionPc->nombre }} · {{ \App\Models\Producto::etiquetaTipoComponentePc($partida->tipo_componente_pc) }}</small>
+                                        @endif
+                                    </th>
                                     <td data-etiqueta="Descripción">{{ $partida->descripcion ?: 'Sin descripción adicional' }}</td>
                                     <td data-etiqueta="Cantidad">{{ number_format((float) $partida->cantidad, 2) }}</td>
                                     <td data-etiqueta="Precio unitario">${{ number_format((float) $partida->precio_unitario, 2) }}</td>

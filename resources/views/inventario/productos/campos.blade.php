@@ -11,6 +11,12 @@
 <x-campo-formulario id="descripcion" nombre="descripcion" etiqueta="Descripción" tipo="textarea" contenedor="campo-formulario campo-formulario--ancho" :valor="old('descripcion', $producto?->descripcion)" />
 <x-campo-formulario id="marca" nombre="marca" etiqueta="Marca" :valor="old('marca', $producto?->marca)" />
 <x-campo-formulario id="modelo" nombre="modelo" etiqueta="Modelo" :valor="old('modelo', $producto?->modelo)" />
+<x-campo-formulario id="tipo-componente-pc" nombre="tipo_componente_pc" etiqueta="Tipo de componente para PC" tipo="select" ayuda="Solo se mostrará en el configurador de PC si seleccionas un tipo.">
+    <option value="">No clasificar como componente de PC</option>
+    @foreach ($tiposComponentesPc as $tipo => $etiqueta)
+        <option value="{{ $tipo }}" @selected(old('tipo_componente_pc', $producto?->tipo_componente_pc) === $tipo)>{{ $etiqueta }}</option>
+    @endforeach
+</x-campo-formulario>
 <x-campo-formulario id="unidad" nombre="unidad" etiqueta="Unidad" :valor="old('unidad', $producto?->unidad ?? 'pieza')" required />
 <x-campo-formulario id="precio" nombre="precio" etiqueta="Precio con IVA" tipo="number" :valor="old('precio', $producto?->precio)" step="0.01" min="0" required />
 <x-campo-formulario id="existencias" nombre="existencias" etiqueta="Existencias" tipo="number" :valor="old('existencias', $producto?->existencias ?? 0)" min="0" required />

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Cotizacion;
 use App\Models\PartidaCotizacion;
+use App\Models\PcArmada;
 use App\Models\Producto;
 use App\Models\Servicio;
 use App\Models\Usuario;
@@ -22,6 +23,7 @@ class ServicioCreacionCotizacion
             'modelo_concepto' => $elemento instanceof Producto ? $elemento->modelo : null,
             'unidad_concepto' => $elemento->unidad,
             'requiere_numero_serie' => $elemento instanceof Producto && $elemento->requiere_numero_serie,
+            'tipo_componente_pc' => $elemento instanceof Producto ? $elemento->tipo_componente_pc : null,
         ];
     }
 
@@ -40,8 +42,20 @@ class ServicioCreacionCotizacion
             ]);
 
             $totalConceptos = 0.0;
-            foreach ($datos['items'] as $item) {
+            foreach ($datos['items'] ?? [] as $item) {
                 $totalConceptos += $this->crearConcepto($cotizacion, $item);
+            }
+
+            foreach ($datos['pc_armadas'] ?? [] as $pc) {
+                $plantilla = ! empty($pc['plantilla_id'])
+                    ? PcArmada::where('activo', true)->findOrFail($pc['plantilla_id'])
+                    : null;
+                $configuracion = app(ServicioConfiguracionPc::class)->crearConfiguracionEnCotizacion(
+                    $cotizacion,
+                    $pc,
+                    $plantilla
+                );
+                $totalConceptos += (float) $configuracion->partidas()->sum('subtotal');
             }
 
             $descuentoGeneral = (float) ($datos['porcentaje_descuento'] ?? 0);

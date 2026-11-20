@@ -23,8 +23,14 @@
                 <option value="activos" @selected(request('estado') === 'activos')>Activos</option>
                 <option value="inactivos" @selected(request('estado') === 'inactivos')>Inactivos</option>
             </x-campo-formulario>
+            <x-campo-formulario id="tipo-componente-pc" nombre="tipo_componente_pc" etiqueta="Componente PC" tipo="select">
+                <option value="">Todos</option>
+                @foreach ($tiposComponentesPc as $tipo => $etiqueta)
+                    <option value="{{ $tipo }}" @selected(request('tipo_componente_pc') === $tipo)>{{ $etiqueta }}</option>
+                @endforeach
+            </x-campo-formulario>
             <x-boton tipo="submit" variante="secundario">Filtrar</x-boton>
-            @if (request()->filled('buscar') || request()->filled('categoria') || request()->filled('estado'))
+            @if (request()->filled('buscar') || request()->filled('categoria') || request()->filled('estado') || request()->filled('tipo_componente_pc'))
                 <x-boton variante="contorno" :href="route('inventario.productos.listado')">Limpiar</x-boton>
             @endif
         </form>
@@ -36,6 +42,7 @@
                         <th scope="col">Producto</th>
                         <th scope="col">Series</th>
                         <th scope="col">Categoría</th>
+                        <th scope="col">Componente PC</th>
                         <th scope="col">Stock</th>
                         <th scope="col">Precio</th>
                         <th scope="col">Estado</th>
@@ -49,6 +56,7 @@
                             <th scope="row" data-etiqueta="Producto"><strong>{{ $producto->nombre }}</strong></th>
                             <td data-etiqueta="Series">{{ $producto->requiere_numero_serie ? 'Requiere series' : 'No requiere series' }}</td>
                             <td data-etiqueta="Categoría">{{ $producto->categoria?->nombre }}</td>
+                            <td data-etiqueta="Componente PC">{{ \App\Models\Producto::etiquetaTipoComponentePc($producto->tipo_componente_pc) }}</td>
                             <td data-etiqueta="Stock">{{ $producto->existencias }}</td>
                             <td data-etiqueta="Precio">${{ number_format((float) $producto->precio, 2) }}</td>
                             <td data-etiqueta="Estado"><x-insignia-estado :estado="$producto->activo ? 'activo' : 'inactivo'" /></td>
@@ -72,7 +80,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="tabla-estado-vacio">
+                            <td colspan="9" class="tabla-estado-vacio">
                                 <x-estado-vacio mensaje="No hay productos con estos filtros.">
                                     <x-slot:acciones>
                                         <x-boton variante="contorno" :href="route('inventario.productos.crear')">Registrar producto</x-boton>

@@ -35,7 +35,8 @@ class CorreoVenta extends Mailable
             'responsable',
             'partidas.producto',
             'partidas.servicio',
-            'partidas.piezas'
+            'partidas.piezas',
+            'partidas.partidaCotizacion.configuracionPc'
         );
 
         return [

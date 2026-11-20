@@ -2,6 +2,7 @@
 
 @section('titulo', 'Mi perfil')
 
+@section('contexto_carga', 'formulario')
 @section('contenido')
     <div class="cuadricula-perfil">
         <section class="bloque-administrativo" aria-labelledby="titulo-datos-perfil">

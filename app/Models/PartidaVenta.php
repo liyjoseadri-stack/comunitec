@@ -35,6 +35,8 @@ class PartidaVenta extends Model
         'modelo_concepto',
         'unidad_concepto',
         'requiere_numero_serie',
+        'nombre_pc',
+        'tipo_componente_pc',
         'cantidad',
         'precio_unitario',
         'porcentaje_descuento',
@@ -58,6 +60,11 @@ class PartidaVenta extends Model
     }
 
     public function partidaCotizada()
+    {
+        return $this->belongsTo(PartidaCotizacion::class, 'partida_cotizacion_id');
+    }
+
+    public function partidaCotizacion()
     {
         return $this->belongsTo(PartidaCotizacion::class, 'partida_cotizacion_id');
     }
