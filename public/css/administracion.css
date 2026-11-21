@@ -483,6 +483,7 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
     border: 1px dashed var(--borde-fuerte);
     border-radius: var(--radio-control);
 }
+.creador-cotizacion__vacio[hidden] { display: none; }
 .creador-cotizacion__vacio strong { color: var(--marca-900); }
 .creador-cotizacion__vacio p { max-width: 42rem; margin: 0; color: var(--texto-suave); }
 .creador-cotizacion__acciones-conceptos { display: flex; justify-content: flex-start; margin-top: var(--espacio-3); }
