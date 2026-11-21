@@ -2,6 +2,7 @@
 
 @section('titulo', 'Registrar categoría')
 
+@section('contexto_carga', 'formulario')
 @section('contenido')
 
     <section class="bloque-administrativo" aria-labelledby="titulo-registrar-categoria">

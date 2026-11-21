@@ -2,6 +2,7 @@
 
 @section('titulo', 'Editar producto')
 
+@section('contexto_carga', 'formulario')
 @section('contenido')
 
     <section class="bloque-administrativo" aria-labelledby="titulo-editar-producto">

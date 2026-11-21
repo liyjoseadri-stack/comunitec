@@ -2,6 +2,7 @@
 
 @section('titulo', 'Panel principal')
 @section('clase_pagina', 'pagina-panel')
+@section('contexto_carga', 'panel')
 
 @section('contenido')
     <section class="bienvenida-panel" aria-labelledby="saludo-panel">

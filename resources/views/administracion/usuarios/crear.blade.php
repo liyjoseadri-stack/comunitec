@@ -2,6 +2,7 @@
 
 @section('titulo', 'Crear usuario')
 
+@section('contexto_carga', 'formulario')
 @section('contenido')
 
     <section class="bloque-administrativo" aria-labelledby="titulo-crear-usuario">

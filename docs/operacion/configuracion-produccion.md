@@ -90,6 +90,24 @@ Comprobar SMTP primero en un entorno separado, con cotización ficticia y destin
 - Crear un respaldo consistente con la herramienta de MySQL antes de migrar. Proporcionar credenciales mediante un archivo privado o el gestor de secretos, nunca en la línea de comandos ni en documentos versionados. Si es necesario coordinar archivos y base, detener escrituras y pausar trabajos durante la copia.
 - Probar periódicamente la restauración en una base aislada, con correo bloqueado y scheduler detenido. Comprobar acceso de un administrador activo, cotizaciones, partidas, ventas, inventario y archivos. Registrar fecha, resultado y tiempo de recuperación sin copiar datos personales.
 
+## Pruebas locales sin tocar MySQL
+
+Las pruebas usan SQLite en memoria y requieren `APP_ENV=testing` y `DB_CONNECTION=sqlite`. No ejecutar PHPUnit con `--no-configuration` sin declarar esas variables, porque Laravel podría leer el `.env` local y `RefreshDatabase` reiniciaría ese esquema.
+
+Comando seguro en PowerShell:
+
+```powershell
+$env:APP_ENV = 'testing'
+$env:DB_CONNECTION = 'sqlite'
+$env:DB_DATABASE = ':memory:'
+$env:SESSION_DRIVER = 'array'
+$env:CACHE_STORE = 'array'
+$env:MAIL_MAILER = 'array'
+php vendor/bin/phpunit tests
+```
+
+El `TestCase` aborta si detecta otro entorno o una conexión distinta de SQLite.
+
 ## Reversión
 
 1. Mantener o activar `php artisan down` y pausar el disparador del scheduler. Conservar evidencia privada del error y cualquier dato nuevo antes de sobrescribir la instalación.

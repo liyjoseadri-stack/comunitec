@@ -78,6 +78,11 @@ class Cotizacion extends Model
         return $this->hasOne(Venta::class, 'cotizacion_id');
     }
 
+    public function configuracionesPc()
+    {
+        return $this->hasMany(ConfiguracionPcCotizacion::class, 'cotizacion_id');
+    }
+
     public function fechaLimiteEntrega()
     {
         return $this->entrega_limite_en ?? $this->vence_en;

@@ -18,10 +18,12 @@
         .partidas th, .partidas td { padding: 7px 6px; border: 1px solid #4b5563; vertical-align: middle; }
         .partidas th { color: #fff; background: #0f6f70; font-size: 9px; letter-spacing: .2px; text-align: center; }
         .partidas tr { page-break-inside: avoid; }
-        .cantidad { width: 9%; text-align: center; }
-        .descripcion { width: 24%; font-weight: 700; }
-        .caracteristicas { width: 35%; }
+        .cantidad { width: 8%; text-align: center; }
+        .descripcion { width: 27%; font-weight: 700; overflow-wrap: anywhere; }
+        .caracteristicas { width: 33%; }
         .importe { width: 16%; text-align: right; white-space: nowrap; }
+        .pc-nombre { line-height: 1.35; }
+        .pc-componente { margin-bottom: 3px; }
         .detalle-secundario { color: #4b5563; font-size: 8.5px; }
         .totales { width: 47%; margin: 10px 0 18px auto; text-align: right; }
         .linea-total { padding: 3px 0; white-space: nowrap; }
@@ -91,6 +93,9 @@
         </thead>
         <tbody>
             @forelse ($cotizacion->partidas as $partida)
+                @if ($partida->configuracion_pc_cotizacion_id)
+                    @continue
+                @endif
                 @php
                     $caracteristicas = collect([
                         $partida->marca_concepto ? 'Marca: '.$partida->marca_concepto : null,
@@ -106,6 +111,10 @@
                         <span class="detalle-secundario">
                             Tipo: {{ ucfirst($partida->tipo) }}
                             · Concepto: {{ $partida->nombreHistorico() }}
+                            @if ($partida->configuracionPc)
+                                · PC: {{ $partida->configuracionPc->nombre }}
+                                · {{ \App\Models\Producto::etiquetaTipoComponentePc($partida->tipo_componente_pc) }}
+                            @endif
                         </span>
                         @if ($caracteristicas->isNotEmpty())
                             <br>
@@ -129,6 +138,61 @@
             @empty
                 <tr><td colspan="5">Esta cotización todavía no contiene productos o servicios.</td></tr>
             @endforelse
+            @foreach ($cotizacion->configuracionesPc as $configuracionPc)
+                @php
+                    $partidasPc = $cotizacion->partidas->where('configuracion_pc_cotizacion_id', $configuracionPc->id);
+                    $ordenComponentes = array_flip(\App\Models\Producto::tiposComponentesPc());
+                    $partidasPc = $partidasPc->sortBy(
+                        fn ($partidaPc) => $ordenComponentes[$partidaPc->tipo_componente_pc] ?? 99
+                    );
+                    $tiposPrincipales = [
+                        \App\Models\Producto::TIPO_COMPONENTE_PROCESADOR,
+                        \App\Models\Producto::TIPO_COMPONENTE_PLACA_MADRE,
+                        \App\Models\Producto::TIPO_COMPONENTE_MEMORIA_RAM,
+                        \App\Models\Producto::TIPO_COMPONENTE_ALMACENAMIENTO,
+                        \App\Models\Producto::TIPO_COMPONENTE_TARJETA_GRAFICA,
+                        \App\Models\Producto::TIPO_COMPONENTE_FUENTE_PODER,
+                        \App\Models\Producto::TIPO_COMPONENTE_GABINETE,
+                    ];
+                    $principales = $partidasPc->filter(
+                        fn ($partidaPc) => in_array($partidaPc->tipo_componente_pc, $tiposPrincipales, true)
+                    );
+                    $extras = $partidasPc->reject(
+                        fn ($partidaPc) => in_array($partidaPc->tipo_componente_pc, $tiposPrincipales, true)
+                    );
+                    $totalPc = (float) $partidasPc->sum('subtotal');
+                    $cantidadPc = max((int) $configuracionPc->cantidad, 1);
+                @endphp
+                <tr>
+                    <td class="cantidad">{{ $cantidadPc }}</td>
+                    <td class="descripcion">
+                        <strong class="pc-nombre">{{ $configuracionPc->nombre }}</strong>
+                        @if ($configuracionPc->descripcion)
+                            <br><span class="detalle-secundario">{{ $configuracionPc->descripcion }}</span>
+                        @endif
+                    </td>
+                    <td class="caracteristicas">
+                        <strong>Componentes principales</strong>
+                        @foreach ($principales as $partidaPc)
+                            <div class="pc-componente">
+                                <strong>{{ \App\Models\Producto::etiquetaTipoComponentePc($partidaPc->tipo_componente_pc) }}:</strong>
+                                {{ number_format((float) $partidaPc->cantidad / $cantidadPc, 0) }} × {{ $partidaPc->nombreHistorico() }} por PC
+                            </div>
+                        @endforeach
+                        @if ($extras->isNotEmpty())
+                            <strong>Extras opcionales</strong>
+                            @foreach ($extras as $partidaPc)
+                                <div class="pc-componente">
+                                    <strong>{{ \App\Models\Producto::etiquetaTipoComponentePc($partidaPc->tipo_componente_pc) }}:</strong>
+                                    {{ number_format((float) $partidaPc->cantidad / $cantidadPc, 0) }} × {{ $partidaPc->nombreHistorico() }} por PC
+                                </div>
+                            @endforeach
+                        @endif
+                    </td>
+                    <td class="importe">${{ number_format($totalPc / $cantidadPc, 2) }}</td>
+                    <td class="importe">${{ number_format($totalPc, 2) }}</td>
+                </tr>
+            @endforeach
         </tbody>
     </table>
 

@@ -82,7 +82,7 @@ class CreacionCotizacionCompletaTest extends TestCase
             ->assertOk()
             ->assertSee('Borrador de cotización')
             ->assertSee('Buscar cliente por nombre o RFC')
-            ->assertSee('Conceptos de la cotización')
+            ->assertSee('Productos y servicios')
             ->assertSee('Subtotal sin IVA')
             ->assertSee('Guardar cotización')
             ->assertSee('data-creador-cotizacion', false);

@@ -88,6 +88,9 @@
                     <td class="tipo">{{ ucfirst($partida->tipo) }}</td>
                     <td class="concepto">
                         {{ $partida->nombreHistorico() }}
+                        @if ($partida->nombre_pc)
+                            <div class="secundario">PC: {{ $partida->nombre_pc }} · {{ \App\Models\Producto::etiquetaTipoComponentePc($partida->tipo_componente_pc) }}</div>
+                        @endif
                         @if ($partida->codigoHistorico())
                             <div class="secundario">SKU: {{ $partida->codigoHistorico() }}</div>
                         @endif

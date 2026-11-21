@@ -16,7 +16,13 @@
             @include('componentes.navegacion-lateral')
             <div class="estructura-aplicacion__principal">
                 @include('componentes.barra-superior')
-                <main class="pagina-administrativa @yield('clase_pagina')" id="contenido-principal" tabindex="-1">
+                <main
+                    class="pagina-administrativa @yield('clase_pagina')"
+                    id="contenido-principal"
+                    data-contexto-carga="@yield('contexto_carga', 'listado')"
+                    tabindex="-1"
+                >
+                    <x-esqueleto-carga :variante="trim($__env->yieldContent('contexto_carga')) ?: 'listado'" />
                     <x-alerta-flash />
                     @include('componentes.errores-validacion')
                     @yield('contenido')

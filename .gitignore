@@ -49,6 +49,7 @@ Thumbs.db
 Desktop.ini
 
 /.local/
+/.jury/
 /.superpowers/
 
 # Archivos locales de trabajo y trazas de IA

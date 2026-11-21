@@ -6,6 +6,7 @@ use App\Http\Requests\SolicitudGuardarCotizacionCompleta;
 use App\Models\Cliente;
 use App\Models\Cotizacion;
 use App\Models\PartidaCotizacion;
+use App\Models\PcArmada;
 use App\Models\Producto;
 use App\Models\Servicio;
 use App\Rules\NumeroFinito;
@@ -55,11 +56,16 @@ class ControladorCotizaciones extends Controller
             ->where('activo', true)
             ->orderBy('nombre')
             ->get();
+        $pcArmadas = PcArmada::with('componentes.producto')
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get();
 
         return view('cotizaciones.crear', [
             'clientes' => $clientes,
             'productos' => $productos,
             'servicios' => $servicios,
+            'pcArmadas' => $pcArmadas,
             'datosCreador' => [
                 'clientes' => $clientes->map(fn (Cliente $cliente): array => [
                     'id' => $cliente->id,
@@ -74,6 +80,7 @@ class ControladorCotizaciones extends Controller
                     'categoria' => $producto->categoria?->nombre,
                     'descripcion' => $producto->descripcion,
                     'precio' => (float) $producto->precio,
+                    'tipo_componente_pc' => $producto->tipo_componente_pc,
                 ])->concat($servicios->map(fn (Servicio $servicio): array => [
                     'id' => $servicio->id,
                     'tipo' => PartidaCotizacion::TIPO_SERVICIO,
@@ -83,6 +90,20 @@ class ControladorCotizaciones extends Controller
                     'descripcion' => $servicio->descripcion,
                     'precio' => (float) $servicio->precio,
                 ]))->values(),
+                'pcArmadas' => $pcArmadas->map(fn (PcArmada $pcArmada): array => [
+                    'id' => $pcArmada->id,
+                    'nombre' => $pcArmada->nombre,
+                    'descripcion' => $pcArmada->descripcion,
+                    'componentes' => $pcArmada->componentes->map(fn ($componente): array => [
+                        'producto_id' => $componente->producto_id,
+                        'tipo' => $componente->tipo_componente_pc,
+                        'tipo_etiqueta' => Producto::etiquetaTipoComponentePc($componente->tipo_componente_pc),
+                        'nombre' => $componente->producto->nombre,
+                        'codigo' => $componente->producto->codigo,
+                        'precio' => (float) $componente->producto->precio,
+                        'cantidad' => $componente->cantidad,
+                    ])->values(),
+                ])->values(),
             ],
             'puedeEditar' => true,
             'folioInformativo' => 'COT-'.now()->format('Ymd').'-AUTOMÁTICO',
@@ -92,7 +113,7 @@ class ControladorCotizaciones extends Controller
 
     public function mostrar(Cotizacion $cotizacion): View
     {
-        $cotizacion->load('cliente', 'partidas.producto', 'partidas.servicio', 'enviosCorreo.usuario', 'venta');
+        $cotizacion->load('cliente', 'partidas.producto', 'partidas.servicio', 'partidas.configuracionPc', 'configuracionesPc', 'enviosCorreo.usuario', 'venta');
         $productos = $cotizacion->partidas->where('tipo', PartidaCotizacion::TIPO_PRODUCTO)->groupBy('producto_id');
         $disponibles = Producto::whereIn('id', $productos->keys())
             ->pluck('existencias', 'id');
@@ -133,6 +154,8 @@ class ControladorCotizaciones extends Controller
                 'cliente',
                 'partidas.producto',
                 'partidas.servicio',
+                'partidas.configuracionPc',
+                'configuracionesPc',
                 'responsable'
             ),
         ])->download("{$cotizacion->folio}.pdf");

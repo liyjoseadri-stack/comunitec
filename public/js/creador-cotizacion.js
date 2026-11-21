@@ -8,12 +8,32 @@
     const datos = JSON.parse(raiz.querySelector('[data-datos-cotizacion]').textContent);
     const formulario = raiz.querySelector('[data-formulario-cotizacion]');
     const cuerpo = raiz.querySelector('[data-filas-cotizacion]');
-    const botonAgregar = raiz.querySelector('[data-agregar-concepto]');
+    const botonesAgregar = raiz.querySelectorAll('[data-agregar-concepto], [data-agregar-concepto-otro]');
+    const vacioConceptos = raiz.querySelector('[data-conceptos-vacio]');
+    const tablaConceptos = raiz.querySelector('[data-tabla-conceptos]');
     const botonGuardar = raiz.querySelector('[data-guardar-cotizacion]');
     const descuentoGeneral = raiz.querySelector('[name="porcentaje_descuento"]');
     const contenedorErrores = raiz.querySelector('.creador-cotizacion__errores');
+    const botonAbrirPlantillas = raiz.querySelector('[data-abrir-plantillas-pc]');
+    const botonAbrirPersonalizar = raiz.querySelector('[data-abrir-personalizar-pc]');
+    const dialogoPc = raiz.querySelector('[data-dialogo-pc-armada]');
+    const dialogoTitulo = raiz.querySelector('[data-dialogo-titulo]');
+    const dialogoInstruccion = raiz.querySelector('[data-dialogo-instruccion]');
+    const dialogoPlantillas = raiz.querySelector('[data-dialogo-plantillas-pc]');
+    const dialogoEditor = raiz.querySelector('[data-dialogo-editor-pc]');
+    const opcionesPlantillas = raiz.querySelector('[data-plantillas-pc-opciones]');
+    const vacioPlantillas = raiz.querySelector('[data-plantillas-pc-vacio]');
+    const editorPc = raiz.querySelector('[data-editor-pc]');
+    const resumenPcs = raiz.querySelector('[data-pcs-resumen]');
+    const vacioPcs = raiz.querySelector('[data-pcs-vacio]');
+    const botonCerrarDialogo = raiz.querySelector('[data-cerrar-dialogo-pc]');
+    const botonCancelarEdicion = raiz.querySelector('[data-cancelar-edicion-pc]');
+    const botonGuardarEdicion = raiz.querySelector('[data-guardar-edicion-pc]');
     const filas = [];
+    const pcs = [];
     let consecutivo = 0;
+    let editorActivo = null;
+    let invocadorDialogo = null;
 
     const moneda = new Intl.NumberFormat('es-MX', {
         style: 'currency',
@@ -165,6 +185,12 @@
         });
     }
 
+    function actualizarVisibilidadConceptos() {
+        const hayFilas = filas.length > 0;
+        vacioConceptos.hidden = hayFilas;
+        tablaConceptos.hidden = !hayFilas;
+    }
+
     function crearFila() {
         consecutivo += 1;
         const fila = document.createElement('tr');
@@ -210,6 +236,7 @@
         };
         filas.push(estado);
         cuerpo.append(fila);
+        actualizarVisibilidadConceptos();
         limitarAEnteros(estado.cantidad);
         limitarAEnteros(estado.descuento);
 
@@ -263,9 +290,6 @@
                 filas.splice(indice, 1);
             }
             fila.remove();
-            if (filas.length === 0) {
-                crearFila();
-            }
             calcularTotales();
         });
 
@@ -286,6 +310,377 @@
         };
     }
 
+    const etiquetasComponentesModal = {
+        procesador: 'Procesador',
+        placa_madre: 'Placa madre',
+        memoria_ram: 'Memoria RAM',
+        almacenamiento: 'Almacenamiento',
+        tarjeta_grafica: 'Tarjeta gráfica',
+        fuente_poder: 'Fuente de poder',
+        gabinete: 'Gabinete',
+        enfriamiento: 'Enfriamiento',
+        sistema_operativo: 'Sistema operativo',
+        accesorio: 'Accesorios',
+    };
+    const componentesBaseModal = [
+        'procesador',
+        'placa_madre',
+        'memoria_ram',
+        'almacenamiento',
+        'tarjeta_grafica',
+        'fuente_poder',
+        'gabinete',
+    ];
+    const componentesExtraModal = ['enfriamiento', 'sistema_operativo', 'accesorio'];
+
+    function normalizarComponentesModal(componentes = []) {
+        return componentes.map((componente) => ({
+            producto_id: Number(componente.producto_id),
+            tipo: componente.tipo_componente_pc || componente.tipo,
+            cantidad: Number(componente.cantidad) || 1,
+        }));
+    }
+
+    function productoComponenteModal(componente) {
+        return datos.catalogo.find((producto) => String(producto.id) === String(componente.producto_id));
+    }
+
+    function totalComponentesModal(componentes) {
+        return componentes.reduce((total, componente) => {
+            const producto = productoComponenteModal(componente);
+            return total + (producto?.precio || 0) * (Number(componente.cantidad) || 0);
+        }, 0);
+    }
+
+    function resumenComponentesModal(componentes) {
+        const nombres = componentes
+            .map((componente) => productoComponenteModal(componente)?.nombre)
+            .filter(Boolean);
+        const visibles = nombres.slice(0, 4).join(' · ');
+        const restantes = nombres.length - 4;
+
+        return restantes > 0 ? `${visibles} · +${restantes} más` : visibles || 'Sin componentes seleccionados';
+    }
+
+    function actualizarResumenPcModal(estado) {
+        if (!estado.tarjeta) {
+            estado.tarjeta = document.createElement('article');
+            estado.tarjeta.className = 'cotizacion-pc-resumen';
+            resumenPcs.append(estado.tarjeta);
+        }
+        estado.tarjeta.innerHTML = `
+            <div class="cotizacion-pc-resumen__encabezado">
+                <div>
+                    <p class="ceja-seccion" data-pc-tipo></p>
+                    <h4 data-pc-nombre></h4>
+                    <p class="texto-ayuda" data-pc-descripcion></p>
+                </div>
+                <div class="cotizacion-pc-resumen__importe">
+                    <strong data-pc-total></strong>
+                    <div class="grupo-acciones">
+                        ${estado.esPlantilla ? '' : '<button class="boton boton--contorno boton--compacto" type="button" data-editar-pc>Editar</button>'}
+                        <button class="boton boton--peligro boton--compacto" type="button" data-eliminar-pc>Quitar</button>
+                    </div>
+                </div>
+            </div>
+            <p class="cotizacion-pc-resumen__componentes" data-pc-componentes></p>`;
+        estado.tarjeta.querySelector('[data-pc-tipo]').textContent = estado.esPlantilla ? 'Plantilla' : 'Personalizada';
+        estado.tarjeta.querySelector('[data-pc-nombre]').textContent = estado.nombre;
+        estado.tarjeta.querySelector('[data-pc-descripcion]').textContent = estado.descripcion || 'Configuración de componentes para esta cotización.';
+        estado.tarjeta.querySelector('[data-pc-total]').textContent = `${estado.cantidad} PC${estado.cantidad === 1 ? '' : 's'} · ${moneda.format(totalComponentesModal(estado.componentes) * estado.cantidad)}`;
+        estado.tarjeta.querySelector('[data-pc-componentes]').textContent = resumenComponentesModal(estado.componentes);
+        estado.tarjeta.querySelector('[data-eliminar-pc]').addEventListener('click', () => {
+            estado.tarjeta.remove();
+            pcs.splice(pcs.indexOf(estado), 1);
+            actualizarEstadoPcsModal();
+            calcularTotales();
+        });
+        estado.tarjeta.querySelector('[data-editar-pc]')?.addEventListener('click', (evento) => {
+            abrirEditorPcModal(estado, evento.currentTarget);
+        });
+    }
+
+    function actualizarEstadoPcsModal() {
+        vacioPcs.hidden = pcs.length > 0;
+        raiz.querySelector('[data-contador-pcs]').textContent = pcs.length;
+    }
+
+    function crearPc(configuracion = {}, existente = null) {
+        const estado = existente || {
+            id: `pc-${Date.now()}-${pcs.length}`,
+            tarjeta: null,
+        };
+        estado.esPlantilla = Boolean(configuracion.plantilla_id);
+        estado.plantillaId = configuracion.plantilla_id || null;
+        estado.nombre = configuracion.nombre || 'PC personalizada';
+        estado.descripcion = configuracion.descripcion || '';
+        estado.cantidad = Math.max(Number(configuracion.cantidad) || 1, 1);
+        estado.componentes = normalizarComponentesModal(configuracion.componentes);
+        if (!existente) {
+            pcs.push(estado);
+        }
+        actualizarResumenPcModal(estado);
+        actualizarEstadoPcsModal();
+        calcularTotales();
+        return estado;
+    }
+
+    function crearFilaEditorPcModal(tipo, componente = {}, puedeQuitar = false) {
+        const fila = document.createElement('div');
+        fila.className = 'pc-configuracion__fila';
+        fila.dataset.editorComponente = 'true';
+        fila.innerHTML = `
+            <input type="hidden" value="${tipo}" data-pc-tipo>
+            <select aria-label="Producto de ${etiquetasComponentesModal[tipo]}" data-pc-producto></select>
+            <input type="number" min="1" step="1" value="${componente.cantidad || 1}" aria-label="Cantidad de ${etiquetasComponentesModal[tipo]}" data-pc-cantidad>
+            ${puedeQuitar ? '<button type="button" class="boton boton--peligro boton--compacto" data-eliminar-componente-pc>Quitar</button>' : ''}`;
+        const producto = fila.querySelector('[data-pc-producto]');
+        producto.append(new Option('Selecciona un producto', ''));
+        datos.catalogo
+            .filter((elemento) => elemento.tipo === 'producto' && elemento.tipo_componente_pc === tipo)
+            .forEach((elemento) => producto.append(new Option(`${elemento.nombre} (${elemento.codigo})`, elemento.id)));
+        producto.value = componente.producto_id || '';
+        producto.addEventListener('change', actualizarTotalEditorPcModal);
+        fila.querySelector('[data-pc-cantidad]').addEventListener('input', actualizarTotalEditorPcModal);
+        fila.querySelector('[data-eliminar-componente-pc]')?.addEventListener('click', () => {
+            fila.remove();
+            actualizarTotalEditorPcModal();
+        });
+        return fila;
+    }
+
+    function crearApartadoEditorPcModal(contenedor, tipo, ayuda, componentes, puedeQuitar = false) {
+        const apartado = document.createElement('section');
+        apartado.className = 'pc-configuracion__apartado';
+        apartado.innerHTML = `
+            <div class="pc-configuracion__apartado-cabecera">
+                <div><h4>${etiquetasComponentesModal[tipo]}</h4><p>${ayuda}</p></div>
+            </div>
+            <div class="pc-configuracion__filas"></div>`;
+        contenedor.append(apartado);
+        const filasApartado = apartado.querySelector('.pc-configuracion__filas');
+        const agregar = (componente = {}) => filasApartado.append(
+            crearFilaEditorPcModal(tipo, componente, puedeQuitar)
+        );
+        componentes.forEach(agregar);
+        if (componentes.length === 0) {
+            agregar();
+        }
+        return {apartado, agregar};
+    }
+
+    function renderizarEditorPcModal(configuracion = {}) {
+        editorPc.replaceChildren();
+        editorPc.innerHTML = `
+            <div class="rejilla-formulario">
+                <div class="campo-formulario"><label for="nombre-pc-dialogo">Nombre de la PC</label><input id="nombre-pc-dialogo" maxlength="255" data-editor-nombre></div>
+                <div class="campo-formulario"><label for="cantidad-pc-dialogo">Cantidad de equipos</label><input id="cantidad-pc-dialogo" type="number" min="1" max="100" step="1" value="1" data-editor-cantidad></div>
+                <div class="campo-formulario"><label for="descripcion-pc-dialogo">Descripción de la PC</label><textarea id="descripcion-pc-dialogo" rows="2" maxlength="2000" data-editor-descripcion></textarea></div>
+            </div>
+            <div class="alerta alerta--peligro" role="alert" data-editor-errores hidden></div>
+            <div class="pc-configuracion__componentes" data-editor-componentes></div>
+            <p class="pc-configuracion__total">Total estimado: <strong data-editor-total>$0.00</strong></p>`;
+        editorPc.querySelector('[data-editor-nombre]').value = configuracion.nombre || 'PC personalizada';
+        editorPc.querySelector('[data-editor-cantidad]').value = Math.max(Number(configuracion.cantidad) || 1, 1);
+        editorPc.querySelector('[data-editor-descripcion]').value = configuracion.descripcion || '';
+
+        const componentes = normalizarComponentesModal(configuracion.componentes);
+        const porTipo = componentes.reduce((grupos, componente) => {
+            const grupo = grupos.get(componente.tipo) || [];
+            grupo.push(componente);
+            grupos.set(componente.tipo, grupo);
+            return grupos;
+        }, new Map());
+        const contenedor = editorPc.querySelector('[data-editor-componentes]');
+        componentesBaseModal.forEach((tipo) => crearApartadoEditorPcModal(
+            contenedor,
+            tipo,
+            'Selecciona un producto del inventario o déjalo vacío si no se requiere.',
+            (porTipo.get(tipo) || []).slice(0, 1)
+        ));
+        const extras = document.createElement('details');
+        extras.className = 'pc-configuracion__extras';
+        extras.open = componentesExtraModal.some((tipo) => porTipo.has(tipo));
+        extras.innerHTML = '<summary>Extras opcionales</summary><p class="texto-ayuda">Agrega enfriamiento, sistema operativo, monitor, teclado, mouse u otro accesorio.</p><div class="pc-configuracion__extras-contenido"></div>';
+        contenedor.append(extras);
+        const extrasContenido = extras.querySelector('.pc-configuracion__extras-contenido');
+        componentesExtraModal.forEach((tipo) => {
+            const apartado = crearApartadoEditorPcModal(
+                extrasContenido,
+                tipo,
+                tipo === 'accesorio' ? 'Puedes agregar monitor, teclado, mouse, bocinas u otros accesorios.' : 'Es opcional; agrégalo solo si forma parte de esta PC.',
+                porTipo.get(tipo) || [],
+                true
+            );
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.className = 'boton boton--contorno boton--compacto';
+            boton.textContent = `+ Agregar otro ${etiquetasComponentesModal[tipo].toLowerCase()}`;
+            boton.addEventListener('click', () => apartado.agregar());
+            apartado.apartado.append(boton);
+        });
+        actualizarTotalEditorPcModal();
+        editorPc.querySelector('[data-editor-nombre]').focus();
+    }
+
+    function componentesEditorPcModal() {
+        return [...editorPc.querySelectorAll('[data-editor-componente]')]
+            .map((fila) => ({
+                producto_id: Number(fila.querySelector('[data-pc-producto]').value),
+                tipo: fila.querySelector('[data-pc-tipo]').value,
+                cantidad: Number(fila.querySelector('[data-pc-cantidad]').value),
+            }))
+            .filter((componente) => componente.producto_id);
+    }
+
+    function actualizarTotalEditorPcModal() {
+        editorPc?.querySelector('[data-editor-total]')?.replaceChildren(
+            moneda.format(totalComponentesModal(componentesEditorPcModal()))
+        );
+    }
+
+    function mostrarErrorEditorPcModal(mensajes) {
+        const contenedor = editorPc.querySelector('[data-editor-errores]');
+        if (mensajes.length === 0) {
+            contenedor.hidden = true;
+            contenedor.replaceChildren();
+            return;
+        }
+        const lista = document.createElement('ul');
+        mensajes.forEach((mensaje) => {
+            const item = document.createElement('li');
+            item.textContent = mensaje;
+            lista.append(item);
+        });
+        contenedor.replaceChildren(lista);
+        contenedor.hidden = false;
+    }
+
+    function abrirDialogoPcModal(invocador) {
+        invocadorDialogo = invocador;
+        if (typeof dialogoPc.showModal === 'function' && !dialogoPc.open) {
+            dialogoPc.showModal();
+        } else {
+            dialogoPc.hidden = false;
+            dialogoPc.setAttribute('open', '');
+        }
+    }
+
+    function finalizarDialogoPcModal() {
+        dialogoPlantillas.hidden = true;
+        dialogoEditor.hidden = true;
+        editorPc.replaceChildren();
+        editorActivo = null;
+        const invocador = invocadorDialogo;
+        invocadorDialogo = null;
+        invocador?.focus();
+    }
+
+    function cerrarDialogoPcModal() {
+        if (typeof dialogoPc.close === 'function' && dialogoPc.open) {
+            dialogoPc.close();
+            return;
+        }
+        dialogoPc.hidden = true;
+        dialogoPc.removeAttribute('open');
+        finalizarDialogoPcModal();
+    }
+
+    function abrirPlantillasPcModal(invocador) {
+        dialogoTitulo.textContent = 'Agregar PC de plantilla';
+        dialogoInstruccion.textContent = 'Elige una configuración guardada para agregarla a la cotización.';
+        dialogoPlantillas.hidden = false;
+        dialogoEditor.hidden = true;
+        opcionesPlantillas.replaceChildren();
+        vacioPlantillas.hidden = datos.pcArmadas.length > 0;
+        datos.pcArmadas.forEach((plantilla) => {
+            const tarjeta = document.createElement('article');
+            tarjeta.className = 'pc-plantilla-opcion';
+            const nombre = document.createElement('h3');
+            nombre.textContent = plantilla.nombre;
+            const descripcion = document.createElement('p');
+            descripcion.textContent = plantilla.descripcion || 'Configuración guardada de componentes.';
+            const componentes = document.createElement('p');
+            componentes.className = 'texto-ayuda';
+            componentes.textContent = resumenComponentesModal(normalizarComponentesModal(plantilla.componentes));
+            const boton = document.createElement('button');
+            boton.type = 'button';
+            boton.className = 'boton boton--secundario';
+            boton.textContent = 'Agregar esta PC';
+            boton.addEventListener('click', () => {
+                const cantidad = Number(cantidadControl.value);
+                crearPc({
+                    nombre: plantilla.nombre,
+                    descripcion: plantilla.descripcion,
+                    plantilla_id: plantilla.id,
+                    cantidad,
+                    componentes: plantilla.componentes,
+                });
+                cerrarDialogoPcModal();
+            });
+            const cantidadEtiqueta = document.createElement('label');
+            cantidadEtiqueta.textContent = 'Cantidad de equipos';
+            const cantidadControl = document.createElement('input');
+            cantidadControl.type = 'number';
+            cantidadControl.min = '1';
+            cantidadControl.max = '100';
+            cantidadControl.step = '1';
+            cantidadControl.value = '1';
+            cantidadControl.className = 'control-cantidad-pc';
+            cantidadEtiqueta.append(cantidadControl);
+            tarjeta.append(nombre, descripcion, componentes, cantidadEtiqueta, boton);
+            opcionesPlantillas.append(tarjeta);
+        });
+        abrirDialogoPcModal(invocador);
+    }
+
+    function abrirEditorPcModal(estado = null, invocador = botonAbrirPersonalizar) {
+        editorActivo = {estado};
+        dialogoTitulo.textContent = estado ? 'Editar PC personalizada' : 'Personalizar PC';
+        dialogoInstruccion.textContent = 'Selecciona los componentes que formarán parte de esta PC.';
+        dialogoPlantillas.hidden = true;
+        dialogoEditor.hidden = false;
+        renderizarEditorPcModal(estado || {});
+        abrirDialogoPcModal(invocador);
+    }
+
+    function guardarEditorPcModal() {
+        const nombre = editorPc.querySelector('[data-editor-nombre]').value.trim();
+        const cantidad = Number(editorPc.querySelector('[data-editor-cantidad]').value);
+        const descripcion = editorPc.querySelector('[data-editor-descripcion]').value.trim();
+        const componentes = componentesEditorPcModal();
+        const errores = [];
+        if (!nombre) {
+            errores.push('Escribe el nombre de la PC.');
+        }
+        if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 100) {
+            errores.push('La cantidad de equipos debe ser un entero entre 1 y 100.');
+        }
+        if (componentes.length === 0) {
+            errores.push('Selecciona al menos un componente para la PC.');
+        }
+        componentes.forEach((componente, indice) => {
+            if (!Number.isInteger(componente.cantidad) || componente.cantidad <= 0) {
+                errores.push(`La cantidad del componente ${indice + 1} debe ser un entero positivo.`);
+            }
+        });
+        mostrarErrorEditorPcModal(errores);
+        if (errores.length > 0) {
+            return;
+        }
+        crearPc({nombre, descripcion, cantidad, componentes}, editorActivo.estado);
+        cerrarDialogoPcModal();
+    }
+
+    function importePcs() {
+        return pcs.reduce((totalPc, pc) => totalPc + pc.componentes.reduce((total, componente) => {
+            const productoId = componente.producto_id ?? componente.producto?.id ?? componente.querySelector?.('[data-pc-producto]')?.value;
+            const cantidad = componente.cantidad ?? componente.querySelector?.('[data-pc-cantidad]')?.value;
+            const producto = datos.catalogo.find((elemento) => String(elemento.id) === String(productoId));
+            return total + (producto?.precio || 0) * (Number(cantidad) || 0);
+        }, 0) * pc.cantidad, 0);
+    }
+
     function calcularTotales() {
         const importes = filas.map((fila) => {
             const importe = importeFila(fila);
@@ -294,19 +689,31 @@
         });
         const bruto = importes.reduce((suma, importe) => suma + importe.bruto, 0);
         const descuentoLineas = importes.reduce((suma, importe) => suma + importe.descuento, 0);
-        const totalLineas = bruto - descuentoLineas;
+        const brutoPc = importePcs();
+        const brutoTotal = bruto + brutoPc;
+        const totalLineas = brutoTotal - descuentoLineas;
         const porcentajeGeneral = Math.min(Math.max(Number(descuentoGeneral.value) || 0, 0), 10);
         const descuento = descuentoLineas + totalLineas * porcentajeGeneral / 100;
-        const total = bruto - descuento;
+        const total = brutoTotal - descuento;
         const subtotalSinIva = total / 1.16;
         const iva = total - subtotalSinIva;
 
-        raiz.querySelector('[data-total-bruto]').textContent = moneda.format(bruto);
+        raiz.querySelector('[data-total-bruto]').textContent = moneda.format(brutoTotal);
         raiz.querySelector('[data-total-descuento]').textContent = `−${moneda.format(descuento)}`;
         raiz.querySelector('[data-total-subtotal]').textContent = moneda.format(subtotalSinIva);
         raiz.querySelector('[data-total-iva]').textContent = moneda.format(iva);
         raiz.querySelector('[data-total-final]').textContent = moneda.format(total);
         raiz.querySelector('[data-contador-conceptos]').textContent = filas.length;
+        actualizarVisibilidadConceptos();
+        pcs.forEach((pc) => {
+            const total = pc.componentes.reduce((suma, componente) => {
+                const productoId = componente.producto_id ?? componente.querySelector?.('[data-pc-producto]')?.value;
+                const cantidad = componente.cantidad ?? componente.querySelector?.('[data-pc-cantidad]')?.value;
+                const producto = datos.catalogo.find((elemento) => String(elemento.id) === String(productoId));
+                return suma + (producto?.precio || 0) * (Number(cantidad) || 0);
+            }, 0) * pc.cantidad;
+            pc.tarjeta.querySelector('[data-pc-total]').textContent = `${pc.cantidad} PC${pc.cantidad === 1 ? '' : 's'} · ${moneda.format(total)}`;
+        });
     }
 
     function validar() {
@@ -314,12 +721,15 @@
         if (!formulario.querySelector('[data-cliente-id]').value) {
             errores.push('Selecciona un cliente de la lista de resultados.');
         }
-        if (filas.length === 0 || filas.every((fila) => !fila.elemento)) {
-            errores.push('Agrega al menos un producto o servicio.');
+        if (filas.every((fila) => !fila.elemento) && pcs.length === 0) {
+            errores.push('Agrega al menos un producto, servicio o PC personalizada.');
         }
         filas.forEach((fila, indice) => {
             if (!fila.elemento) {
-                errores.push(`Selecciona el concepto de la fila ${indice + 1}.`);
+                if (pcs.length === 0) {
+                    errores.push(`Selecciona el concepto de la fila ${indice + 1}.`);
+                }
+                return;
             }
             if (!fila.descripcion.value.trim()) {
                 errores.push(`Escribe la descripción de la fila ${indice + 1}.`);
@@ -337,6 +747,19 @@
             } else if (!Number.isInteger(Number(fila.descuento.value))) {
                 errores.push(`El descuento de la fila ${indice + 1} debe ser un número entero.`);
             }
+        });
+        pcs.forEach((pc, indicePc) => {
+            if (!pc.nombre.trim()) {
+                errores.push(`Escribe el nombre de la PC ${indicePc + 1}.`);
+            }
+            if (pc.componentes.length === 0) {
+                errores.push(`Selecciona al menos un componente para la PC ${indicePc + 1}.`);
+            }
+            pc.componentes.forEach((componente, indiceComponente) => {
+                if (!Number.isInteger(Number(componente.cantidad)) || Number(componente.cantidad) <= 0) {
+                    errores.push(`La cantidad del componente seleccionado ${indiceComponente + 1} de la PC ${indicePc + 1} debe ser un entero positivo.`);
+                }
+            });
         });
         if (!Number.isInteger(Number(descuentoGeneral.value))) {
             errores.push('El descuento general debe ser un número entero.');
@@ -370,7 +793,7 @@
             area_solicitante: datosFormulario.get('area_solicitante') || null,
             notas: datosFormulario.get('notas') || null,
             porcentaje_descuento: Number(datosFormulario.get('porcentaje_descuento')) || 0,
-            items: filas.map((fila) => ({
+            items: filas.filter((fila) => fila.elemento).map((fila) => ({
                 tipo: fila.tipo.value,
                 producto_id: fila.tipo.value === 'producto' ? fila.elemento?.id : null,
                 servicio_id: fila.tipo.value === 'servicio' ? fila.elemento?.id : null,
@@ -378,6 +801,17 @@
                 cantidad: Number(fila.cantidad.value),
                 precio_unitario: Number(fila.precio.value),
                 porcentaje_descuento: Number(fila.descuento.value),
+            })),
+            pc_armadas: pcs.map((pc) => ({
+                nombre: pc.nombre.trim(),
+                descripcion: pc.descripcion.trim() || null,
+                cantidad: pc.cantidad,
+                plantilla_id: pc.plantillaId,
+                componentes: pc.componentes.map((componente) => ({
+                    producto_id: Number(componente.producto_id),
+                    tipo_componente_pc: componente.tipo,
+                    cantidad: Number(componente.cantidad),
+                })),
             })),
         };
     }
@@ -419,9 +853,15 @@
         }
     });
 
-    botonAgregar.addEventListener('click', crearFila);
+    botonesAgregar.forEach((boton) => boton.addEventListener('click', crearFila));
+        botonAbrirPlantillas.addEventListener('click', () => abrirPlantillasPcModal(botonAbrirPlantillas));
+        botonAbrirPersonalizar.addEventListener('click', () => abrirEditorPcModal());
+        botonCerrarDialogo.addEventListener('click', cerrarDialogoPcModal);
+        botonCancelarEdicion.addEventListener('click', cerrarDialogoPcModal);
+        botonGuardarEdicion.addEventListener('click', guardarEditorPcModal);
+        dialogoPc.addEventListener('close', finalizarDialogoPcModal);
     descuentoGeneral.addEventListener('input', calcularTotales);
     limitarAEnteros(descuentoGeneral);
     configurarCliente();
-    crearFila();
+    calcularTotales();
 })();

@@ -28,6 +28,7 @@ class PartidaCotizacion extends Model
 
     protected $fillable = [
         'cotizacion_id',
+        'configuracion_pc_cotizacion_id',
         'producto_id',
         'servicio_id',
         'tipo',
@@ -38,6 +39,7 @@ class PartidaCotizacion extends Model
         'modelo_concepto',
         'unidad_concepto',
         'requiere_numero_serie',
+        'tipo_componente_pc',
         'cantidad',
         'precio_unitario',
         'porcentaje_descuento',
@@ -68,6 +70,11 @@ class PartidaCotizacion extends Model
     public function servicio()
     {
         return $this->belongsTo(Servicio::class, 'servicio_id');
+    }
+
+    public function configuracionPc()
+    {
+        return $this->belongsTo(ConfiguracionPcCotizacion::class, 'configuracion_pc_cotizacion_id');
     }
 
     public function getArticuloAttribute(): Producto|Servicio|null

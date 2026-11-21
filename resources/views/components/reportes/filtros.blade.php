@@ -14,6 +14,7 @@
         action="{{ $accion }}"
         role="search"
         aria-labelledby="{{ $tituloId }}"
+        data-carga-variante="listado"
     >
         <x-campo-formulario
             id="desde"

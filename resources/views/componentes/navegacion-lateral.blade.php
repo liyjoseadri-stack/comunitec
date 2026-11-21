@@ -100,8 +100,23 @@
                         href="{{ route('inventario.series-vendidas.listado') }}"
                         @if (request()->routeIs('inventario.series-vendidas.*')) aria-current="page" @endif
                     >Series vendidas</a>
+                    <a
+                        href="{{ route('inventario.pc-armadas.listado') }}"
+                        @if (request()->routeIs('inventario.pc-armadas.*')) aria-current="page" @endif
+                    >PC armadas</a>
                 </div>
             </details>
+        @endif
+
+        @if (! $puedeOperar)
+            <a
+                class="menu-administrativo__enlace"
+                href="{{ route('inventario.pc-armadas.listado') }}"
+                @if (request()->routeIs('inventario.pc-armadas.*')) aria-current="page" @endif
+            >
+                <x-icono nombre="inventario" />
+                <span>PC armadas</span>
+            </a>
         @endif
 
         <details
